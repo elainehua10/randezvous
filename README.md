@@ -1,3 +1,3 @@
 # randezvous
 
-randezvous is a app
+randezvous is a very cool app
