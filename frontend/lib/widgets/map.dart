@@ -11,55 +11,21 @@ class MapSample extends StatefulWidget {
   State<MapSample> createState() => MapSampleState();
 }
 
-class MapSampleState extends State<MapSample> with TickerProviderStateMixin {
+class MapSampleState extends State<MapSample> {
   final Completer<GoogleMapController> _controller =
       Completer<GoogleMapController>();
 
   LatLng userPos = LatLng(40.428246, -86.914391);
-  LatLng prevUserPos = LatLng(
-    40.428246,
-    -86.914391,
-  ); // Keep track of previous position
   StreamSubscription<Position>? positionStream;
-  AnimationController? _animationController;
-  Animation<double>? _latAnimation;
-  Animation<double>? _lngAnimation;
-  Timer? _updateTimer;
 
-  @override
   void initState() {
     super.initState();
     _moveToUser();
-
-    // Create an animation controller
-    _animationController = AnimationController(
-      vsync: this,
-      duration: Duration(milliseconds: 1000), // Adjust duration as needed
-    );
-
-    // Set up update timer to redraw marker position during animation
-    _updateTimer = Timer.periodic(Duration(milliseconds: 16), (timer) {
-      if (_latAnimation != null && _lngAnimation != null) {
-        setState(() {
-          userPos = LatLng(_latAnimation!.value, _lngAnimation!.value);
-        });
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _animationController?.dispose();
-    _updateTimer?.cancel();
-    positionStream?.cancel();
-    super.dispose();
   }
 
   void _moveToUser() async {
     final GoogleMapController controller = await _controller.future;
     userPos = await _getUserLocation() ?? LatLng(40.428246, -86.914391);
-    prevUserPos = userPos; // Initialize previous position
-
     await controller.animateCamera(
       CameraUpdate.newCameraPosition(CameraPosition(target: userPos, zoom: 15)),
     );
@@ -70,46 +36,13 @@ class MapSampleState extends State<MapSample> with TickerProviderStateMixin {
       if (position == null) {
         return;
       }
-
-      // Store the previous position
-      prevUserPos = userPos;
-
-      // Create new target position
-      LatLng newPos = LatLng(position.latitude, position.longitude);
-
-      // Create animations for smooth transition
-      _createPositionAnimation(prevUserPos, newPos);
-
-      // Start the animation
-      _animationController!.forward(from: 0.0);
-
-      // Also update the camera to follow the user smoothly
-      controller.animateCamera(
-        CameraUpdate.newCameraPosition(
-          CameraPosition(target: newPos, zoom: 15),
-        ),
-      );
+      // print(
+      //   '${position.latitude.toString()}, ${position.longitude.toString()}',
+      // );
+      setState(() {
+        userPos = LatLng(position.latitude, position.longitude);
+      });
     });
-  }
-
-  void _createPositionAnimation(LatLng startPos, LatLng endPos) {
-    // Create animations for latitude and longitude
-    _latAnimation = Tween<double>(
-      begin: startPos.latitude,
-      end: endPos.latitude,
-    ).animate(
-      CurvedAnimation(
-        parent: _animationController!,
-        curve: Curves.easeInOut, // Use a smoother curve
-      ),
-    );
-
-    _lngAnimation = Tween<double>(
-      begin: startPos.longitude,
-      end: endPos.longitude,
-    ).animate(
-      CurvedAnimation(parent: _animationController!, curve: Curves.easeInOut),
-    );
   }
 
   Future<LatLng?> _getUserLocation() async {
@@ -150,7 +83,7 @@ class MapSampleState extends State<MapSample> with TickerProviderStateMixin {
         onMapCreated: (GoogleMapController controller) {
           _controller.complete(controller);
         },
-        // Enable this to make camera follow user automatically
+        // markers: {Marker(markerId: const MarkerId('You'), position: userPos)},
         myLocationEnabled: true,
         myLocationButtonEnabled: true,
       ),
