@@ -43,7 +43,6 @@ const createGroup = async (req: Request, res: Response) => {
     return res.status(500).json({ error: "Internal server error" });
   }
 };
-
 export { createGroup };
 
 // Rename group (only leader can change)
@@ -86,6 +85,7 @@ const renameGroup = async (req: Request, res: Response) => {
   }
 
 };
+export { renameGroup };
 
 // Upload an icon for group
 
@@ -108,7 +108,7 @@ const setPublicity = async (req: Request, res: Response) => {
 
     // Update group publicity
     const updatedPublicity = await sql`
-            UPDATE "is_public" 
+            UPDATE is_public 
             SET name = ${isPublic} 
             WHERE id = ${groupId}
             RETURNING *;
@@ -119,7 +119,8 @@ const setPublicity = async (req: Request, res: Response) => {
     console.error("Error changing group publicity:", error);
     return res.status(500).json({ error: "Internal server error" });
   }
-}
+};
+export { setPublicity };
 
 // Send an invite to other users
 const inviteToGroup = async (
