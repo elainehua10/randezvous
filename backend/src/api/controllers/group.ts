@@ -1,6 +1,6 @@
 // group.ts
 // All the group processing logic
-
+import { Request, Response } from "express";
 import sql from "../../db";
 
 // Set limit to how many groups a user can create
@@ -38,18 +38,86 @@ const createGroup = async (
 };
 
 // Rename group (only leader can change)
-const renameGroup = (userId: string, groupId: number, newName: string) => {};
+const renameGroup = async (req: Request, res: Response) => {
+  try {
+    // Check fields
+    const { userId, groupId, newName } = req.body;
+    if (!userId || !groupId || !newName) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    // Check group ownership
+    const group = await sql`
+            SELECT * FROM "group" WHERE id = ${groupId} AND leader_id = ${userId};
+        `;
+    if (group.length === 0) {
+      return res.status(403).json({ error: "You are not authorized to rename this group." });
+    }
+
+    // Check for duplicate name 
+    const existingGroup = await sql`
+            SELECT * FROM "group" WHERE name = ${newName} AND id <> ${groupId};
+        `;
+    if (existingGroup.length > 0) {
+      return res.status(409).json({ error: "A group with this name already exists. Please choose a different name." });
+    }
+
+    // Update group name
+    const updatedGroup = await sql`
+            UPDATE "group" 
+            SET name = ${newName} 
+            WHERE id = ${groupId}
+            RETURNING *;
+        `;
+
+    return res.status(200).json({ success: true, group: updatedGroup[0] });
+  } catch (error) {
+    console.error("Error renaming group:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+
+};
 
 // Upload an icon for group
 
 // Change group publicity
+const setPublicity = async (req: Request, res: Response) => {
+  try {
+    // Check fields
+    const { userId, groupId, isPublic } = req.body;
+    if (!userId || !groupId || !isPublic) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    // Check group ownership
+    const group = await sql`
+            SELECT * FROM "group" WHERE id = ${groupId} AND leader_id = ${userId};
+        `;
+    if (group.length === 0) {
+      return res.status(403).json({ error: "You are not authorized to rename this group." });
+    }
+
+    // Update group publicity
+    const updatedPublicity = await sql`
+            UPDATE "is_public" 
+            SET name = ${isPublic} 
+            WHERE id = ${groupId}
+            RETURNING *;
+        `;
+
+    return res.status(200).json({ success: true, group: updatedPublicity[0] });
+  } catch (error) {
+    console.error("Error changing group publicity:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+}
 
 // Send an invite to other users
 const inviteToGroup = async (
   fromUserId: string,
   toUserId: string,
   groupID: string
-) => {};
+) => { };
 
 // Remove people from the group
 
@@ -57,6 +125,7 @@ const inviteToGroup = async (
 
 // Accept invite
 
-// Leave the a group user is in
+// Leave a group user
+
 
 // Get locations of other users
