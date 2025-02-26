@@ -134,8 +134,53 @@ const inviteToGroup = async (
 // ============= Member of group functions ===================
 
 // Accept invite
+export const acceptInvite = async (req: Request, res: Response) => {
+  const { userId, groupId } = req.body;
 
-// Leave a group user
+  if (!userId || !groupId) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
 
+  try {
+    // Check if there's a pending invite for this user and group
+    const invite = await sql`
+      SELECT * FROM invite
+      WHERE group_id = ${groupId} 
+        AND to_user_id = ${userId} 
+        AND status = 'pending'
+      LIMIT 1;
+    `;
+
+    if (!invite) {
+      return res.status(404).json({ error: 'No pending invite found for this user and group'})
+    }
+    
+    // Adding user to the user_group table
+    await sql`
+      INSERT INTO user_group (group_id, user_id)
+      VALUES (${groupId}, ${userId})
+      ON CONFLICT DO NOTHING;
+    `;
+
+    // Update the invite status to 'accepted'
+    await sql`
+      UPDATE invites
+      SET status = 'accepted'
+      WHERE group_id = ${groupId}
+        AND to_user_id = ${userId};
+    `;
+
+    return res.status(200).json({ message: 'Invite accepted. You have been added to the group.' });
+
+  } catch (error) {
+    console.error('Error accepting invite:', error);
+    return res.status(500).json({
+      error: (error as Error).message || 'An unknown error occurred',
+    });
+  }
+};
+
+
+// Leave the a group user is in
 
 // Get locations of other users
