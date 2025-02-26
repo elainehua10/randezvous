@@ -9,7 +9,7 @@ const MAX_GROUPS_PER_USER = 5;
 // ============= Leader of group functions ===================
 
 // Create a new group
-const createGroup = async (req: Request, res: Response) => {
+export const createGroup = async (req: Request, res: Response) => {
   try {
     // Check fields
     const { userId, groupName, isPublic } = req.body;
@@ -43,10 +43,9 @@ const createGroup = async (req: Request, res: Response) => {
     return res.status(500).json({ error: "Internal server error" });
   }
 };
-export { createGroup };
 
 // Rename group (only leader can change)
-const renameGroup = async (req: Request, res: Response) => {
+export const renameGroup = async (req: Request, res: Response) => {
   try {
     // Check fields
     const { userId, groupId, newName } = req.body;
@@ -85,12 +84,11 @@ const renameGroup = async (req: Request, res: Response) => {
   }
 
 };
-export { renameGroup };
 
 // Upload an icon for group
 
 // Change group publicity
-const setPublicity = async (req: Request, res: Response) => {
+export const setPublicity = async (req: Request, res: Response) => {
   try {
     // Check fields
     const { userId, groupId, isPublic } = req.body;
@@ -120,7 +118,6 @@ const setPublicity = async (req: Request, res: Response) => {
     return res.status(500).json({ error: "Internal server error" });
   }
 };
-export { setPublicity };
 
 // Send an invite to other users
 const inviteToGroup = async (
