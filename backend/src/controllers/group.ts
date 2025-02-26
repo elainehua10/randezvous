@@ -1,7 +1,7 @@
 // group.ts
 // All the group processing logic
 
-import sql from "./db"
+import sql from "../db"
 
 // Set limit to how many groups a user can create
 const MAX_GROUPS_PER_USER = 5; 
