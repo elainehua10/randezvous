@@ -1,5 +1,5 @@
 import express from "express";
-import { register } from "./controllers/user";
+import { register, login } from "./controllers/user";
 import MessageResponse from "../interfaces/MessageResponse";
 import emojis from "./emojis";
 
@@ -13,5 +13,6 @@ router.get<{}, MessageResponse>("/", (req, res) => {
 
 router.use("/emojis", emojis);
 router.use("/register", register);
+router.use("/login", login)
 
 export default router;
