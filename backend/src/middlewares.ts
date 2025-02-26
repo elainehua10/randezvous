@@ -17,3 +17,14 @@ export function errorHandler(err: Error, req: Request, res: Response<ErrorRespon
     stack: process.env.NODE_ENV === 'production' ? '🥞' : err.stack,
   });
 }
+
+// middleware for requiring user to be loggedin
+export function requireAuth(err: Error, req: Request, res: Response<ErrorResponse>, next: NextFunction) {
+  next()
+}
+
+// middleware for requiring user to be leader of group
+export function requireGroupLeader(err: Error, req: Request, res: Response<ErrorResponse>, next: NextFunction) {
+  next()
+}
+
