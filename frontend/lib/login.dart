@@ -30,7 +30,7 @@ class _LoginScreenState extends State<LoginScreen> {
         foregroundColor: Colors.black,
       ),
       body: Padding(
-        padding: EdgeInsets.all(10.0),
+        padding: EdgeInsets.all(20.0),
         child: Form(
           key: _formKey,
           child: Column(
@@ -79,6 +79,7 @@ class _LoginScreenState extends State<LoginScreen> {
               SizedBox(height: 20),
               TextButton(
                 onPressed: () {
+                    Navigator.pushNamed(context, '/register');
                 },
                 child: Text("Don't have an account? Register"),
               ),
