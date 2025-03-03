@@ -2,7 +2,7 @@ import express from "express";
 import { register, login } from "./controllers/user";
 import MessageResponse from "../interfaces/MessageResponse";
 import emojis from "./emojis";
-import { createGroup } from "./controllers/group";
+import { inviteToGroup, createGroup } from "./controllers/group";
 
 const router = express.Router();
 
@@ -16,5 +16,7 @@ router.use("/emojis", emojis);
 router.use("/register", register);
 router.use("/login", login)
 router.use("/groups/create", createGroup)
+
+router.use("/group/invite", inviteToGroup);
 
 export default router;
