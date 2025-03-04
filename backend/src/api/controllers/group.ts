@@ -120,11 +120,30 @@ export const setPublicity = async (req: Request, res: Response) => {
 };
 
 // Send an invite to other users
-const inviteToGroup = async (
-  fromUserId: string,
-  toUserId: string,
-  groupID: string
-) => { };
+export const inviteToGroup = async (req: Request, res: Response) => {
+  const { userId, toUserId, groupId } = req.body;
+
+  if (!userId || !toUserId || !groupId) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  try {
+    let result = await sql`
+            INSERT INTO invite (from_user_id, to_user_id, group_id) 
+            VALUES (${userId}, ${toUserId}, ${groupId})
+            RETURNING id;
+        `;
+
+    // Add user to user_group table
+    const inviteId = result[0].id;
+
+    return res.status(200).json({ message: "Invite Created", inviteId });
+  } catch (error) {
+    console.error("Error creating group:", error);
+    res.status(500).json({ message: "error lol" });
+    throw error;
+  }
+};
 
 // Remove people from the group
 
