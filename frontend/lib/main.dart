@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/login.dart';
 import 'package:frontend/register.dart';
+import 'package:frontend/map.dart';
 
 void main() {
   runApp(const MyApp());
@@ -12,7 +13,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Login Demo',
+      title: 'RandezVous',
       theme: ThemeData(
         primarySwatch: Colors.yellow,
       ),
@@ -20,8 +21,10 @@ class MyApp extends StatelessWidget {
       routes: {
         '/login': (context) => LoginScreen(),
         '/register': (context) => RegisterScreen(),
+        '/home': (context) => MapScreen(),
       },
       home: LoginScreen(),
+      //home: MapScreen(),
     );
   }
 

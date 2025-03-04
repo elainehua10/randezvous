@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/map.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -17,6 +18,20 @@ class _LoginScreenState extends State<LoginScreen> {
     if (_formKey.currentState!.validate()) {
       // Here you can add your code for checking credentials
       print('Login attempt: $email with $password');
+
+      bool success = true;
+
+      if (success) {
+        Navigator.pushReplacementNamed(context, '/home');
+      } else {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text('Login Failed'),
+            content: Text('Please check your credentials and try again.'),
+          ),
+        );
+      }
     }
   }
 
