@@ -18,14 +18,14 @@ export const createGroup = async (req: Request, res: Response) => {
     }
     console.log(`
             INSERT INTO groups (name, is_public, leader_id) 
-            VALUES (${groupName}, ${isPublic ? 'TRUE' :'FALSE'}, ${userId})
+            VALUES (${groupName}, ${isPublic ? 'TRUE' : 'FALSE'}, ${userId})
             RETURNING id;
         `)
 
     // Insert new group (user is the leader)
     let newGroup = await sql`
             INSERT INTO groups (name, is_public, leader_id) 
-            VALUES (${groupName}, ${isPublic ? 'TRUE' :'FALSE'}, ${userId})
+            VALUES (${groupName}, ${isPublic ? 'TRUE' : 'FALSE'}, ${userId})
             RETURNING id;
         `;
 
@@ -146,6 +146,35 @@ export const inviteToGroup = async (req: Request, res: Response) => {
 };
 
 // Remove people from the group
+export const removeFromGroup = async (req: Request, res: Response) => {
+  const { userId, removingUserId, groupId } = req.body;
+
+  if (!userId || !removingUserId || !groupId) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  try {
+    // Check group ownership
+    const group = await sql`
+            SELECT * FROM groups WHERE id = ${groupId} AND leader_id = ${userId};
+        `;
+    if (group.length === 0) {
+      return res.status(403).json({ error: "You are not authorized to rename this group." });
+    }
+
+    // Remove user from user_group table
+    await sql`
+            DELETE FROM user_group
+            WHERE user_id = ${removingUserId} AND group_id = ${groupId}
+        `;
+
+    return res.status(200).json({ message: "User removed from group" });
+  } catch (error) {
+    console.error("Error removing user from group:", error);
+    res.status(500).json({ message: "error lol" });
+    throw error;
+  }
+};
 
 // ============= Member of group functions ===================
 
@@ -168,9 +197,9 @@ export const acceptInvite = async (req: Request, res: Response) => {
     `;
 
     if (!invite) {
-      return res.status(404).json({ error: 'No pending invite found for this user and group'})
+      return res.status(404).json({ error: 'No pending invite found for this user and group' })
     }
-    
+
     // Adding user to the user_group table
     await sql`
       INSERT INTO user_group (group_id, user_id)
@@ -198,5 +227,60 @@ export const acceptInvite = async (req: Request, res: Response) => {
 
 
 // Leave the a group user is in
+export const leaveGroup = async (req: Request, res: Response) => {
+  const { userId, groupId } = req.body;
+
+  if (!userId || !groupId) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  try {
+    // Remove user from user_group table
+    await sql`
+            DELETE FROM user_group
+            WHERE user_id = ${userId} AND group_id = ${groupId}
+        `;
+
+    return res.status(200).json({ message: 'User removed from group' });
+  } catch (error) {
+    console.error('Error leaving group:', error);
+    return res.status(500).json({
+      error: (error as Error).message || 'An unknown error occurred',
+    });
+  }
+};
 
 // Get locations of other users
+export const getGroupLocations = async (req: Request, res: Response) => {
+  const { userId, groupId } = req.body;
+
+  if (!userId || !groupId) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  try {
+    // Check if user is in the group
+    const userInGroup = await sql`
+            SELECT * FROM user_group
+            WHERE user_id = ${userId} AND group_id = ${groupId}
+        `;
+    if (userInGroup.length === 0) {
+      return res.status(403).json({ error: 'You are not a member of this group' });
+    }
+    
+    // Get locations of other users in the group
+    const locations = await sql`
+            SELECT u.longitude, u.latitude
+            FROM user_group ug
+            JOIN profile p ON ug.user_id = p.id
+            WHERE group_id = ${groupId}
+        `;
+
+    return res.status(200).json({ locations });
+  } catch (error) {
+    console.error('Error getting group locations:', error);
+    return res.status(500).json({
+      error: (error as Error).message || 'An unknown error occurred',
+    });
+  }
+};
