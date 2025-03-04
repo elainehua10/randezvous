@@ -39,6 +39,7 @@ export const createGroup = async (req: Request, res: Response) => {
             VALUES (${groupId}, ${userId})
             RETURNING *;
         `;
+        
     // Update profile to reflect that user is in a group
     await sql`
             UPDATE profile 
@@ -64,7 +65,7 @@ export const renameGroup = async (req: Request, res: Response) => {
 
     // Check group ownership
     const group = await sql`
-            SELECT * FROM groups WHERE id = ${groupId} AND leader_id = ${userId};
+            SELECT id FROM groups WHERE id = ${groupId} AND leader_id = ${userId};
         `;
     if (group.length === 0) {
       return res.status(403).json({ error: "You are not authorized to rename this group." });
@@ -72,7 +73,7 @@ export const renameGroup = async (req: Request, res: Response) => {
 
     // Check for duplicate name 
     const existingGroup = await sql`
-            SELECT * FROM groups WHERE name = ${newName} AND id <> ${groupId};
+            SELECT id FROM groups WHERE name = ${newName} AND id <> ${groupId};
         `;
     if (existingGroup.length > 0) {
       return res.status(409).json({ error: "A group with this name already exists. Please choose a different name." });
@@ -103,10 +104,10 @@ export const uploadIcon = async (req: Request, res: Response) => {
 
     // Check group ownership
     const group = await sql`
-            SELECT * FROM groups WHERE id = ${groupId} AND leader_id = ${userId};
+            SELECT id FROM groups WHERE id = ${groupId} AND leader_id = ${userId};
         `;
     if (group.length === 0) {
-      return res.status(403).json({ error: "You are not authorized to rename this group." });
+      return res.status(403).json({ error: "You are not authorized to upload an icon for this group." });
     }
 
     // Update group icon
@@ -134,7 +135,7 @@ export const setPublicity = async (req: Request, res: Response) => {
 
     // Check group ownership
     const group = await sql`
-            SELECT * FROM groups WHERE id = ${groupId} AND leader_id = ${userId};
+            SELECT id FROM groups WHERE id = ${groupId} AND leader_id = ${userId};
         `;
     if (group.length === 0) {
       return res.status(403).json({ error: "You are not authorized to rename this group." });
@@ -143,7 +144,7 @@ export const setPublicity = async (req: Request, res: Response) => {
     // Update group publicity
     const updatedPublicity = await sql`
             UPDATE groups 
-            SET name = ${isPublic} 
+            SET is_public = ${isPublic} 
             WHERE id = ${groupId}
             RETURNING *;
         `;
@@ -191,7 +192,7 @@ export const removeFromGroup = async (req: Request, res: Response) => {
 
     // Check group ownership
     const group = await sql`
-            SELECT * FROM groups WHERE id = ${groupId} AND leader_id = ${userId};
+            SELECT id FROM groups WHERE id = ${groupId} AND leader_id = ${userId};
         `;
     if (group.length === 0) {
       return res.status(403).json({ error: "You are not authorized to remove people from this group." });
@@ -206,7 +207,7 @@ export const removeFromGroup = async (req: Request, res: Response) => {
     // Update profile to not be in a group
     await sql`
             UPDATE profile 
-            SET in_group = ${false} 
+            SET in_group = FALSE
             WHERE id = ${removingUserId};
         `;
 
@@ -231,7 +232,7 @@ export const acceptInvite = async (req: Request, res: Response) => {
   try {
     // Check if there's a pending invite for this user and group
     const invite = await sql`
-      SELECT * FROM invite
+      SELECT from_user_id FROM invite
       WHERE group_id = ${groupId} 
         AND to_user_id = ${userId} 
         AND status = 'pending'
@@ -294,6 +295,12 @@ export const leaveGroup = async (req: Request, res: Response) => {
             DELETE FROM user_group
             WHERE user_id = ${userId} AND group_id = ${groupId}
         `;
+    // Update profile to not be in a group
+    await sql`
+            UPDATE profile
+            SET in_group = FALSE
+            WHERE id = ${userId}
+        `;
 
     return res.status(200).json({ message: 'User removed from group' });
   } catch (error) {
@@ -315,7 +322,7 @@ export const getGroupLocations = async (req: Request, res: Response) => {
   try {
     // Check if user is in the group
     const userInGroup = await sql`
-            SELECT * FROM user_group
+            SELECT user_id FROM user_group
             WHERE user_id = ${userId} AND group_id = ${groupId}
         `;
     if (userInGroup.length === 0) {
