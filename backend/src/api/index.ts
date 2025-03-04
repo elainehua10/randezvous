@@ -2,7 +2,7 @@ import express from "express";
 import { register, login, changeUsername } from "./controllers/user";
 import MessageResponse from "../interfaces/MessageResponse";
 import emojis from "./emojis";
-import { inviteToGroup, createGroup } from "./controllers/group";
+import { createGroup, renameGroup, setPublicity, inviteToGroup } from "./controllers/group";
 
 const router = express.Router();
 
@@ -17,6 +17,8 @@ router.use("/register", register);
 router.use("/login", login);
 router.use("/change-username", changeUsername)
 router.use("/groups/create", createGroup)
+router.use("/groups/rename", renameGroup)
+router.use("/groups/setpub", setPublicity)
 
 router.use("/group/invite", inviteToGroup);
 
