@@ -4,7 +4,7 @@ import { Request, Response } from "express";
 import sql from "../../db";
 
 // Set limit to how many groups a user can create
-const MAX_GROUPS_PER_USER = 5;
+const MAX_GROUPS_PER_USER = 1;
 
 // ============= Leader of group functions ===================
 
@@ -16,11 +16,14 @@ export const createGroup = async (req: Request, res: Response) => {
     if (!userId || !groupName || !isPublic) {
       return res.status(400).json({ error: "Missing required fields" });
     }
-    console.log(`
-            INSERT INTO groups (name, is_public, leader_id) 
-            VALUES (${groupName}, ${isPublic ? 'TRUE' : 'FALSE'}, ${userId})
-            RETURNING id;
-        `)
+
+    // Check if user has reached the limit of groups they can create (1 for now)
+    const inGroup = await sql`
+            SELECT in_group FROM profile WHERE user_id = ${userId};
+        `;
+    if (inGroup.length > 0 && inGroup[0].in_group) {
+      return res.status(403).json({ error: "You have are already part of a group." });
+    }
 
     // Insert new group (user is the leader)
     let newGroup = await sql`
@@ -35,6 +38,12 @@ export const createGroup = async (req: Request, res: Response) => {
             INSERT INTO user_group (group_id, user_id) 
             VALUES (${groupId}, ${userId})
             RETURNING *;
+        `;
+    // Update profile to reflect that user is in a group
+    await sql`
+            UPDATE profile 
+            SET in_group = TRUE
+            WHERE id = ${userId};
         `;
 
     return res.status(200).json({ success: true, group: newGroup[0] });
@@ -76,7 +85,6 @@ export const renameGroup = async (req: Request, res: Response) => {
             WHERE id = ${groupId}
             RETURNING *;
         `;
-
     return res.status(200).json({ success: true, group: updatedGroup[0] });
   } catch (error) {
     console.error("Error renaming group:", error);
@@ -91,7 +99,8 @@ export const uploadIcon = async (req: Request, res: Response) => {
     const { userId, groupId, iconUrl } = req.body;
     if (!userId || !groupId || !iconUrl) {
       return res.status(400).json({ error: "Missing required fields" });
-    } 
+    }
+
     // Check group ownership
     const group = await sql`
             SELECT * FROM groups WHERE id = ${groupId} AND leader_id = ${userId};
@@ -99,6 +108,7 @@ export const uploadIcon = async (req: Request, res: Response) => {
     if (group.length === 0) {
       return res.status(403).json({ error: "You are not authorized to rename this group." });
     }
+
     // Update group icon
     const updatedGroup = await sql`
             UPDATE groups
@@ -147,20 +157,20 @@ export const setPublicity = async (req: Request, res: Response) => {
 
 // Send an invite to other users
 export const inviteToGroup = async (req: Request, res: Response) => {
-  const { userId, toUserId, groupId } = req.body;
-
-  if (!userId || !toUserId || !groupId) {
-    return res.status(400).json({ error: "Missing required fields" });
-  }
-
   try {
+    // Check fields
+    const { userId, toUserId, groupId } = req.body;
+    if (!userId || !toUserId || !groupId) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    // Add user to invite table
     let result = await sql`
             INSERT INTO invite (from_user_id, to_user_id, group_id) 
             VALUES (${userId}, ${toUserId}, ${groupId})
             RETURNING id;
         `;
 
-    // Add user to user_group table
     const inviteId = result[0].id;
 
     return res.status(200).json({ message: "Invite Created", inviteId });
@@ -173,25 +183,31 @@ export const inviteToGroup = async (req: Request, res: Response) => {
 
 // Remove people from the group
 export const removeFromGroup = async (req: Request, res: Response) => {
-  const { userId, removingUserId, groupId } = req.body;
-
-  if (!userId || !removingUserId || !groupId) {
-    return res.status(400).json({ error: "Missing required fields" });
-  }
-
   try {
+    const { userId, removingUserId, groupId } = req.body;
+    if (!userId || !removingUserId || !groupId) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
     // Check group ownership
     const group = await sql`
             SELECT * FROM groups WHERE id = ${groupId} AND leader_id = ${userId};
         `;
     if (group.length === 0) {
-      return res.status(403).json({ error: "You are not authorized to rename this group." });
+      return res.status(403).json({ error: "You are not authorized to remove people from this group." });
     }
 
     // Remove user from user_group table
     await sql`
             DELETE FROM user_group
-            WHERE user_id = ${removingUserId} AND group_id = ${groupId}
+            WHERE user_id = ${removingUserId} AND group_id = ${groupId};
+        `;
+
+    // Update profile to not be in a group
+    await sql`
+            UPDATE profile 
+            SET in_group = ${false} 
+            WHERE id = ${removingUserId};
         `;
 
     return res.status(200).json({ message: "User removed from group" });
@@ -221,9 +237,16 @@ export const acceptInvite = async (req: Request, res: Response) => {
         AND status = 'pending'
       LIMIT 1;
     `;
-
     if (invite.length === 0) {
       return res.status(404).json({ error: 'No pending invite found for this user and group' })
+    }
+
+    // Check if the user is already in a group
+    const userProfile = await sql`
+      SELECT in_group FROM profile WHERE id = ${userId};
+    `;
+    if (userProfile.length > 0 && userProfile[0].in_group) {
+      return res.status(403).json({ error: "You are already in a group and cannot accept an invite." });
     }
 
     // Adding user to the user_group table
@@ -237,8 +260,14 @@ export const acceptInvite = async (req: Request, res: Response) => {
     await sql`
       UPDATE invite
       SET status = 'accepted'
-      WHERE group_id = ${groupId}
-        AND to_user_id = ${userId};
+      WHERE group_id = ${groupId} AND to_user_id = ${userId};
+    `;
+
+    // Update profile to indicate the user is now in a group
+    await sql`
+      UPDATE profile 
+      SET in_group = TRUE 
+      WHERE id = ${userId};
     `;
 
     return res.status(200).json({ message: 'Invite accepted. You have been added to the group.' });
@@ -250,7 +279,6 @@ export const acceptInvite = async (req: Request, res: Response) => {
     });
   }
 };
-
 
 // Leave the a group user is in
 export const leaveGroup = async (req: Request, res: Response) => {
