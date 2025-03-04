@@ -1,5 +1,5 @@
 import express from "express";
-import { register, login } from "./controllers/user";
+import { register, login, changeUsername } from "./controllers/user";
 import MessageResponse from "../interfaces/MessageResponse";
 import emojis from "./emojis";
 import { inviteToGroup, createGroup } from "./controllers/group";
@@ -14,7 +14,8 @@ router.get<{}, MessageResponse>("/", (req, res) => {
 
 router.use("/emojis", emojis);
 router.use("/register", register);
-router.use("/login", login)
+router.use("/login", login);
+router.use("/change-username", changeUsername)
 router.use("/groups/create", createGroup)
 
 router.use("/group/invite", inviteToGroup);

@@ -11,6 +11,15 @@ export const register = async (req: Request, res: Response) => {
   }
   // Register a new user
   try {
+    // Check if the username is already taken by another user
+    const existingUser = await sql`
+      SELECT id FROM profile WHERE username = ${username}
+    `;
+    
+    if (existingUser.length > 0) {
+      return res.status(400).json({ error: "Username is already taken" });
+    }
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -60,3 +69,46 @@ export const login = async (req: Request, res: Response) => {
     res.status(401).json({ error: (error as Error).message || 'Invalid login credentials' });
   }
 };
+
+export const changeUsername = async (req: Request, res: Response) => {
+  const { userId, newUsername } = req.body;
+  
+  if (!userId || !newUsername) {
+    return res.status(400).json({ error: "Missing userId or newUsername" });
+  }
+
+  try {
+    const existingUser = await sql`
+      SELECT id FROM profile WHERE username = ${newUsername}
+    `;
+    if (existingUser.length > 0) {
+      return res.status(400).json({ error: "Username already taken" });
+    }
+    await sql`
+      UPDATE profile SET username = ${newUsername} WHERE id = ${userId}
+    `;
+    res.status(200).json({ message: "Username updated successfully" });
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message || "An unknown error occurred" });
+  }
+};
+
+export const deleteAccount = async (req: Request, res: Response) => {
+  const { userId } = req.body;
+  if (!userId) {
+    return res.status(400).json({ error: "Missing userId"});
+  }
+  try {
+    await sql`
+      DELETE FROM profile WHERE id = ${userId};
+    `;
+    const { data, error } = await supabase.auth.admin.deleteUser(userId);
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
+    res.status(200).json({ message: 'Account deleted successfully',
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+}
