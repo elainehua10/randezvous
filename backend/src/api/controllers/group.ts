@@ -80,12 +80,38 @@ export const renameGroup = async (req: Request, res: Response) => {
     return res.status(200).json({ success: true, group: updatedGroup[0] });
   } catch (error) {
     console.error("Error renaming group:", error);
-    return res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: "error lol" });
   }
-
 };
 
 // Upload an icon for group
+export const uploadIcon = async (req: Request, res: Response) => {
+  try {
+    // Check fields
+    const { userId, groupId, iconUrl } = req.body;
+    if (!userId || !groupId || !iconUrl) {
+      return res.status(400).json({ error: "Missing required fields" });
+    } 
+    // Check group ownership
+    const group = await sql`
+            SELECT * FROM groups WHERE id = ${groupId} AND leader_id = ${userId};
+        `;
+    if (group.length === 0) {
+      return res.status(403).json({ error: "You are not authorized to rename this group." });
+    }
+    // Update group icon
+    const updatedGroup = await sql`
+            UPDATE groups
+            SET icon_url = ${iconUrl}
+            WHERE id = ${groupId}
+            RETURNING *;
+        `;
+    return res.status(200).json({ success: true, group: updatedGroup[0] });
+  } catch (error) {
+    console.error("Error uploading icon:", error);
+    return res.status(500).json({ error: "error lol" });
+  }
+};
 
 // Change group publicity
 export const setPublicity = async (req: Request, res: Response) => {
@@ -115,7 +141,7 @@ export const setPublicity = async (req: Request, res: Response) => {
     return res.status(200).json({ success: true, group: updatedPublicity[0] });
   } catch (error) {
     console.error("Error changing group publicity:", error);
-    return res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: "error lol" });
   }
 };
 
