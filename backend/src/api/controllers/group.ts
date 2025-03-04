@@ -39,7 +39,7 @@ export const createGroup = async (req: Request, res: Response) => {
             VALUES (${groupId}, ${userId})
             RETURNING *;
         `;
-        
+
     // Update profile to reflect that user is in a group
     await sql`
             UPDATE profile 
@@ -69,6 +69,11 @@ export const renameGroup = async (req: Request, res: Response) => {
         `;
     if (group.length === 0) {
       return res.status(403).json({ error: "You are not authorized to rename this group." });
+    }
+
+    // Check name length
+    if (newName.length < 3 || newName.length > 30) {
+      return res.status(400).json({ error: "Group name must be between 3 and 30 characters." });
     }
 
     // Check for duplicate name 
