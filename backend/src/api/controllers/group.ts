@@ -270,10 +270,10 @@ export const getGroupLocations = async (req: Request, res: Response) => {
 
     // Get locations of other users in the group
     const locations = await sql`
-            SELECT u.longitude, u.latitude
+            SELECT p.longitude, p.latitude
             FROM user_group ug
-            JOIN auth.users u ON ug.user_id = u.id
-            WHERE group_id = ${groupId}
+            JOIN profile p ON ug.user_id = p.user_id
+            WHERE ug.group_id = ${groupId}
         `;
 
     return res.status(200).json({ locations });
