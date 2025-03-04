@@ -1,7 +1,10 @@
 // group.ts
 // All the group processing logic
+import supabase from "../../supabase";
 import { Request, Response } from "express";
+import { UploadedFile } from "express-fileupload";
 import sql from "../../db";
+import sharp from "sharp";
 
 // Set limit to how many groups a user can create
 const MAX_GROUPS_PER_USER = 1;
@@ -107,8 +110,8 @@ export const renameGroup = async (req: Request, res: Response) => {
 export const uploadIcon = async (req: Request, res: Response) => {
   try {
     // Check fields
-    const { userId, groupId, iconUrl } = req.body;
-    if (!userId || !groupId || !iconUrl) {
+    const { userId, groupId } = req.body;
+    if (!userId || !groupId) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
@@ -120,13 +123,51 @@ export const uploadIcon = async (req: Request, res: Response) => {
       return res.status(403).json({ error: "You are not authorized to upload an icon for this group." });
     }
 
-    // Update group icon
+    // Extract file
+    const iconFile = req.files?.icon as UploadedFile;
+    if (!iconFile) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
+
+    // Validate file type
+    const allowedExtensions = [".png", ".jpg", ".jpeg", ".gif"];
+    const fileExtension = iconFile.name.split(".").at(-1);
+    if (!allowedExtensions.includes(fileExtension || "")) {
+      return res.status(400).json({ error: "Invalid file type. Only PNG, JPG, JPEG, and GIF are allowed." });
+    }
+
+    // Size the file down
+    const resizedImageBuffer = await sharp(iconFile.data)
+      .resize(200, 200)
+      .toBuffer();
+
+    // Upload to Supabase Storage (Bucket: "images")
+    const fileName = `group_${groupId}_${Date.now()}${fileExtension}`;
+    const { error } = await supabase.storage
+      .from("images")
+      .upload(fileName, resizedImageBuffer, {
+        cacheControl: "3600",
+        upsert: false,
+        contentType: iconFile.mimetype,
+      });
+    if (error) {
+      console.error("Error uploading icon to Supabase:", error);
+      return res.status(500).json({ error: "error lol" });
+    }
+
+    // Get public URL
+    const { data } = await supabase.storage
+      .from("images")
+      .getPublicUrl(fileName);
+
+    // Update group icon URL
     const updatedGroup = await sql`
             UPDATE groups
-            SET icon_url = ${iconUrl}
+            SET icon_url = ${data.publicUrl}
             WHERE id = ${groupId}
             RETURNING *;
         `;
+
     return res.status(200).json({ success: true, group: updatedGroup[0] });
   } catch (error) {
     console.error("Error uploading icon:", error);
