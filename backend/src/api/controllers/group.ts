@@ -106,7 +106,7 @@ export const setPublicity = async (req: Request, res: Response) => {
 
     // Update group publicity
     const updatedPublicity = await sql`
-            UPDATE is_public 
+            UPDATE groups 
             SET name = ${isPublic} 
             WHERE id = ${groupId}
             RETURNING *;
@@ -196,7 +196,7 @@ export const acceptInvite = async (req: Request, res: Response) => {
       LIMIT 1;
     `;
 
-    if (!invite) {
+    if (invite.length === 0) {
       return res.status(404).json({ error: 'No pending invite found for this user and group' })
     }
 
@@ -209,7 +209,7 @@ export const acceptInvite = async (req: Request, res: Response) => {
 
     // Update the invite status to 'accepted'
     await sql`
-      UPDATE invites
+      UPDATE invite
       SET status = 'accepted'
       WHERE group_id = ${groupId}
         AND to_user_id = ${userId};
@@ -267,12 +267,12 @@ export const getGroupLocations = async (req: Request, res: Response) => {
     if (userInGroup.length === 0) {
       return res.status(403).json({ error: 'You are not a member of this group' });
     }
-    
+
     // Get locations of other users in the group
     const locations = await sql`
             SELECT u.longitude, u.latitude
             FROM user_group ug
-            JOIN profile p ON ug.user_id = p.id
+            JOIN auth.users u ON ug.user_id = u.id
             WHERE group_id = ${groupId}
         `;
 
