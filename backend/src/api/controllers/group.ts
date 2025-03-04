@@ -25,6 +25,11 @@ export const createGroup = async (req: Request, res: Response) => {
       return res.status(403).json({ error: "You have are already part of a group." });
     }
 
+    // Check group name length
+    if (groupName.length < 3 || groupName.length > 30) {
+      return res.status(400).json({ error: "Group name must be between 3 and 30 characters." });
+    }
+
     // Insert new group (user is the leader)
     let newGroup = await sql`
             INSERT INTO groups (name, is_public, leader_id) 
