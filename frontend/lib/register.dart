@@ -7,15 +7,17 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
-  String name = '';
+  String firstName = '';
+  String lastName = '';
   String email = '';
+  String username = '';
   String password = '';
   String confirmPassword = '';
 
   void _register() {
     if (_formKey.currentState!.validate()) {
       // Here you can add your code for registering the user
-      print('Registration attempt: $name, $email');
+      print('Registration attempt: $firstName $lastName, $email, $username');
     }
   }
 
@@ -38,17 +40,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
               children: <Widget>[
                 TextFormField(
                   decoration: InputDecoration(
-                    labelText: 'Name',
+                    labelText: 'First Name',
                     border: OutlineInputBorder(),
                     prefixIcon: Icon(Icons.person),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please enter your name';
+                      return 'Please enter your first name';
                     }
                     return null;
                   },
-                  onSaved: (value) => name = value!,
+                  onSaved: (value) => firstName = value!,
+                ),
+                SizedBox(height: 20),
+                TextFormField(
+                  decoration: InputDecoration(
+                    labelText: 'Last Name',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.person),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your last name';
+                    }
+                    return null;
+                  },
+                  onSaved: (value) => lastName = value!,
                 ),
                 SizedBox(height: 20),
                 TextFormField(
@@ -60,6 +77,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please enter your email';
+                    }
+                    return null;
+                  },
+                  onSaved: (value) => email = value!,
+                ),
+                SizedBox(height: 20),
+                TextFormField(
+                  decoration: InputDecoration(
+                    labelText: 'Username',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.verified_user),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter a username';
                     }
                     return null;
                   },
