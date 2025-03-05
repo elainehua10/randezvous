@@ -1,5 +1,6 @@
 import supabase from "../../supabase";
 import { Request, Response } from "express";
+import { UploadedFile } from "express-fileupload";
 import sql from "../../db";
 import sharp from "sharp";
 
@@ -152,6 +153,18 @@ export const setProfilePicture = async (req: Request, res: Response) => {
     return res.status(500).json({ error: "Internal server error" });
   }
 }
+
+// Logout of account
+
+export const logout = async (req: Request, res: Response) => {
+  try {
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error
+    res.status(200).json({ message: "Logout successful" });
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message || "Internal server error" });
+  }
+};
 
 // Delete account
 export const deleteAccount = async (req: Request, res: Response) => {
