@@ -22,7 +22,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       // Here you can add your code for registering the user
       print('Registration attempt: $firstName $lastName, $email, $username');
 
-      _formKey.currentState!.save();
+      _formKey.currentState!.save(); // do i need this?
       final url = Uri.parse('http://localhost:5001/register');
 
       try {
