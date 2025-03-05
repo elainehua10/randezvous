@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/map.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class RegisterScreen extends StatefulWidget {
   @override
@@ -15,22 +17,47 @@ class _RegisterScreenState extends State<RegisterScreen> {
   String password = '';
   String confirmPassword = '';
 
-  void _register() {
+  Future<void> _register() async {
     if (_formKey.currentState!.validate()) {
       // Here you can add your code for registering the user
       print('Registration attempt: $firstName $lastName, $email, $username');
 
-      bool success = true;
+      _formKey.currentState!.save();
+      final url = Uri.parse('http://localhost:5001/register');
 
-      if (success) {
-        Navigator.pushReplacementNamed(context, '/home');
-      } else {
+      try {
+        final response = await http.post(
+          url,
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'first_name': firstName,
+            'last_name': lastName,
+            'email': email,
+            'username': username,
+            'password': password,
+          }),
+        );
+        if (response.statusCode == 200) {
+          Navigator.pushReplacementNamed(context, '/home');
+        } else {
+          showDialog(
+            context: context,
+            builder:
+                (context) => AlertDialog(
+                  title: Text('Registration Failed'),
+                  content: Text('Please check your information and try again.'),
+                ),
+          );
+        }
+      } catch (error) {
+        print('Error: $error');
         showDialog(
           context: context,
-          builder: (context) => AlertDialog(
-            title: Text('Registration Failed'),
-            content: Text('Please check your information and try again.'),
-          ),
+          builder:
+              (context) => AlertDialog(
+                title: Text('Registration Failed'),
+                content: Text('Failed to connect to server'),
+              ),
         );
       }
     }
@@ -149,9 +176,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   onPressed: _register,
                   child: Text('Register'),
                   style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green, // background color
-                  foregroundColor: Colors.white, // text color
-                ),
+                    backgroundColor: Colors.green, // background color
+                    foregroundColor: Colors.white, // text color
+                  ),
                 ),
                 TextButton(
                   onPressed: () {
