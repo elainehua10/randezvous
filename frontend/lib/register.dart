@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/auth.dart';
 import 'package:frontend/map_screen.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -11,7 +12,6 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _storage = FlutterSecureStorage();
 
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController =
@@ -52,8 +52,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
         final responseData = jsonDecode(response.body);
         if (response.statusCode == 200 || response.statusCode == 201) {
           // Save access token from backend
-          String token = responseData["session"]["access_token"];
-          await _storage.write(key: 'auth_token', value: token);
+          String access_token = responseData["session"]["access_token"];
+          String refresh_token = responseData["session"]["refresh_token"];
+          int expire_time = responseData["session"]["expires_at"];
+          Auth.saveTokens(access_token, refresh_token, expire_time);
 
           Navigator.pushReplacementNamed(context, '/home');
         } else {

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/auth.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ProfileScreen extends StatelessWidget {
   @override
@@ -19,34 +21,28 @@ class ProfileScreen extends StatelessWidget {
           _buildListTile(title: "Account Details", onTap: () {}),
           _buildListTile(title: "Achievements", onTap: () {}),
           _buildListTile(title: "Settings", onTap: () {}),
-          _buildListTile(
-            title: "Log out",
-            onTap: () async {
-              try {
-                final response = await http.post(
-                  Uri.parse('http://localhost:5001/api/v1/logout'),
-                  headers: {
-                    'Content-Type': 'application/json',
-                    // Add authentication headers if needed
-                  },
-                );
-
-                if (response.statusCode == 200) {
-                  // Successfully logged out, now navigate to login screen
-                  Navigator.pushReplacementNamed(context, '/login');
-                } else {
-                  // Handle logout failure
-                  print("Logout failed: ${response.body}");
-                }
-              } catch (e) {
-                print("Error logging out: $e");
-              }
-            },
-          ),
+          _buildListTile(title: "Log out", onTap: () => _handleLogout(context)),
           _buildListTile(title: "Delete Account", onTap: () {}),
         ],
       ),
     );
+  }
+
+  Future<void> _handleLogout(BuildContext context) async {
+    Auth.removeTokens();
+    try {
+      final response = await Auth.makeAuthenticatedPostRequest("logout", {});
+      if (response.statusCode == 200) {
+        print("Logout successful");
+
+        // Navigate to the login screen
+        Navigator.pushReplacementNamed(context, '/login');
+      } else {
+        print("Logout failed: ${response.body}");
+      }
+    } catch (e) {
+      print("Error logging out: $e");
+    }
   }
 
   Widget _buildProfileHeader() {

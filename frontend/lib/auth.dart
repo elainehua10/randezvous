@@ -80,4 +80,11 @@ class Auth {
     );
     return response;
   }
+
+  static Future<void> removeTokens() async {
+    String token = (await getAccessToken())!;
+    print(token);
+    await storage.delete(key: 'access_token');
+    await storage.delete(key: 'refresh_token');
+  }
 }
