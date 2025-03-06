@@ -17,7 +17,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'RandezVous',
       theme: ThemeData(primarySwatch: Colors.yellow),
-      initialRoute: '/home',
+      initialRoute: '/register',
       home: LoginScreen(),
       routes: {
         '/login': (context) => LoginScreen(),

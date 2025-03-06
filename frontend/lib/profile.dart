@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/auth.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -28,12 +29,9 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Future<void> _handleLogout(BuildContext context) async {
+    Auth.removeTokens();
     try {
-      final response = await http.post(
-        Uri.parse('http://localhost:5001/api/v1/logout'),
-        headers: {'Content-Type': 'application/json'},
-      );
-
+      final response = await Auth.makeAuthenticatedPostRequest("logout", {});
       if (response.statusCode == 200) {
         print("Logout successful");
 

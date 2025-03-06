@@ -17,10 +17,10 @@ router.get<{}, MessageResponse>("/", (req, res) => {
 router.use("/emojis", emojis);
 router.use("/register", register);
 router.use("/login", login);
-router.use("/change-username", changeUsername);
-router.use("/logout", logout);
-router.use("/set-profile-picture", setProfilePicture);
-router.use("/delete-account", deleteAccount);
+router.use("/change-username", requireAuth, changeUsername);
+router.use("/logout", requireAuth, logout);
+router.use("/set-profile-picture", requireAuth, setProfilePicture);
+router.use("/delete-account", requireAuth, deleteAccount);
 router.use("/refresh-token", refreshToken);
 
 // Group routes
