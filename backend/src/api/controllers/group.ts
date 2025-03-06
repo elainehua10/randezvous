@@ -111,7 +111,7 @@ export const uploadIcon = async (req: Request, res: Response) => {
   try {
     // Check fields
     const { userId, groupId } = req.body;
-    if (!userId || !groupId) {
+    if (!userId || !groupId || !req.files) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
@@ -152,7 +152,7 @@ export const uploadIcon = async (req: Request, res: Response) => {
       });
     if (error) {
       console.error("Error uploading icon to Supabase:", error);
-      return res.status(500).json({ error: "error lol" });
+      return res.status(500).json({ error: "supabase error lol" });
     }
 
     // Get public URL
@@ -214,6 +214,19 @@ export const inviteToGroup = async (req: Request, res: Response) => {
     const { userId, toUserId, groupId } = req.body;
     if (!userId || !toUserId || !groupId) {
       return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    // Check if invite already exists
+    const existingInvite = await sql`
+            SELECT id FROM invite
+            WHERE from_user_id = ${userId} 
+            AND to_user_id = ${toUserId} 
+            AND group_id = ${groupId} 
+            AND status = 'pending';
+        `;
+
+    if (existingInvite.length > 0) {
+      return res.status(409).json({ error: "Invite already sent to this user." });
     }
 
     // Add user to invite table
