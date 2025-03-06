@@ -65,4 +65,9 @@ class auth {
     );
     return response;
   }
+
+  Future<void> removeTokens() async {
+    await storage.delete(key: 'auth_token');
+    await storage.delete(key: 'refresh_token');
+  }
 }
