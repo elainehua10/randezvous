@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/mapscreen.dart';
+import 'package:frontend/map_screen.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
