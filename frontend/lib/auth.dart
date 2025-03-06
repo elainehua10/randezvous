@@ -4,7 +4,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart';
 import 'package:http/http.dart' as http;
 
-class auth {
+class Auth {
   final storage = FlutterSecureStorage();
 
   Future<void> saveTokens(
@@ -30,19 +30,30 @@ class auth {
   }
 
   Future<void> refreshTokenIfNeeded() async {
-    final token = await getAccessToken();
-    if (token == null) {
+    final token = await getRefreshToken();
+    final expireTime = await getExpireTime();
+
+    if (token == null || expireTime == null) {
       return;
     }
 
-    final response = await http.post(
-      Uri.parse('http://localhost:5001/api/v1/refresh'),
-    );
+    // Check if the token is expired
+    if (DateTime.now().millisecondsSinceEpoch >= expireTime) {
+      final response = await http.post(
+        Uri.parse('http://localhost:5001/api/v1/refresh'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({"refreshToken": token}),
+      );
 
-    if (response.statusCode == 200) {
-      final responseData = jsonDecode(response.body);
-      final accessToken = responseData['access_token'];
-      await storage.write(key: 'access_token', value: accessToken);
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body)["session"];
+        final accessToken = responseData['access_token'];
+        final newExpireTime =
+            responseData['exp']; // Ensure this is returned from the API
+
+        await storage.write(key: 'access_token', value: accessToken);
+        await storage.write(key: 'exp', value: newExpireTime.toString());
+      }
     }
   }
 
@@ -56,12 +67,16 @@ class auth {
     return response;
   }
 
-  Future<Response> makeAuthenticatedPostRequest(String endpoint) async {
+  Future<Response> makeAuthenticatedPostRequest(
+    String endpoint,
+    Object body,
+  ) async {
     await refreshTokenIfNeeded();
     final token = await getAccessToken();
     final response = await http.post(
       Uri.parse('http://localhost:5001/api/v1/$endpoint'),
       headers: {'Authorization': 'Bearer $token'},
+      body: jsonEncode(body),
     );
     return response;
   }
