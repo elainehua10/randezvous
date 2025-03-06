@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/mapscreen.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -20,9 +21,10 @@ class _LoginScreenState extends State<LoginScreen> {
       // Here you can add your code for checking credentials
       print('Login attempt: $email with $password');
 
+      _formKey.currentState!.save();
       try {
         // Make a POST request to the server
-        final url = Uri.parse('http://localhost:5001/login');
+        final url = Uri.parse('http://localhost:5001/api/v1/login');
         final response = await http.post(
           url,
           headers: {'Content-Type': 'application/json'},

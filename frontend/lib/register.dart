@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/mapscreen.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class RegisterScreen extends StatefulWidget {
   @override
@@ -9,6 +11,12 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _storage = FlutterSecureStorage();
+
+  final TextEditingController passwordController = TextEditingController();
+  final TextEditingController confirmPasswordController =
+      TextEditingController();
+
   String firstName = '';
   String lastName = '';
   String email = '';
@@ -21,24 +29,36 @@ class _RegisterScreenState extends State<RegisterScreen> {
       // Here you can add your code for registering the user
       print('Registration attempt: $firstName $lastName, $email, $username');
 
-      _formKey.currentState!.save(); // do i need this?
-      final url = Uri.parse('http://localhost:5001/register');
+      _formKey.currentState!.save();
+      password = passwordController.text;
+      final url = Uri.parse('http://localhost:5001/api/v1/register');
 
       try {
+        final body = jsonEncode({
+          'firstname': firstName,
+          'lastname': lastName,
+          'email': email,
+          'username': username,
+          'password': password,
+        });
+        print('Request Body: $body');
+
         final response = await http.post(
           url,
           headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({
-            'first_name': firstName,
-            'last_name': lastName,
-            'email': email,
-            'username': username,
-            'password': password,
-          }),
+          body: body,
         );
-        if (response.statusCode == 200) {
+
+        final responseData = jsonDecode(response.body);
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          // Save access token from backend
+          String token = responseData["session"]["access_token"];
+          await _storage.write(key: 'auth_token', value: token);
+
           Navigator.pushReplacementNamed(context, '/home');
         } else {
+          print('Response Status Code: ${response.statusCode}');
+          print('Response Body: ${response.body}');
           showDialog(
             context: context,
             builder:
@@ -136,10 +156,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     }
                     return null;
                   },
-                  onSaved: (value) => email = value!,
+                  onSaved: (value) => username = value!,
                 ),
                 SizedBox(height: 20),
                 TextFormField(
+                  controller: passwordController,
                   decoration: InputDecoration(
                     labelText: 'Password',
                     border: OutlineInputBorder(),
@@ -156,6 +177,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 SizedBox(height: 20),
                 TextFormField(
+                  controller: confirmPasswordController,
                   decoration: InputDecoration(
                     labelText: 'Confirm Password',
                     border: OutlineInputBorder(),
@@ -163,7 +185,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   obscureText: true,
                   validator: (value) {
-                    if (value == null || value.isEmpty || value != password) {
+                    if (value == null ||
+                        value.isEmpty ||
+                        value != passwordController.text) {
                       return 'Passwords do not match';
                     }
                     return null;
