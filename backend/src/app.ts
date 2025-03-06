@@ -1,13 +1,14 @@
-import express from "express";
+import express, { Request, Response, NextFunction } from "express";
 import morgan from "morgan";
 import helmet from "helmet";
 import cors from "cors";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 import * as middlewares from "./middlewares";
 import api from "./api";
 import MessageResponse from "./interfaces/MessageResponse";
-
-require("dotenv").config();
 
 const app = express();
 
@@ -16,6 +17,9 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 
+// Initialize Supabase
+
+// Default message
 app.get<{}, MessageResponse>("/", (req, res) => {
   res.json({
     message: "🦄🌈✨👋🌎🌍🌏✨🌈🦄",
