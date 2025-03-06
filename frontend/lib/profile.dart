@@ -33,6 +33,7 @@ class ProfileScreen extends StatelessWidget {
       final response = await Auth.makeAuthenticatedPostRequest("logout", {});
       Auth.removeTokens();
 
+      Auth.removeTokens();
       if (response.statusCode == 200) {
         print("Logout successful");
 
