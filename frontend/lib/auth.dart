@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart';
@@ -75,7 +76,7 @@ class Auth {
     final token = await getAccessToken();
     final response = await http.post(
       Uri.parse('http://localhost:5001/api/v1/$endpoint'),
-      headers: {'Authorization': 'Bearer $token'},
+      headers: {HttpHeaders.authorizationHeader: 'Bearer $token'},
       body: jsonEncode(body),
     );
     return response;

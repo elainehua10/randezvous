@@ -29,9 +29,9 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Future<void> _handleLogout(BuildContext context) async {
-    Auth.removeTokens();
     try {
       final response = await Auth.makeAuthenticatedPostRequest("logout", {});
+      Auth.removeTokens();
       if (response.statusCode == 200) {
         print("Logout successful");
 
