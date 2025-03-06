@@ -108,11 +108,9 @@ export const setProfilePicture = async (req: Request, res: Response) => {
     const allowedExtensions = [".png", ".jpg", ".jpeg", ".gif"];
     const fileExtension = iconFile.name.split(".").at(-1);
     if (!allowedExtensions.includes(fileExtension || "")) {
-      return res
-        .status(400)
-        .json({
-          error: "Invalid file type. Only PNG, JPG, JPEG, and GIF are allowed.",
-        });
+      return res.status(400).json({
+        error: "Invalid file type. Only PNG, JPG, JPEG, and GIF are allowed.",
+      });
     }
 
     // Size the file down
@@ -217,5 +215,33 @@ export const refreshToken = async (req: Request, res: Response) => {
 };
 
 export const search = async (req: Request, res: Response) => {
+  console.log(req.body);
   const { username } = req.body;
+
+  if (!username) {
+    return res.status(400).json({ error: "Missing username parameter" });
+  }
+
+  try {
+    const results = await sql`
+      SELECT id, username, first_name, last_name, profile_picture
+      FROM profile
+      WHERE username LIKE ${`%${username}%`}
+      LIMIT 4;
+    `;
+
+    if (results.length === 0) {
+      return res
+        .status(200)
+        .json({ message: "No users found matching that username.", users: [] });
+    }
+
+    res.status(200).json({ message: "Search results:", users: results });
+  } catch (error) {
+    console.error("Search error:", error);
+    res.status(500).json({
+      error:
+        (error as Error).message || "An unknown error occurred during search",
+    });
+  }
 };

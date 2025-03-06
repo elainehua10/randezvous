@@ -20,26 +20,31 @@ class GroupScreen extends StatelessWidget {
         id: 'user1',
         name: 'Jane Smith',
         avatarUrl: 'https://example.com/avatar1.jpg',
+        username: '',
       ),
       User(
         id: 'user2',
         name: 'John Doe',
         avatarUrl: 'https://example.com/avatar2.jpg',
+        username: '',
       ),
       User(
         id: 'user3',
         name: 'Alex Johnson',
         avatarUrl: 'https://example.com/avatar3.jpg',
+        username: '',
       ),
       User(
         id: 'user4',
         name: 'Sarah Williams',
         avatarUrl: 'https://example.com/avatar4.jpg',
+        username: '',
       ),
       User(
         id: 'user5',
         name: 'Michael Brown',
         avatarUrl: 'https://example.com/avatar5.jpg',
+        username: '',
       ),
     ];
 

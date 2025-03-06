@@ -1,5 +1,14 @@
 import express from "express";
-import { register, login, changeUsername, logout, setProfilePicture, deleteAccount, refreshToken } from "./controllers/user";
+import {
+  register,
+  login,
+  changeUsername,
+  logout,
+  setProfilePicture,
+  deleteAccount,
+  refreshToken,
+  search,
+} from "./controllers/user";
 import MessageResponse from "../interfaces/MessageResponse";
 import emojis from "./emojis";
 import { requireAuth, requireGroupLeader } from "../middlewares";
@@ -17,6 +26,7 @@ router.get<{}, MessageResponse>("/", (req, res) => {
 router.use("/emojis", emojis);
 router.use("/register", register);
 router.use("/login", login);
+router.use("/user/search", search);
 router.use("/change-username", requireAuth, changeUsername);
 router.use("/logout", requireAuth, logout);
 router.use("/set-profile-picture", requireAuth, setProfilePicture);

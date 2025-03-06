@@ -1,4 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:frontend/auth.dart';
+import 'package:frontend/models/user.dart';
+import 'package:http/http.dart';
 
 class InviteMembersDialog {
   static void show(BuildContext context) {
@@ -13,38 +18,39 @@ class _InviteMembersDialog extends StatefulWidget {
 
 class _InviteMembersDialogState extends State<_InviteMembersDialog> {
   final TextEditingController _searchController = TextEditingController();
-  List<Map<String, String>> _searchResults = [];
+  List<User> _searchResults = [];
 
-  // Dummy data for search results
-  void _performUserSearch(String userId) {
-    setState(() {
-      // Clear previous results
-      _searchResults.clear();
+  void _performUserSearch(String userId) async {
+    if (userId.isEmpty) return;
 
-      // Dummy search logic
-      if (userId.isNotEmpty) {
-        _searchResults =
-            [
-                  {'id': 'USR001', 'name': 'John Doe', 'username': '@johndoe'},
-                  {
-                    'id': 'USR002',
-                    'name': 'Jane Smith',
-                    'username': '@janesmith',
-                  },
-                  {
-                    'id': 'USR003',
-                    'name': 'Bob Johnson',
-                    'username': '@bobjohnson',
-                  },
-                ]
-                .where(
-                  (user) =>
-                      user['id']!.contains(userId) ||
-                      user['username']!.contains(userId),
-                )
-                .toList();
-      }
+    Response response = await Auth.makeAuthenticatedPostRequest("user/search", {
+      "username": userId,
     });
+    final responseData = jsonDecode(response.body);
+
+    if (response.statusCode == 200) {
+      print(responseData["users"]);
+      List<User> results =
+          responseData["users"]
+              .map<User>(
+                (user) => User(
+                  id: user["id"],
+                  name: "${user["first_name"]} ${user["last_name"]}",
+                  avatarUrl: user["profile_picture"],
+                  username: user["username"],
+                ),
+              )
+              .toList();
+
+      setState(() {
+        _searchResults = results;
+      });
+    } else {
+      print(responseData);
+      setState(() {
+        _searchResults = [];
+      });
+    }
   }
 
   @override
@@ -59,7 +65,6 @@ class _InviteMembersDialogState extends State<_InviteMembersDialog> {
           children: [
             Text('Search for a user by ID:'),
             SizedBox(height: 16),
-            // User ID Search
             TextField(
               controller: _searchController,
               decoration: InputDecoration(
@@ -77,7 +82,6 @@ class _InviteMembersDialogState extends State<_InviteMembersDialog> {
               ),
             ),
             SizedBox(height: 16),
-            // Search Results
             if (_searchResults.isNotEmpty)
               Container(
                 constraints: BoxConstraints(maxHeight: 200),
@@ -87,9 +91,9 @@ class _InviteMembersDialogState extends State<_InviteMembersDialog> {
                   itemBuilder: (context, index) {
                     final user = _searchResults[index];
                     return ListTile(
-                      leading: CircleAvatar(child: Text(user['name']![0])),
-                      title: Text(user['name']!),
-                      subtitle: Text(user['username']!),
+                      leading: CircleAvatar(child: Text(user.name![0])),
+                      title: Text(user.name!),
+                      subtitle: Text(user.username!),
                       trailing: IconButton(
                         icon: Icon(Icons.add),
                         onPressed: () {
