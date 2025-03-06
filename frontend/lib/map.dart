@@ -177,6 +177,7 @@ class _MapScreenState extends State<MapScreen> {
           IconButton(
             icon: Icon(Icons.person, color: Colors.black),
             onPressed: () {
+              Navigator.pushNamed(context, '/profile');
               print('Profile button tapped');
             },
           ),
