@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class RegisterScreen extends StatefulWidget {
   @override
@@ -7,15 +9,56 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
-  String name = '';
+  String firstName = '';
+  String lastName = '';
   String email = '';
+  String username = '';
   String password = '';
   String confirmPassword = '';
 
-  void _register() {
+  Future<void> _register() async {
     if (_formKey.currentState!.validate()) {
       // Here you can add your code for registering the user
-      print('Registration attempt: $name, $email');
+      print('Registration attempt: $firstName $lastName, $email, $username');
+
+      _formKey.currentState!.save(); // do i need this?
+      final url = Uri.parse('http://localhost:5001/register');
+
+      try {
+        final response = await http.post(
+          url,
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'first_name': firstName,
+            'last_name': lastName,
+            'email': email,
+            'username': username,
+            'password': password,
+          }),
+        );
+        if (response.statusCode == 200) {
+          Navigator.pushReplacementNamed(context, '/home');
+        } else {
+          showDialog(
+            context: context,
+            builder:
+                (context) => AlertDialog(
+                  title: Text('Registration Failed'),
+                  content: Text('Please check your information and try again.'),
+                ),
+          );
+        }
+      } catch (error) {
+        print('Error: $error');
+        showDialog(
+          context: context,
+          builder:
+              (context) => AlertDialog(
+                title: Text('Registration Failed'),
+                content: Text('Failed to connect to server'),
+              ),
+        );
+      }
     }
   }
 
@@ -38,17 +81,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
               children: <Widget>[
                 TextFormField(
                   decoration: InputDecoration(
-                    labelText: 'Name',
+                    labelText: 'First Name',
                     border: OutlineInputBorder(),
                     prefixIcon: Icon(Icons.person),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please enter your name';
+                      return 'Please enter your first name';
                     }
                     return null;
                   },
-                  onSaved: (value) => name = value!,
+                  onSaved: (value) => firstName = value!,
+                ),
+                SizedBox(height: 20),
+                TextFormField(
+                  decoration: InputDecoration(
+                    labelText: 'Last Name',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.person),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your last name';
+                    }
+                    return null;
+                  },
+                  onSaved: (value) => lastName = value!,
                 ),
                 SizedBox(height: 20),
                 TextFormField(
@@ -60,6 +118,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please enter your email';
+                    }
+                    return null;
+                  },
+                  onSaved: (value) => email = value!,
+                ),
+                SizedBox(height: 20),
+                TextFormField(
+                  decoration: InputDecoration(
+                    labelText: 'Username',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.verified_user),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter a username';
                     }
                     return null;
                   },
@@ -102,9 +175,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   onPressed: _register,
                   child: Text('Register'),
                   style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green, // background color
-                  foregroundColor: Colors.white, // text color
-                ),
+                    backgroundColor: Colors.green, // background color
+                    foregroundColor: Colors.white, // text color
+                  ),
                 ),
                 TextButton(
                   onPressed: () {

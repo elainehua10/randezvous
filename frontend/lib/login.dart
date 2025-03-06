@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -13,10 +15,61 @@ class _LoginScreenState extends State<LoginScreen> {
   String email = '';
   String password = '';
 
-  void _login() {
+  Future<void> _login() async {
     if (_formKey.currentState!.validate()) {
       // Here you can add your code for checking credentials
       print('Login attempt: $email with $password');
+
+      try {
+        // Make a POST request to the server
+        final url = Uri.parse('http://localhost:5001/login');
+        final response = await http.post(
+          url,
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({'email': email, 'password': password}),
+        );
+
+        // Handle the response
+        if (response.statusCode == 200) {
+          print('Login successful');
+          Navigator.pushReplacementNamed(context, '/home');
+        } else {
+          print('Login failed: ${response.body}');
+          showDialog(
+            context: context,
+            builder:
+                (context) => AlertDialog(
+                  title: Text('Login Failed'),
+                  content: Text('Please check your credentials and try again.'),
+                ),
+          );
+        }
+      } catch (error) {
+        print('Error: $error');
+        showDialog(
+          context: context,
+          builder:
+              (context) => AlertDialog(
+                title: Text('Login Failed'),
+                content: Text('Failed to connect to server'),
+              ),
+        );
+      }
+
+      bool success = true;
+
+      if (success) {
+        Navigator.pushReplacementNamed(context, '/home');
+      } else {
+        showDialog(
+          context: context,
+          builder:
+              (context) => AlertDialog(
+                title: Text('Login Failed'),
+                content: Text('Please check your credentials and try again.'),
+              ),
+        );
+      }
     }
   }
 
@@ -79,7 +132,7 @@ class _LoginScreenState extends State<LoginScreen> {
               SizedBox(height: 20),
               TextButton(
                 onPressed: () {
-                    Navigator.pushNamed(context, '/register');
+                  Navigator.pushNamed(context, '/register');
                 },
                 child: Text("Don't have an account? Register"),
               ),

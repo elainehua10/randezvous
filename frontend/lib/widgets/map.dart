@@ -4,14 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-class MapSample extends StatefulWidget {
-  const MapSample({super.key});
+class MapWidget extends StatefulWidget {
+  const MapWidget({super.key});
 
   @override
-  State<MapSample> createState() => MapSampleState();
+  State<MapWidget> createState() => MapWidgetState();
 }
 
-class MapSampleState extends State<MapSample> {
+class MapWidgetState extends State<MapWidget> {
   final Completer<GoogleMapController> _controller =
       Completer<GoogleMapController>();
 
@@ -87,11 +87,11 @@ class MapSampleState extends State<MapSample> {
         myLocationEnabled: true,
         myLocationButtonEnabled: true,
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _goToTheLake,
-        label: const Text('To the lake!'),
-        icon: const Icon(Icons.directions_boat),
-      ),
+      // floatingActionButton: FloatingActionButton.extended(
+      //   onPressed: _goToTheLake,
+      //   label: const Text('To the lake!'),
+      //   icon: const Icon(Icons.directions_boat),
+      // ),
     );
   }
 
