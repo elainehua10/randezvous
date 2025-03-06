@@ -1,5 +1,5 @@
 import express from "express";
-import { register, login, changeUsername, logout, setProfilePicture, deleteAccount, refreshToken } from "./controllers/user";
+import { register, login, changeUsername, logout, setProfilePicture, deleteAccount, refreshToken, getUserProfileInfo } from "./controllers/user";
 import MessageResponse from "../interfaces/MessageResponse";
 import emojis from "./emojis";
 import { requireAuth, requireGroupLeader } from "../middlewares";
@@ -22,6 +22,7 @@ router.use("/logout", requireAuth, logout);
 router.use("/set-profile-picture", requireAuth, setProfilePicture);
 router.use("/delete-account", requireAuth, deleteAccount);
 router.use("/refresh-token", refreshToken);
+router.use("/get-user-profile-info", requireAuth, getUserProfileInfo);
 
 // Group routes
 router.use("/groups/create", requireAuth, group.createGroup);
