@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/models/group.dart';
 import 'package:frontend/models/user.dart';
+import 'package:frontend/widgets/invite.dart';
 
 class GroupScreen extends StatelessWidget {
   final String groupId;
@@ -122,7 +123,18 @@ class GroupScreen extends StatelessWidget {
     );
   }
 
+  void _handleImageUpload(BuildContext context) {
+    // Placeholder for image upload functionality
+    // In a real app, this would open an image picker and handle the upload
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Image upload functionality to be implemented')),
+    );
+  }
+
   Widget _buildGroupHeader(BuildContext context, Group group) {
+    final bool isCurrentUserLeader =
+        true; // Moved from parent scope for this example
+
     return Container(
       height: 200,
       width: double.infinity,
@@ -137,6 +149,28 @@ class GroupScreen extends StatelessWidget {
               child: Icon(Icons.group, size: 80, color: Colors.blue[800]),
             ),
           ),
+
+          // Upload Button (visible only to group leader)
+          if (isCurrentUserLeader)
+            Positioned(
+              top: 8,
+              left: 8,
+              child: IconButton(
+                icon: Container(
+                  padding: EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Color.fromRGBO(255, 255, 255, 0.6),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(Icons.upload, color: Colors.blue[800], size: 24),
+                ),
+                onPressed: () {
+                  // Image upload functionality to be implemented
+                  _handleImageUpload(context);
+                },
+                tooltip: 'Upload Group Image',
+              ),
+            ),
 
           // Group Info Overlay
           Positioned(
@@ -322,50 +356,7 @@ class GroupScreen extends StatelessWidget {
   }
 
   void _showInviteMembersDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('Invite Members'),
-          content: Container(
-            width: double.maxFinite,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Enter the username of the person you want to invite:'),
-                SizedBox(height: 16),
-
-                // User ID Input
-                TextField(
-                  decoration: InputDecoration(
-                    hintText: 'Enter Username',
-                    prefixIcon: Icon(Icons.person),
-                    suffixIcon: IconButton(
-                      icon: Icon(Icons.add),
-                      onPressed: () {
-                        // Add user ID functionality to be implemented
-                      },
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: Text('Cancel'),
-            ),
-          ],
-        );
-      },
-    );
+    InviteMembersDialog.show(context);
   }
 
   void _showLeaveGroupDialog(BuildContext context, Group group) {
