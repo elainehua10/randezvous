@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/widgets/map.dart';
 
 class MapScreen extends StatefulWidget {
   @override
@@ -184,39 +185,11 @@ class _MapScreenState extends State<MapScreen> {
         ],
       ),
       body: Container(
-        decoration: BoxDecoration(
-          color: Colors.grey[200],
-          border: Border.all(color: Colors.blueAccent, width: 3),
-        ),
+        decoration: BoxDecoration(color: Colors.grey[200]),
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'Map Placeholder',
-                style: TextStyle(fontSize: 24, color: Colors.black),
-              ),
-              SizedBox(height: 20),
-              if (_selectedGroupId != null)
-                Column(
-                  children: [
-                    Text(
-                      'Selected Group: $_selectedGroupName',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(
-                      'Selected Group ID: $_selectedGroupId',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.normal,
-                      ),
-                    ),
-                  ],
-                ),
-            ],
+            children: [Expanded(child: MapWidget())],
           ),
         ),
       ),
