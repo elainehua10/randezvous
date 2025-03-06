@@ -46,32 +46,38 @@ export function requireAuth(
     return;
   }
 
-  const decoded = jwt.verify(token, process.env.JWT_SECRET!);
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!);
 
-  if (typeof decoded == "string") {
-    const error = new Error("Unauthorized: Unrecognized token pattern");
+    if (typeof decoded == "string") {
+      const error = new Error("Unauthorized: Unrecognized token pattern");
+      next(error);
+      return;
+    }
+
+    if (!decoded || !decoded.user_metadata || !decoded.user_metadata.sub) {
+      const error = new Error("Unauthorized: Unrecognized token pattern");
+      next(error);
+      return;
+    }
+
+    console.log(Date.now() / 1000);
+    console.log(decoded.exp || 0 < Date.now() / 1000);
+
+    if ((decoded.exp || 0) < Date.now() / 1000) {
+      const error = new Error("Unauthorized: Token Expired");
+      next(error);
+      return;
+    }
+
+    req.body.userId = decoded.user_metadata.sub;
+
+    next();
+  } catch {
+    const error = new Error("Unauthorized: Invalid token/secret");
     next(error);
     return;
   }
-
-  if (!decoded || !decoded.user_metadata || !decoded.user_metadata.sub) {
-    const error = new Error("Unauthorized: Unrecognized token pattern");
-    next(error);
-    return;
-  }
-
-  console.log(Date.now() / 1000);
-  console.log(decoded.exp || 0 < Date.now() / 1000);
-
-  if ((decoded.exp || 0) < Date.now() / 1000) {
-    const error = new Error("Unauthorized: Token Expired");
-    next(error);
-    return;
-  }
-
-  req.body.userId = decoded.user_metadata.sub;
-
-  next();
 }
 
 // middleware for requiring user to be leader of group
