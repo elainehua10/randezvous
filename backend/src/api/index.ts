@@ -3,6 +3,7 @@ import { register, login } from "./controllers/user";
 import MessageResponse from "../interfaces/MessageResponse";
 import emojis from "./emojis";
 import { inviteToGroup, createGroup } from "./controllers/group";
+import { requireAuth, requireGroupLeader } from "../middlewares";
 
 const router = express.Router();
 
@@ -14,9 +15,9 @@ router.get<{}, MessageResponse>("/", (req, res) => {
 
 router.use("/emojis", emojis);
 router.use("/register", register);
-router.use("/login", login)
-router.use("/groups/create", createGroup)
+router.use("/login", login);
+router.use("/groups/create", requireAuth, createGroup);
 
-router.use("/group/invite", inviteToGroup);
+router.use("/group/invite", requireAuth, requireGroupLeader, inviteToGroup);
 
 export default router;
