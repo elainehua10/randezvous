@@ -4,10 +4,10 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart';
 import 'package:http/http.dart' as http;
 
-class auth {
-  final storage = FlutterSecureStorage();
+class Auth {
+  static final storage = FlutterSecureStorage();
 
-  Future<void> saveTokens(
+  static Future<void> saveTokens(
     String accessToken,
     String refreshToken,
     int expireTime,
@@ -17,36 +17,47 @@ class auth {
     await storage.write(key: 'exp', value: "$expireTime");
   }
 
-  Future<String?> getAccessToken() async {
+  static Future<String?> getAccessToken() async {
     return await storage.read(key: 'access_token');
   }
 
-  Future<int?> getExpireTime() async {
+  static Future<int?> getExpireTime() async {
     return int.parse((await storage.read(key: 'exp'))!);
   }
 
-  Future<String?> getRefreshToken() async {
+  static Future<String?> getRefreshToken() async {
     return await storage.read(key: 'refresh_token');
   }
 
-  Future<void> refreshTokenIfNeeded() async {
-    final token = await getAccessToken();
-    if (token == null) {
+  static Future<void> refreshTokenIfNeeded() async {
+    final token = await getRefreshToken();
+    final expireTime = await getExpireTime();
+
+    if (token == null || expireTime == null) {
       return;
     }
 
-    final response = await http.post(
-      Uri.parse('http://localhost:5001/api/v1/refresh'),
-    );
+    // Check if the token is expired
+    if (DateTime.now().millisecondsSinceEpoch >= expireTime) {
+      final response = await http.post(
+        Uri.parse('http://localhost:5001/api/v1/refresh'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({"refreshToken": token}),
+      );
 
-    if (response.statusCode == 200) {
-      final responseData = jsonDecode(response.body);
-      final accessToken = responseData['access_token'];
-      await storage.write(key: 'access_token', value: accessToken);
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body)["session"];
+        final accessToken = responseData['access_token'];
+        final newExpireTime =
+            responseData['exp']; // Ensure this is returned from the API
+
+        await storage.write(key: 'access_token', value: accessToken);
+        await storage.write(key: 'exp', value: newExpireTime.toString());
+      }
     }
   }
 
-  Future<Response> makeAuthenticatedGetRequest(String endpoint) async {
+  static Future<Response> makeAuthenticatedGetRequest(String endpoint) async {
     await refreshTokenIfNeeded();
     final token = await getAccessToken();
     final response = await http.get(
@@ -56,12 +67,16 @@ class auth {
     return response;
   }
 
-  Future<Response> makeAuthenticatedPostRequest(String endpoint) async {
+  static Future<Response> makeAuthenticatedPostRequest(
+    String endpoint,
+    Object body,
+  ) async {
     await refreshTokenIfNeeded();
     final token = await getAccessToken();
     final response = await http.post(
       Uri.parse('http://localhost:5001/api/v1/$endpoint'),
       headers: {'Authorization': 'Bearer $token'},
+      body: jsonEncode(body),
     );
     return response;
   }
