@@ -25,12 +25,16 @@ export const createGroup = async (req: Request, res: Response) => {
             SELECT in_group FROM profile WHERE user_id = ${userId};
         `;
     if (inGroup.length > 0 && inGroup[0].in_group) {
-      return res.status(403).json({ error: "You have are already part of a group." });
+      return res
+        .status(403)
+        .json({ error: "You have are already part of a group." });
     }
 
     // Check group name length
     if (groupName.length < 3 || groupName.length > 30) {
-      return res.status(400).json({ error: "Group name must be between 3 and 30 characters." });
+      return res
+        .status(400)
+        .json({ error: "Group name must be between 3 and 30 characters." });
     }
 
     // Insert new group (user is the leader)
@@ -71,13 +75,14 @@ export const renameGroup = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-
     // Check name length
     if (newName.length < 3 || newName.length > 30) {
-      return res.status(400).json({ error: "Group name must be between 3 and 30 characters." });
+      return res
+        .status(400)
+        .json({ error: "Group name must be between 3 and 30 characters." });
     }
 
-    // Check for duplicate name 
+    // Check for duplicate name
     const existingGroup = await sql`
             SELECT id FROM groups WHERE name = ${newName} AND id <> ${groupId};
         `;
@@ -116,7 +121,11 @@ export const uploadIcon = async (req: Request, res: Response) => {
             SELECT id FROM groups WHERE id = ${groupId} AND leader_id = ${userId};
         `;
     if (group.length === 0) {
-      return res.status(403).json({ error: "You are not authorized to upload an icon for this group." });
+      return res
+        .status(403)
+        .json({
+          error: "You are not authorized to upload an icon for this group.",
+        });
     }
 
     // Extract file
@@ -129,7 +138,11 @@ export const uploadIcon = async (req: Request, res: Response) => {
     const allowedExtensions = [".png", ".jpg", ".jpeg", ".gif"];
     const fileExtension = iconFile.name.split(".").at(-1);
     if (!allowedExtensions.includes(fileExtension || "")) {
-      return res.status(400).json({ error: "Invalid file type. Only PNG, JPG, JPEG, and GIF are allowed." });
+      return res
+        .status(400)
+        .json({
+          error: "Invalid file type. Only PNG, JPG, JPEG, and GIF are allowed.",
+        });
     }
 
     // Size the file down
@@ -179,7 +192,7 @@ export const setPublicity = async (req: Request, res: Response) => {
     if (!userId || !groupId || !isPublic) {
       return res.status(400).json({ error: "Missing required fields" });
     }
-    
+
     // Update group publicity
     const updatedPublicity = await sql`
             UPDATE groups 
@@ -214,7 +227,9 @@ export const inviteToGroup = async (req: Request, res: Response) => {
         `;
 
     if (existingInvite.length > 0) {
-      return res.status(409).json({ error: "Invite already sent to this user." });
+      return res
+        .status(409)
+        .json({ error: "Invite already sent to this user." });
     }
 
     // Add user to invite table
@@ -247,7 +262,11 @@ export const removeFromGroup = async (req: Request, res: Response) => {
             SELECT id FROM groups WHERE id = ${groupId} AND leader_id = ${userId};
         `;
     if (group.length === 0) {
-      return res.status(403).json({ error: "You are not authorized to remove people from this group." });
+      return res
+        .status(403)
+        .json({
+          error: "You are not authorized to remove people from this group.",
+        });
     }
 
     // Remove user from user_group table
@@ -291,22 +310,27 @@ export const acceptInvite = async (req: Request, res: Response) => {
       LIMIT 1;
     `;
     if (invite.length === 0) {
-      return res.status(404).json({ error: 'No pending invite found for this user and group' })
+      return res
+        .status(404)
+        .json({ error: "No pending invite found for this user and group" });
     }
-
 
     if (!invite) {
       return res
         .status(404)
         .json({ error: "No pending invite found for this user and group" });
+    }
 
     // Check if the user is already in a group
     const userProfile = await sql`
       SELECT in_group FROM profile WHERE id = ${userId};
     `;
     if (userProfile.length > 0 && userProfile[0].in_group) {
-      return res.status(403).json({ error: "You are already in a group and cannot accept an invite." });
-
+      return res
+        .status(403)
+        .json({
+          error: "You are already in a group and cannot accept an invite.",
+        });
     }
 
     // Adding user to the user_group table
@@ -346,7 +370,7 @@ export const leaveGroup = async (req: Request, res: Response) => {
   const { userId, groupId } = req.body;
 
   if (!userId || !groupId) {
-    return res.status(400).json({ error: 'Missing required fields' });
+    return res.status(400).json({ error: "Missing required fields" });
   }
 
   try {
@@ -362,11 +386,11 @@ export const leaveGroup = async (req: Request, res: Response) => {
             WHERE id = ${userId}
         `;
 
-    return res.status(200).json({ message: 'User removed from group' });
+    return res.status(200).json({ message: "User removed from group" });
   } catch (error) {
-    console.error('Error leaving group:', error);
+    console.error("Error leaving group:", error);
     return res.status(500).json({
-      error: (error as Error).message || 'An unknown error occurred',
+      error: (error as Error).message || "An unknown error occurred",
     });
   }
 };
@@ -376,7 +400,7 @@ export const getGroupLocations = async (req: Request, res: Response) => {
   const { userId, groupId } = req.body;
 
   if (!userId || !groupId) {
-    return res.status(400).json({ error: 'Missing required fields' });
+    return res.status(400).json({ error: "Missing required fields" });
   }
 
   try {
@@ -386,7 +410,9 @@ export const getGroupLocations = async (req: Request, res: Response) => {
             WHERE user_id = ${userId} AND group_id = ${groupId}
         `;
     if (userInGroup.length === 0) {
-      return res.status(403).json({ error: 'You are not a member of this group' });
+      return res
+        .status(403)
+        .json({ error: "You are not a member of this group" });
     }
 
     // Get locations of other users in the group
@@ -399,9 +425,9 @@ export const getGroupLocations = async (req: Request, res: Response) => {
 
     return res.status(200).json({ locations });
   } catch (error) {
-    console.error('Error getting group locations:', error);
+    console.error("Error getting group locations:", error);
     return res.status(500).json({
-      error: (error as Error).message || 'An unknown error occurred',
+      error: (error as Error).message || "An unknown error occurred",
     });
   }
 };
