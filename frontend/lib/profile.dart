@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 class ProfileScreen extends StatelessWidget {
   @override
@@ -15,16 +16,34 @@ class ProfileScreen extends StatelessWidget {
           const SizedBox(height: 20),
           _buildProfileHeader(),
           const Divider(),
-          _buildListTile(title: "Account Details", onTap: () {
-          }),
-          _buildListTile(title: "Achievements", onTap: () {
-          }),
-          _buildListTile(title: "Settings", onTap: () {
-          }),
-          _buildListTile(title: "Log out", onTap: () {
-          }),
-          _buildListTile(title: "Delete Account", onTap: () {
-          }),
+          _buildListTile(title: "Account Details", onTap: () {}),
+          _buildListTile(title: "Achievements", onTap: () {}),
+          _buildListTile(title: "Settings", onTap: () {}),
+          _buildListTile(
+            title: "Log out",
+            onTap: () async {
+              try {
+                final response = await http.post(
+                  Uri.parse('http://localhost:5001/api/v1/logout'),
+                  headers: {
+                    'Content-Type': 'application/json',
+                    // Add authentication headers if needed
+                  },
+                );
+
+                if (response.statusCode == 200) {
+                  // Successfully logged out, now navigate to login screen
+                  Navigator.pushReplacementNamed(context, '/login');
+                } else {
+                  // Handle logout failure
+                  print("Logout failed: ${response.body}");
+                }
+              } catch (e) {
+                print("Error logging out: $e");
+              }
+            },
+          ),
+          _buildListTile(title: "Delete Account", onTap: () {}),
         ],
       ),
     );
@@ -61,20 +80,24 @@ class ProfileScreen extends StatelessWidget {
             ],
           ),
           SizedBox(height: 8),
-          Text("First Last", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+          Text(
+            "First Last",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+          ),
           Text("@username", style: TextStyle(color: Colors.grey)),
         ],
       ),
     );
   }
 
-
   Widget _buildListTile({required String title, required VoidCallback onTap}) {
     return ListTile(
       //leading: Icon(icon),
       title: Text(
         title,
-        style: TextStyle(color: title == "Delete Account" ? Colors.red : Colors.black),
+        style: TextStyle(
+          color: title == "Delete Account" ? Colors.red : Colors.black,
+        ),
       ),
       trailing: Icon(Icons.arrow_forward_ios),
       onTap: onTap,

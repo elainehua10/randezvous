@@ -57,21 +57,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
         );
       }
-
-      bool success = true;
-
-      if (success) {
-        Navigator.pushReplacementNamed(context, '/home');
-      } else {
-        showDialog(
-          context: context,
-          builder:
-              (context) => AlertDialog(
-                title: Text('Login Failed'),
-                content: Text('Please check your credentials and try again.'),
-              ),
-        );
-      }
     }
   }
 
