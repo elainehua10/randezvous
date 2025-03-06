@@ -79,4 +79,22 @@ export async function requireGroupLeader(
   req: Request,
   res: Response<ErrorResponse>,
   next: NextFunction
-) {}
+) {
+  const { userId, groupId } = req.body;
+
+  if (!userId || !groupId) {
+    const error = new Error("Missing required fields");
+    next(error);
+    return;
+  }
+
+  const group = await sql`
+            SELECT * FROM groups WHERE id = ${groupId} AND leader_id = ${userId};
+        `;
+  if (group.length === 0) {
+    const error = new Error("You are not authorized to rename this group.");
+    next(error);
+    return;
+  }
+  next();
+}
