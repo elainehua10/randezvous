@@ -16,19 +16,14 @@ class ProfileScreen extends StatelessWidget {
           _buildProfileHeader(),
           const Divider(),
           _buildListTile(title: "Account Details", onTap: () {
-            // Handle navigation or functionality
           }),
           _buildListTile(title: "Achievements", onTap: () {
-            // Handle navigation or functionality
           }),
           _buildListTile(title: "Settings", onTap: () {
-            // Handle navigation or functionality
           }),
           _buildListTile(title: "Log out", onTap: () {
-            // Handle logout
           }),
           _buildListTile(title: "Delete Account", onTap: () {
-            // Handle account deletion
           }),
         ],
       ),
@@ -36,19 +31,43 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _buildProfileHeader() {
-  return Column(
-    children: [
-      CircleAvatar(
-        radius: 50,  // Increased size for visibility
-        backgroundColor: Colors.blue,
-        child: Icon(Icons.person, size: 50, color: Colors.white),
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Stack(
+            alignment: Alignment.bottomRight,
+            children: [
+              CircleAvatar(
+                radius: 50,
+                backgroundColor: Colors.blue,
+                child: Icon(Icons.person, size: 50, color: Colors.white),
+              ),
+              Container(
+                height: 35,
+                width: 35,
+                decoration: BoxDecoration(
+                  color: const Color.fromARGB(255, 92, 181, 254),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2),
+                ),
+                child: IconButton(
+                  icon: Icon(Icons.edit, color: Colors.white, size: 15),
+                  onPressed: () {
+                    // Action to edit user info
+                  },
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 8),
+          Text("First Last", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+          Text("@username", style: TextStyle(color: Colors.grey)),
+        ],
       ),
-      SizedBox(height: 8),
-      Text("First Last", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
-      Text("@username", style: TextStyle(color: Colors.grey)),
-    ],
-  );
-}
+    );
+  }
+
 
   Widget _buildListTile({required String title, required VoidCallback onTap}) {
     return ListTile(
