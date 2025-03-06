@@ -90,3 +90,7 @@ export const refreshToken = async (req: Request, res: Response) => {
       .json({ error: (error as Error).message || "Invalid Refresh Token" });
   }
 };
+
+export const search = async (req: Request, res: Response) => {
+  const { username } = req.body;
+};
