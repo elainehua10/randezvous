@@ -36,7 +36,7 @@ export const createGroup = async (req: Request, res: Response) => {
     // Insert new group (user is the leader)
     let newGroup = await sql`
             INSERT INTO groups (name, is_public, leader_id) 
-            VALUES (${groupName}, ${isPublic ? 'TRUE' : 'FALSE'}, ${userId})
+            VALUES (${groupName}, ${isPublic ? "TRUE" : "FALSE"}, ${userId})
             RETURNING id;
         `;
 
@@ -71,13 +71,6 @@ export const renameGroup = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    // Check group ownership
-    const group = await sql`
-            SELECT id FROM groups WHERE id = ${groupId} AND leader_id = ${userId};
-        `;
-    if (group.length === 0) {
-      return res.status(403).json({ error: "You are not authorized to rename this group." });
-    }
 
     // Check name length
     if (newName.length < 3 || newName.length > 30) {
@@ -89,7 +82,10 @@ export const renameGroup = async (req: Request, res: Response) => {
             SELECT id FROM groups WHERE name = ${newName} AND id <> ${groupId};
         `;
     if (existingGroup.length > 0) {
-      return res.status(409).json({ error: "A group with this name already exists. Please choose a different name." });
+      return res.status(409).json({
+        error:
+          "A group with this name already exists. Please choose a different name.",
+      });
     }
 
     // Update group name
@@ -183,15 +179,7 @@ export const setPublicity = async (req: Request, res: Response) => {
     if (!userId || !groupId || !isPublic) {
       return res.status(400).json({ error: "Missing required fields" });
     }
-
-    // Check group ownership
-    const group = await sql`
-            SELECT id FROM groups WHERE id = ${groupId} AND leader_id = ${userId};
-        `;
-    if (group.length === 0) {
-      return res.status(403).json({ error: "You are not authorized to rename this group." });
-    }
-
+    
     // Update group publicity
     const updatedPublicity = await sql`
             UPDATE groups 
@@ -290,7 +278,7 @@ export const acceptInvite = async (req: Request, res: Response) => {
   const { userId, groupId } = req.body;
 
   if (!userId || !groupId) {
-    return res.status(400).json({ error: 'Missing required fields' });
+    return res.status(400).json({ error: "Missing required fields" });
   }
 
   try {
@@ -306,12 +294,19 @@ export const acceptInvite = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'No pending invite found for this user and group' })
     }
 
+
+    if (!invite) {
+      return res
+        .status(404)
+        .json({ error: "No pending invite found for this user and group" });
+
     // Check if the user is already in a group
     const userProfile = await sql`
       SELECT in_group FROM profile WHERE id = ${userId};
     `;
     if (userProfile.length > 0 && userProfile[0].in_group) {
       return res.status(403).json({ error: "You are already in a group and cannot accept an invite." });
+
     }
 
     // Adding user to the user_group table
@@ -335,12 +330,13 @@ export const acceptInvite = async (req: Request, res: Response) => {
       WHERE id = ${userId};
     `;
 
-    return res.status(200).json({ message: 'Invite accepted. You have been added to the group.' });
-
+    return res
+      .status(200)
+      .json({ message: "Invite accepted. You have been added to the group." });
   } catch (error) {
-    console.error('Error accepting invite:', error);
+    console.error("Error accepting invite:", error);
     return res.status(500).json({
-      error: (error as Error).message || 'An unknown error occurred',
+      error: (error as Error).message || "An unknown error occurred",
     });
   }
 };
