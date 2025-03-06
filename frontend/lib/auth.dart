@@ -5,9 +5,9 @@ import 'package:http/http.dart';
 import 'package:http/http.dart' as http;
 
 class Auth {
-  final storage = FlutterSecureStorage();
+  static final storage = FlutterSecureStorage();
 
-  Future<void> saveTokens(
+  static Future<void> saveTokens(
     String accessToken,
     String refreshToken,
     int expireTime,
@@ -17,19 +17,19 @@ class Auth {
     await storage.write(key: 'exp', value: "$expireTime");
   }
 
-  Future<String?> getAccessToken() async {
+  static Future<String?> getAccessToken() async {
     return await storage.read(key: 'access_token');
   }
 
-  Future<int?> getExpireTime() async {
+  static Future<int?> getExpireTime() async {
     return int.parse((await storage.read(key: 'exp'))!);
   }
 
-  Future<String?> getRefreshToken() async {
+  static Future<String?> getRefreshToken() async {
     return await storage.read(key: 'refresh_token');
   }
 
-  Future<void> refreshTokenIfNeeded() async {
+  static Future<void> refreshTokenIfNeeded() async {
     final token = await getRefreshToken();
     final expireTime = await getExpireTime();
 
@@ -57,7 +57,7 @@ class Auth {
     }
   }
 
-  Future<Response> makeAuthenticatedGetRequest(String endpoint) async {
+  static Future<Response> makeAuthenticatedGetRequest(String endpoint) async {
     await refreshTokenIfNeeded();
     final token = await getAccessToken();
     final response = await http.get(
@@ -67,7 +67,7 @@ class Auth {
     return response;
   }
 
-  Future<Response> makeAuthenticatedPostRequest(
+  static Future<Response> makeAuthenticatedPostRequest(
     String endpoint,
     Object body,
   ) async {
