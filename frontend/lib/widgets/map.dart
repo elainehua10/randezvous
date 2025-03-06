@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:frontend/widgets/map_style.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
@@ -83,7 +84,7 @@ class MapWidgetState extends State<MapWidget> {
         onMapCreated: (GoogleMapController controller) {
           _controller.complete(controller);
         },
-        // markers: {Marker(markerId: const MarkerId('You'), position: userPos)},
+        // style: MyMapStyle.mapStyles,
         myLocationEnabled: true,
         myLocationButtonEnabled: true,
       ),
