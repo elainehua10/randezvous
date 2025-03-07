@@ -195,7 +195,7 @@ export const deleteAccount = async (req: Request, res: Response) => {
 
   try {
     await sql`DELETE FROM profile WHERE id = ${userId};`;
-
+    console.log("userid: " + userId);
     const { error } = await supabase.auth.admin.deleteUser(userId);
     if (error) {
       console.error("Error deleting user from authentication system:", error);
