@@ -82,6 +82,53 @@ export const createGroup = async (req: Request, res: Response) => {
   }
 };
 
+export const reassignLeader = async (req: Request, res: Response) => {
+  try {
+    // Check fields
+    const { groupId, userId, newLeaderId } = req.body;
+    if (!groupId || !userId || !newLeaderId) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    // Check if the user is the current leader of the group
+    const group = await sql`
+      SELECT leader_id FROM groups WHERE id = ${groupId};
+    `;
+    if (group.length === 0) {
+      return res.status(404).json({ error: "Group not found." });
+    }
+    if (group[0].leader_id !== userId) {
+      return res
+        .status(403)
+        .json({ error: "Only the current leader can reassign leadership." });
+    }
+
+    // Check if the new leader is a member of the group
+    const member = await sql`
+      SELECT user_id FROM user_group WHERE group_id = ${groupId} AND user_id = ${newLeaderId};
+    `;
+    if (member.length === 0) {
+      return res
+        .status(400)
+        .json({ error: "New leader must be a member of the group." });
+    }
+
+    // Update the leader in the groups table
+    await sql`
+      UPDATE groups 
+      SET leader_id = ${newLeaderId} 
+      WHERE id = ${groupId};
+    `;
+
+    return res
+      .status(200)
+      .json({ success: true, message: "Leader reassigned successfully." });
+  } catch (error) {
+    console.error("Error reassigning leader:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
 // Rename group (only leader can change)
 export const renameGroup = async (req: Request, res: Response) => {
   try {
@@ -537,11 +584,9 @@ export const checkMembership = async (req: Request, res: Response) => {
 
     // Validate input
     if (!userId || !groupId) {
-      return res
-        .status(400)
-        .json({
-          error: "Missing required fields: userId and groupId are required",
-        });
+      return res.status(400).json({
+        error: "Missing required fields: userId and groupId are required",
+      });
     }
 
     // Check if the group exists

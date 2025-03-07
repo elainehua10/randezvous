@@ -69,49 +69,140 @@ class _GroupScreenState extends State<GroupScreen> {
 
   // API call to leave the group
   void _leaveGroup() async {
-    if (!isUserLeader) {
-      final response = await Auth.makeAuthenticatedPostRequest("groups/leave", {
-        "groupId": widget.groupId,
-      });
+    final response = await Auth.makeAuthenticatedPostRequest("groups/leave", {
+      "groupId": widget.groupId,
+    });
 
-      if (response.statusCode == 200) {
-        Navigator.pop(context);
-        Navigator.pushReplacementNamed(context, "/home");
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("You have left the group.")));
-      } else {
-        print("Error leaving group: ${response.body}");
-      }
+    if (response.statusCode == 200) {
+      Navigator.pop(context);
+      Navigator.pushReplacementNamed(context, "/home");
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("You have left the group.")));
+    } else {
+      print("Error leaving group: ${response.body}");
     }
   }
 
   // Show confirmation dialog before leaving the group
   void _showLeaveGroupDialog() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text("Leave Group"),
-          content: Text(
-            "Are you sure you want to leave this group? You will need an invite to rejoin.",
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text("Cancel"),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                _leaveGroup(); // Calls the API to leave
-              },
-              child: Text("Leave Group"),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            ),
-          ],
+    if (isUserLeader) {
+      if (members.length <= 1) {
+        // Case when leader is the only member
+        showDialog(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              title: Text("Cannot Leave Group"),
+              content: Text(
+                "You are the only member of this group. As the leader, you cannot leave unless there are other members. Please invite someone before trying to leave.",
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text("OK"),
+                ),
+              ],
+            );
+          },
         );
-      },
-    );
+      } else {
+        // Case when leader needs to assign new leader
+        showDialog(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              title: Text("Assign New Leader"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "As the group leader, you must assign a new leader before leaving. Please select a member to become the new leader:",
+                  ),
+                  SizedBox(height: 16),
+                  DropdownButtonFormField<User>(
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(),
+                      labelText: "Select New Leader",
+                    ),
+                    items:
+                        members
+                            .where((member) => member.id != group.leaderId)
+                            .map(
+                              (member) => DropdownMenuItem(
+                                value: member,
+                                child: Text(member.name),
+                              ),
+                            )
+                            .toList(),
+                    onChanged: (selectedMember) async {
+                      if (selectedMember != null) {
+                        // API call to assign new leader
+                        final response =
+                            await Auth.makeAuthenticatedPostRequest(
+                              "groups/assign-leader",
+                              {
+                                "groupId": widget.groupId,
+                                "newLeaderId": selectedMember.id,
+                              },
+                            );
+
+                        if (response.statusCode == 200) {
+                          // After successful assignment, proceed with leaving
+                          _leaveGroup();
+                          Navigator.pop(context);
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                "Failed to assign new leader: ${response.body}",
+                              ),
+                            ),
+                          );
+                        }
+                      }
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text("Cancel"),
+                ),
+              ],
+            );
+          },
+        );
+      }
+    } else {
+      // Original dialog for non-leaders
+      showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: Text("Leave Group"),
+            content: Text(
+              "Are you sure you want to leave this group? You will need an invite to rejoin.",
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text("Cancel"),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  _leaveGroup(); // Calls the API to leave
+                },
+                child: Text("Leave Group"),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              ),
+            ],
+          );
+        },
+      );
+    }
   }
 
   @override

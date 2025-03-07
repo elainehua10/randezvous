@@ -14,6 +14,7 @@ import MessageResponse from "../interfaces/MessageResponse";
 import emojis from "./emojis";
 import { requireAuth, requireGroupLeader } from "../middlewares";
 import * as group from "./controllers/group";
+import { reassignLeader } from "./controllers/group";
 
 const router = express.Router();
 
@@ -70,5 +71,6 @@ router.use("/groups/getgroups", requireAuth, group.getUserGroups);
 router.use("/groups/getinvites", requireAuth, group.getUserInvites);
 router.use("/groups/members", requireAuth, group.getGroupMembers);
 router.use("/groups/check-membership", requireAuth, group.checkMembership);
+router.use("/groups/assign-leader", requireAuth, group.reassignLeader);
 
 export default router;
