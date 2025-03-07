@@ -6,6 +6,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:http_parser/http_parser.dart';
+import 'package:frontend/edit_profile.dart';
 
 class ProfileScreen extends StatefulWidget {
   @override
@@ -74,7 +75,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: 20),
                   _buildProfileHeader(),
                   const Divider(),
-                  _buildListTile(title: "Edit Profile", onTap: () {}),
+                  _buildListTile(
+                    title: "Edit Profile",
+                    onTap: () => Navigator.pushNamed(context, '/edit-profile'),
+                  ),
                   _buildListTile(title: "Achievements", onTap: () {}),
                   _buildListTile(title: "Settings", onTap: () {}),
                   _buildListTile(
@@ -213,7 +217,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           print('Profile picture uploaded successfully.');
           //final responseData = jsonDecode(response.body);
         } else {
-          print('Failed to upload profile picture.');
+          print('Failed to upload profile picture" ${response.body}');
           showDialog(
             context: context,
             builder: (context) => AlertDialog(

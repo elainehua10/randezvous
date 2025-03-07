@@ -4,6 +4,7 @@ import 'package:frontend/login.dart';
 import 'package:frontend/register.dart';
 import 'package:frontend/map_screen.dart';
 import 'package:frontend/profile.dart';
+import 'package:frontend/edit_profile.dart';
 
 void main() {
   runApp(const MyApp());
@@ -25,6 +26,7 @@ class MyApp extends StatelessWidget {
         '/home': (context) => MapScreen(),
         '/group': (context) => GroupScreen(groupId: ''),
         '/profile': (context) => ProfileScreen(),
+        '/edit-profile': (context) => EditProfileScreen(),
       },
       //home: LoginScreen(),
       //home: MapScreen(),
