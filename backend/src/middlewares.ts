@@ -93,6 +93,8 @@ export async function requireGroupLeader(
 ) {
   const { userId, groupId } = req.body;
 
+  console.log(groupId, userId);
+
   if (!userId || !groupId) {
     const error = new Error("Missing required fields");
     next(error);

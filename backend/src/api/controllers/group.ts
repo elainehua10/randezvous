@@ -408,7 +408,7 @@ export const getGroupMembers = async (req: Request, res: Response) => {
 
     // Check if the group exists and fetch the leader's ID and group name
     const group = await sql`
-      SELECT leader_id, name FROM groups WHERE id = ${groupId};
+      SELECT leader_id, name, icon_url FROM groups WHERE id = ${groupId};
     `;
 
     if (group.length === 0) {
@@ -417,6 +417,7 @@ export const getGroupMembers = async (req: Request, res: Response) => {
 
     const leader_id = group[0].leader_id;
     const name = group[0].name;
+    const iconUrl = group[0].icon_url;
     const isUserLeader = userId === leader_id;
 
     // Fetch all members of the group
@@ -433,6 +434,7 @@ export const getGroupMembers = async (req: Request, res: Response) => {
       leader_id,
       isUserLeader,
       members,
+      iconUrl,
     });
   } catch (error) {
     console.error("Error fetching group members:", error);
@@ -489,7 +491,7 @@ export const getUserGroups = async (req: Request, res: Response) => {
 
     // Get all groups the user is part of
     const groups = await sql`
-      SELECT id, name, COALESCE(icon_url, NULL) AS icon_url
+      SELECT groups.id, name, COALESCE(icon_url, NULL) AS icon_url
       FROM groups
       JOIN user_group ON groups.id = user_group.group_id
       WHERE user_group.user_id = ${userId};

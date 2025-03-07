@@ -1,9 +1,11 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:frontend/models/group.dart';
 import 'package:frontend/models/user.dart';
 import 'package:frontend/widgets/invite.dart';
 import 'package:frontend/auth.dart';
+import 'package:image_picker/image_picker.dart';
 
 class GroupScreen extends StatefulWidget {
   final String groupId;
@@ -43,6 +45,8 @@ class _GroupScreenState extends State<GroupScreen> {
           isPublic: data['isPublic'] == true, // Ensure it’s a boolean
           iconUrl: data['iconUrl'] as String?, // Allow it to be null
         );
+
+        print(group.iconUrl);
         members =
             (data['members'] as List)
                 .map(
@@ -194,12 +198,92 @@ class _GroupScreenState extends State<GroupScreen> {
     );
   }
 
-  void _handleImageUpload(BuildContext context) {
-    // Placeholder for image upload functionality
-    // In a real app, this would open an image picker and handle the upload
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Image upload functionality to be implemented')),
+  Future<void> _handleImageUpload(BuildContext context) async {
+    final ImagePicker picker = ImagePicker();
+
+    // Show a dialog to let the user choose between camera and gallery
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Wrap(
+            children: <Widget>[
+              ListTile(
+                leading: Icon(Icons.photo_library),
+                title: Text('Choose from Gallery'),
+                onTap: () async {
+                  Navigator.pop(context);
+                  final XFile? image = await picker.pickImage(
+                    source: ImageSource.gallery,
+                    maxWidth: 1000,
+                    maxHeight: 1000,
+                    imageQuality: 85,
+                  );
+                  if (image != null) {
+                    _uploadImage(File(image.path));
+                  }
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.photo_camera),
+                title: Text('Take a Photo'),
+                onTap: () async {
+                  Navigator.pop(context);
+                  final XFile? photo = await picker.pickImage(
+                    source: ImageSource.camera,
+                    maxWidth: 1000,
+                    maxHeight: 1000,
+                    imageQuality: 85,
+                  );
+                  if (photo != null) {
+                    _uploadImage(File(photo.path));
+                  }
+                },
+              ),
+            ],
+          ),
+        );
+      },
     );
+  }
+
+  // Add this function to handle the image upload process
+  Future<void> _uploadImage(File imageFile) async {
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      print(widget.groupId);
+      final response = await Auth.uploadFileWithAuth("groups/icon", imageFile, {
+        "groupId": widget.groupId,
+      });
+      final responseData = jsonDecode(response.body);
+      print(responseData);
+      // Close loading dialog
+      Navigator.pop(context);
+
+      if (response.statusCode == 200) {
+        // Refresh group details to show the new image
+        fetchGroupDetails();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Group image updated successfully')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to upload image. Please try again.')),
+        );
+      }
+    } catch (e) {
+      // Close loading dialog
+      Navigator.pop(context);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
+    }
   }
 
   Widget _buildGroupHeader(BuildContext context, Group group) {
@@ -210,13 +294,20 @@ class _GroupScreenState extends State<GroupScreen> {
       width: double.infinity,
       child: Stack(
         children: [
-          // Group Cover Image
           Container(
             height: 150,
             width: double.infinity,
             color: Colors.blue[100],
             child: Center(
-              child: Icon(Icons.group, size: 80, color: Colors.blue[800]),
+              child:
+                  group.iconUrl == null
+                      ? Icon(Icons.group, size: 80, color: Colors.blue[800])
+                      : Image.network(
+                        group.iconUrl!,
+                        height:
+                            80, // Optional: adding height to match icon size
+                        width: 80, // Optional: adding width to match icon size
+                      ),
             ),
           ),
 
@@ -426,7 +517,7 @@ class _GroupScreenState extends State<GroupScreen> {
   }
 
   void _showInviteMembersDialog(BuildContext context) {
-    InviteMembersDialog.show(context, widget.groupId, isUserLeader);
+    InviteMembersDialog.show(context, widget.groupId);
   }
 
   void _showRemoveMemberDialog(BuildContext context, User member) {
