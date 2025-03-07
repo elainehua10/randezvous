@@ -11,27 +11,36 @@ export const register = async (req: Request, res: Response) => {
   if (!email || !password || !username || !firstname || !lastname) {
     return res.status(400).json({ error: "Missing required fields" });
   }
-  // Register a new user
+
   try {
+    // Check if the username is already taken
+    const existingUser =
+      await sql`SELECT id FROM profile WHERE username = ${username}`;
+    if (existingUser.length > 0) {
+      return res.status(400).json({ error: "Username already taken" });
+    }
+
+    // Register a new user
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
     });
     if (error) throw error;
     if (!data.user) {
-      throw "User failed to sign in";
+      throw new Error("User failed to sign in");
     }
+
     await sql`
-            INSERT INTO profile (id, username, first_name, last_name)
-            VALUES (${data.user.id}, ${username}, ${firstname}, ${lastname});
-            `;
+      INSERT INTO profile (id, username, first_name, last_name)
+      VALUES (${data.user.id}, ${username}, ${firstname}, ${lastname});
+    `;
 
     res.status(201).json({
       message: "User registered successfully",
       session: data.session,
     });
   } catch (error) {
-    console.log(error);
+    console.error(error);
     res
       .status(500)
       .json({ error: (error as Error).message || "An unknown error occurred" });
