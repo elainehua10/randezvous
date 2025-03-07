@@ -22,12 +22,12 @@ export const createGroup = async (req: Request, res: Response) => {
 
     // Check if user has reached the limit of groups they can create (1 for now)
     const inGroup = await sql`
-            SELECT in_group FROM profile WHERE user_id = ${userId};
+            SELECT in_group FROM profile WHERE id = ${userId};
         `;
     if (inGroup.length > 0 && inGroup[0].in_group) {
       return res
         .status(403)
-        .json({ error: "You have are already part of a group." });
+        .json({ error: "You are already part of a group." });
     }
 
     // Check group name length
@@ -135,7 +135,7 @@ export const uploadIcon = async (req: Request, res: Response) => {
     }
 
     // Validate file type
-    const allowedExtensions = [".png", ".jpg", ".jpeg", ".gif"];
+    const allowedExtensions = ["png", "jpg", "jpeg", "gif"];
     const fileExtension = iconFile.name.split(".").at(-1);
     if (!allowedExtensions.includes(fileExtension || "")) {
       return res
@@ -151,7 +151,7 @@ export const uploadIcon = async (req: Request, res: Response) => {
       .toBuffer();
 
     // Upload to Supabase Storage (Bucket: "images")
-    const fileName = `group_${groupId}_${Date.now()}${fileExtension}`;
+    const fileName = `group_${groupId}_${Date.now()}.${fileExtension}`;
     const { error } = await supabase.storage
       .from("images")
       .upload(fileName, resizedImageBuffer, {
