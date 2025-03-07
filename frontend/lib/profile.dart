@@ -116,6 +116,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  ImageProvider<Object>? getBackgroundImage() {
+    if (_profileImage != null) {
+      return FileImage(_profileImage!);
+    }
+    if (icon != "pfp") {
+      return NetworkImage(icon);
+    }
+    else return null;
+  }
+
   Widget _buildProfileHeader() {
     return Center(
       child: Column(
@@ -127,7 +137,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               CircleAvatar(
                 radius: 50,
                 backgroundColor: Colors.blue,
-                backgroundImage: _profileImage != null ? FileImage(_profileImage!) : null,
+                backgroundImage: getBackgroundImage(),
                 child: _profileImage == null ? Icon(Icons.person, size: 50, color: Colors.white) : null,
               ),
               Container(
@@ -168,14 +178,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   leading: Icon(Icons.photo_library),
                   title: Text('Choose from library'),
                   onTap: () {
-                    //Navigator.pop(context);
                     _pickImage(ImageSource.gallery, context);
                   }),
               ListTile(
                 leading: Icon(Icons.photo_camera),
                 title: Text('Take photo'),
                 onTap: () {
-                    //Navigator.pop(context);
                     _pickImage(ImageSource.camera, context);
                 },
               ),
@@ -203,37 +211,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _pickImage(ImageSource source, BuildContext context) async {
     final pickedFile = await _picker.pickImage(source: source);
     if (pickedFile != null) {
-      //File imageFile = File(pickedFile.path);
       setState(() {
         _profileImage = File(pickedFile.path);
       });
       print("Image picked: ${pickedFile.path}");
       try {
-        final uri = Uri.parse('http://localhost:5001/api/v1/set-profile-picture');
-        var request = http.MultipartRequest('POST', uri)
-          ..fields['username'] = username
-          ..files.add(await http.MultipartFile.fromPath(
-            'icon',
-            _profileImage!.path,
-            contentType: MediaType('image', _profileImage!.path.split('.').last),
-          ));
-
-        var streamedResponse = await request.send();
-        var response = await http.Response.fromStream(streamedResponse);
-
-        if (response.statusCode == 200) {
-          print('Profile picture uploaded successfully.');
-          //final responseData = jsonDecode(response.body);
-        } else {
-          print('Failed to upload profile picture" ${response.body}');
-          showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: Text('Upload Failed'),
-              content: Text('Failed to upload profile picture. Please try again.'),
-            )
-          );
-        }
+        Auth.uploadFileWithAuth('/set-profile-picture', File(pickedFile.path), {});
       } catch (e) {
         showDialog(
           context: context,
