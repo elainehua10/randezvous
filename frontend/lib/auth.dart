@@ -65,7 +65,6 @@ class Auth {
     final response = await http.get(
       Uri.parse('http://localhost:5001/api/v1/$endpoint'),
       headers: {HttpHeaders.authorizationHeader: 'Bearer $token'},
-      headers: {HttpHeaders.authorizationHeader: 'Bearer $token'},
     );
     return response;
   }
@@ -92,14 +91,6 @@ class Auth {
     );
     return response;
   }
-
-  static Future<void> removeTokens() async {
-    String token = (await getAccessToken())!;
-    print(token);
-    await storage.delete(key: 'access_token');
-    await storage.delete(key: 'refresh_token');
-  }
-}
 
   static Future<void> removeTokens() async {
     String token = (await getAccessToken())!;

@@ -9,7 +9,7 @@ class Group {
   factory Group.fromJson(Map<String, dynamic> json) {
     return Group(
       id: json['id'],
-      name: json['name'],
+      name: json['first'],
       leaderId: json['leaderId'],
     );
   }

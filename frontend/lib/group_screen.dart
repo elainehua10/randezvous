@@ -34,14 +34,20 @@ class _GroupScreenState extends State<GroupScreen> {
     );
 
 
+    
+
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       setState(() {
-        group = Group(id: data['id'], name: data['name'], leaderId: data['leaderId'],);
+        group = Group(
+          id: data['groupId'], 
+          name: data['groupName'], 
+          leaderId: data['leaderId'],
+        );
         members = (data['members'] as List).map((m) => User(
           id: m['id'], 
-          name: m['name'], 
-          avatarUrl: m['avatarUrl']
+          name: "${m['first_name']} ${m['last_name']}",  
+          avatarUrl: m['profile_picture'],
         )).toList();
         userId = data['userId'];
         isLoading = false;
@@ -49,6 +55,7 @@ class _GroupScreenState extends State<GroupScreen> {
     } else {
       print("Failed to load group data");
     }
+
   }
 
   // API call to leave the group
