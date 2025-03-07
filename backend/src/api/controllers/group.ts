@@ -7,7 +7,7 @@ import sql from "../../db";
 import sharp from "sharp";
 
 // Set limit to how many groups a user can create
-const MAX_GROUPS_PER_USER = 1;
+const MAX_GROUPS_PER_USER = 10;
 
 // ============= Leader of group functions ===================
 
@@ -16,18 +16,23 @@ export const createGroup = async (req: Request, res: Response) => {
   try {
     // Check fields
     const { userId, groupName, isPublic } = req.body;
-    if (!userId || !groupName || !isPublic) {
+    if (!userId || !groupName || isPublic === undefined) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    // Check if user has reached the limit of groups they can create (1 for now)
-    const inGroup = await sql`
-            SELECT in_group FROM profile WHERE user_id = ${userId};
-        `;
-    if (inGroup.length > 0 && inGroup[0].in_group) {
-      return res
-        .status(403)
-        .json({ error: "You have are already part of a group." });
+    console.log(isPublic);
+
+    // Check if user has reached the limit of groups they can create
+    const userProfile = await sql`
+      SELECT num_groups FROM profile WHERE id = ${userId};
+    `;
+    if (userProfile.length === 0) {
+      return res.status(404).json({ error: "User not found." });
+    }
+    if (userProfile[0].num_groups >= MAX_GROUPS_PER_USER) {
+      return res.status(403).json({
+        error: `You cannot be in more than ${MAX_GROUPS_PER_USER} group.`,
+      });
     }
 
     // Check group name length
@@ -37,10 +42,21 @@ export const createGroup = async (req: Request, res: Response) => {
         .json({ error: "Group name must be between 3 and 30 characters." });
     }
 
+    // Check for duplicate name
+    const existingGroup = await sql`
+      SELECT id FROM groups WHERE name = ${groupName};
+    `;
+    if (existingGroup.length > 0) {
+      return res.status(409).json({
+        error:
+          "A group with this name already exists. Please choose a different name.",
+      });
+    }
+
     // Insert new group (user is the leader)
     let newGroup = await sql`
             INSERT INTO groups (name, is_public, leader_id) 
-            VALUES (${groupName}, ${isPublic ? "TRUE" : "FALSE"}, ${userId})
+            VALUES (${groupName}, ${isPublic}, ${userId})
             RETURNING id;
         `;
 
@@ -55,7 +71,7 @@ export const createGroup = async (req: Request, res: Response) => {
     // Update profile to reflect that user is in a group
     await sql`
             UPDATE profile 
-            SET in_group = TRUE
+            SET num_groups = num_groups + 1
             WHERE id = ${userId};
         `;
 
@@ -121,11 +137,9 @@ export const uploadIcon = async (req: Request, res: Response) => {
             SELECT id FROM groups WHERE id = ${groupId} AND leader_id = ${userId};
         `;
     if (group.length === 0) {
-      return res
-        .status(403)
-        .json({
-          error: "You are not authorized to upload an icon for this group.",
-        });
+      return res.status(403).json({
+        error: "You are not authorized to upload an icon for this group.",
+      });
     }
 
     // Extract file
@@ -135,14 +149,12 @@ export const uploadIcon = async (req: Request, res: Response) => {
     }
 
     // Validate file type
-    const allowedExtensions = [".png", ".jpg", ".jpeg", ".gif"];
+    const allowedExtensions = ["png", "jpg", "jpeg", "gif"];
     const fileExtension = iconFile.name.split(".").at(-1);
     if (!allowedExtensions.includes(fileExtension || "")) {
-      return res
-        .status(400)
-        .json({
-          error: "Invalid file type. Only PNG, JPG, JPEG, and GIF are allowed.",
-        });
+      return res.status(400).json({
+        error: "Invalid file type. Only PNG, JPG, JPEG, and GIF are allowed.",
+      });
     }
 
     // Size the file down
@@ -151,7 +163,7 @@ export const uploadIcon = async (req: Request, res: Response) => {
       .toBuffer();
 
     // Upload to Supabase Storage (Bucket: "images")
-    const fileName = `group_${groupId}_${Date.now()}${fileExtension}`;
+    const fileName = `group_${groupId}_${Date.now()}.${fileExtension}`;
     const { error } = await supabase.storage
       .from("images")
       .upload(fileName, resizedImageBuffer, {
@@ -165,9 +177,7 @@ export const uploadIcon = async (req: Request, res: Response) => {
     }
 
     // Get public URL
-    const { data } = await supabase.storage
-      .from("images")
-      .getPublicUrl(fileName);
+    const { data } = supabase.storage.from("images").getPublicUrl(fileName);
 
     // Update group icon URL
     const updatedGroup = await sql`
@@ -262,11 +272,9 @@ export const removeFromGroup = async (req: Request, res: Response) => {
             SELECT id FROM groups WHERE id = ${groupId} AND leader_id = ${userId};
         `;
     if (group.length === 0) {
-      return res
-        .status(403)
-        .json({
-          error: "You are not authorized to remove people from this group.",
-        });
+      return res.status(403).json({
+        error: "You are not authorized to remove people from this group.",
+      });
     }
 
     // Remove user from user_group table
@@ -278,7 +286,7 @@ export const removeFromGroup = async (req: Request, res: Response) => {
     // Update profile to not be in a group
     await sql`
             UPDATE profile 
-            SET in_group = FALSE
+            SET num_groups = num_groups - 1
             WHERE id = ${removingUserId};
         `;
 
@@ -309,13 +317,7 @@ export const acceptInvite = async (req: Request, res: Response) => {
         AND status = 'pending'
       LIMIT 1;
     `;
-    if (invite.length === 0) {
-      return res
-        .status(404)
-        .json({ error: "No pending invite found for this user and group" });
-    }
-
-    if (!invite) {
+    if (!invite || invite.length === 0) {
       return res
         .status(404)
         .json({ error: "No pending invite found for this user and group" });
@@ -323,14 +325,15 @@ export const acceptInvite = async (req: Request, res: Response) => {
 
     // Check if the user is already in a group
     const userProfile = await sql`
-      SELECT in_group FROM profile WHERE id = ${userId};
+      SELECT num_groups FROM profile WHERE id = ${userId};
     `;
-    if (userProfile.length > 0 && userProfile[0].in_group) {
-      return res
-        .status(403)
-        .json({
-          error: "You are already in a group and cannot accept an invite.",
-        });
+    if (userProfile.length === 0) {
+      return res.status(404).json({ error: "User not found." });
+    }
+    if (userProfile[0].num_groups >= MAX_GROUPS_PER_USER) {
+      return res.status(403).json({
+        error: `You cannot be in more than ${MAX_GROUPS_PER_USER} group.`,
+      });
     }
 
     // Adding user to the user_group table
@@ -350,7 +353,7 @@ export const acceptInvite = async (req: Request, res: Response) => {
     // Update profile to indicate the user is now in a group
     await sql`
       UPDATE profile 
-      SET in_group = TRUE 
+      SET num_groups = num_groups + 1 
       WHERE id = ${userId};
     `;
 
@@ -382,7 +385,7 @@ export const leaveGroup = async (req: Request, res: Response) => {
     // Update profile to not be in a group
     await sql`
             UPDATE profile
-            SET in_group = FALSE
+            SET num_groups = num_groups - 1
             WHERE id = ${userId}
         `;
 
@@ -392,6 +395,48 @@ export const leaveGroup = async (req: Request, res: Response) => {
     return res.status(500).json({
       error: (error as Error).message || "An unknown error occurred",
     });
+  }
+};
+
+export const getGroupMembers = async (req: Request, res: Response) => {
+  try {
+    const { userId, groupId } = req.body;
+
+    if (!userId || !groupId) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    // Check if the group exists and fetch the leader's ID and group name
+    const group = await sql`
+      SELECT leader_id, name FROM groups WHERE id = ${groupId};
+    `;
+
+    if (group.length === 0) {
+      return res.status(404).json({ error: "Group not found." });
+    }
+
+    const leader_id = group[0].leader_id;
+    const name = group[0].name;
+    const isUserLeader = userId === leader_id;
+
+    // Fetch all members of the group
+    const members = await sql`
+      SELECT u.id, u.first_name, u.last_name, u.profile_picture
+      FROM user_group ug
+      JOIN profile u ON ug.user_id = u.id
+      WHERE ug.group_id = ${groupId};
+    `;
+
+    return res.status(200).json({
+      groupId,
+      name,
+      leader_id,
+      isUserLeader,
+      members,
+    });
+  } catch (error) {
+    console.error("Error fetching group members:", error);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -419,7 +464,7 @@ export const getGroupLocations = async (req: Request, res: Response) => {
     const locations = await sql`
             SELECT p.longitude, p.latitude
             FROM user_group ug
-            JOIN profile p ON ug.user_id = p.user_id
+            JOIN profile p ON ug.user_id = p.id
             WHERE ug.group_id = ${groupId}
         `;
 
@@ -429,5 +474,57 @@ export const getGroupLocations = async (req: Request, res: Response) => {
     return res.status(500).json({
       error: (error as Error).message || "An unknown error occurred",
     });
+  }
+};
+
+// ============= General group functions ===================
+
+// Get all groups the user is part of
+export const getUserGroups = async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.body;
+    if (!userId) {
+      return res.status(400).json({ error: "Missing userId" });
+    }
+
+    // Get all groups the user is part of
+    const groups = await sql`
+      SELECT id, name, COALESCE(icon_url, NULL) AS icon_url
+      FROM groups
+      JOIN user_group ON groups.id = user_group.group_id
+      WHERE user_group.user_id = ${userId};
+    `;
+
+    return res.status(200).json(groups);
+  } catch (error) {
+    console.error("Error fetching user groups:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// Get all invites for the user
+export const getUserInvites = async (req: Request, res: Response) => {
+  const { userId } = req.body;
+  if (!userId) {
+    return res.status(400).json({ error: "Missing userId" });
+  }
+
+  try {
+    const invites = await sql`
+      SELECT 
+        groups.id, 
+        groups.name, 
+        COALESCE(groups.icon_url, NULL) AS icon_url 
+      FROM invite
+      JOIN groups ON invite.group_id = groups.id
+      WHERE invite.to_user_id = ${userId} AND invite.status = 'pending';
+    `;
+
+    console.log("Sending invites:", invites); // Debugging print
+
+    return res.status(200).json(invites);
+  } catch (error) {
+    console.error("Error fetching user invites:", error);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };

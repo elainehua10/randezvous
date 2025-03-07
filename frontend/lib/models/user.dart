@@ -11,3 +11,5 @@ class User {
     this.avatarUrl,
   });
 }
+
+

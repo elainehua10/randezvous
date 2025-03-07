@@ -17,13 +17,13 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'RandezVous',
       theme: ThemeData(primarySwatch: Colors.yellow),
-      initialRoute: '/register',
+      initialRoute: '/login',
       home: LoginScreen(),
       routes: {
         '/login': (context) => LoginScreen(),
         '/register': (context) => RegisterScreen(),
         '/home': (context) => MapScreen(),
-        '/group': (context) => GroupScreen(groupId: ''),
+        '/group': (context) => GroupScreen(groupId: '2'),
         '/profile': (context) => ProfileScreen(),
       },
       //home: LoginScreen(),

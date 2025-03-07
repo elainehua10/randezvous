@@ -1,76 +1,141 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:frontend/models/group.dart';
 import 'package:frontend/models/user.dart';
 import 'package:frontend/widgets/invite.dart';
+import 'package:frontend/auth.dart';
 
-class GroupScreen extends StatelessWidget {
+class GroupScreen extends StatefulWidget {
   final String groupId;
 
   const GroupScreen({Key? key, required this.groupId}) : super(key: key);
-  final String leaderUserId = "user3";
+
+  @override
+  _GroupScreenState createState() => _GroupScreenState();
+}
+
+class _GroupScreenState extends State<GroupScreen> {
+  late Group group;
+  late List<User> members;
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchGroupDetails();
+  }
+
+  bool isUserLeader = false;
+
+  // Fetch group details from the backend
+  Future<void> fetchGroupDetails() async {
+    final response = await Auth.makeAuthenticatedPostRequest("groups/members", {
+      "groupId": widget.groupId,
+    });
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      setState(() {
+        group = Group(
+          id: data['groupId'],
+          name: data['groupName'],
+          leaderId: data['leaderId'],
+          isPublic: data['isPublic'] == true, // Ensure it’s a boolean
+          iconUrl: data['iconUrl'] as String?, // Allow it to be null
+        );
+        members =
+            (data['members'] as List)
+                .map(
+                  (m) => User(
+                    id: m['id'],
+                    name: "${m['first_name']} ${m['last_name']}",
+                    avatarUrl: m['profile_picture'],
+                  ),
+                )
+                .toList();
+
+        isUserLeader = data['isUserLeader'];
+        isLoading = false;
+      });
+    } else {
+      print("Failed to load group data");
+    }
+  }
+
+  // API call to leave the group
+  void _leaveGroup() async {
+    final response = await Auth.makeAuthenticatedPostRequest("groups/leave", {
+      "userId": "your_user_id",
+      "groupId": widget.groupId,
+    });
+
+    if (response.statusCode == 200) {
+      Navigator.pop(context);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("You have left the group.")));
+    } else {
+      print("Error leaving group: ${response.body}");
+    }
+  }
+
+  // Show confirmation dialog before leaving the group
+  void _showLeaveGroupDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("Leave Group"),
+          content: Text(
+            "Are you sure you want to leave this group? You will need an invite to rejoin.",
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text("Cancel"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                _leaveGroup(); // Calls the API to leave
+              },
+              child: Text("Leave Group"),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Static group data - in a real app, this would be fetched based on groupId
-    final group = Group(id: groupId, name: 'Friends Group');
-
-    // Static member data - in a real app, this would be fetched based on groupId
-    final members = [
-      User(
-        id: 'user1',
-        name: 'Jane Smith',
-        avatarUrl: 'https://example.com/avatar1.jpg',
-        username: '',
-      ),
-      User(
-        id: 'user2',
-        name: 'John Doe',
-        avatarUrl: 'https://example.com/avatar2.jpg',
-        username: '',
-      ),
-      User(
-        id: 'user3',
-        name: 'Alex Johnson',
-        avatarUrl: 'https://example.com/avatar3.jpg',
-        username: '',
-      ),
-      User(
-        id: 'user4',
-        name: 'Sarah Williams',
-        avatarUrl: 'https://example.com/avatar4.jpg',
-        username: '',
-      ),
-      User(
-        id: 'user5',
-        name: 'Michael Brown',
-        avatarUrl: 'https://example.com/avatar5.jpg',
-        username: '',
-      ),
-    ];
-
-    // Static data to determine if current user is the leader
-    // In a real app, this would be determined by comparing the current user's ID with the leader's ID
-    final bool isCurrentUserLeader = true;
+    if (isLoading) {
+      return Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ), // Show loading animation
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(group.name),
+        title: Text(group.name ?? "Unnamed Group"),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
         actions: [
-          if (isCurrentUserLeader)
+          if (isUserLeader)
             IconButton(
               icon: Icon(Icons.settings),
               onPressed: () {
                 _showGroupSettings(context, group);
               },
             ),
-          if (!isCurrentUserLeader)
+          if (!isUserLeader)
             IconButton(
               icon: Icon(Icons.exit_to_app),
               onPressed: () {
-                _showLeaveGroupDialog(context, group);
+                _showLeaveGroupDialog();
               },
             ),
         ],
@@ -95,7 +160,7 @@ class GroupScreen extends StatelessWidget {
                     'Members (${members.length})',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                  if (isCurrentUserLeader)
+                  if (isUserLeader)
                     ElevatedButton.icon(
                       onPressed: () {
                         _showInviteMembersDialog(context);
@@ -119,7 +184,7 @@ class GroupScreen extends StatelessWidget {
               itemCount: members.length,
               itemBuilder: (context, index) {
                 final member = members[index];
-                return _buildMemberItem(context, member, isCurrentUserLeader);
+                return _buildMemberItem(context, member, isUserLeader);
               },
             ),
           ],
@@ -137,8 +202,7 @@ class GroupScreen extends StatelessWidget {
   }
 
   Widget _buildGroupHeader(BuildContext context, Group group) {
-    final bool isCurrentUserLeader =
-        true; // Moved from parent scope for this example
+    final bool isUserLeader = true; // Moved from parent scope for this example
 
     return Container(
       height: 200,
@@ -156,7 +220,7 @@ class GroupScreen extends StatelessWidget {
           ),
 
           // Upload Button (visible only to group leader)
-          if (isCurrentUserLeader)
+          if (isUserLeader)
             Positioned(
               top: 8,
               left: 8,
@@ -193,7 +257,7 @@ class GroupScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      group.name,
+                      group.name ?? "Unnamed Group",
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
@@ -225,7 +289,7 @@ class GroupScreen extends StatelessWidget {
   Widget _buildMemberItem(
     BuildContext context,
     User member,
-    bool isCurrentUserLeader,
+    bool isUserLeader,
   ) {
     return ListTile(
       leading: CircleAvatar(
@@ -238,7 +302,7 @@ class GroupScreen extends StatelessWidget {
         children: [
           Text(member.name),
           SizedBox(width: 8),
-          if (member.id == leaderUserId)
+          if (member.id == group.leaderId)
             Container(
               padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
@@ -254,7 +318,7 @@ class GroupScreen extends StatelessWidget {
         ],
       ),
       trailing:
-          isCurrentUserLeader && member.id != leaderUserId
+          isUserLeader && member.id != group.leaderId
               ? PopupMenuButton(
                 icon: Icon(Icons.more_vert),
                 onSelected: (value) {
@@ -338,7 +402,7 @@ class GroupScreen extends StatelessWidget {
                   child: OutlinedButton(
                     onPressed: () {
                       Navigator.pop(context);
-                      _showLeaveGroupDialog(context, group);
+                      _showLeaveGroupDialog();
                     },
                     child: Padding(
                       padding: const EdgeInsets.all(12.0),
@@ -362,36 +426,6 @@ class GroupScreen extends StatelessWidget {
 
   void _showInviteMembersDialog(BuildContext context) {
     InviteMembersDialog.show(context);
-  }
-
-  void _showLeaveGroupDialog(BuildContext context, Group group) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('Leave Group'),
-          content: Text(
-            'Are you sure you want to leave "${group.name}"? You\'ll need to be invited again to rejoin.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                Navigator.pop(context); // Also return to previous screen
-              },
-              child: Text('Leave Group', style: TextStyle(color: Colors.white)),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   void _showRemoveMemberDialog(BuildContext context, User member) {

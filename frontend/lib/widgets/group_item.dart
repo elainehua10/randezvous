@@ -25,7 +25,7 @@ class GroupItem extends StatelessWidget {
         ),
         child: Icon(Icons.group, color: Colors.white),
       ),
-      title: Text(group.name),
+      title: Text(group.name?? 'Unnamed Group'),
       tileColor: isSelected ? Colors.blue[100] : null,
       onTap: onTap,
     );
