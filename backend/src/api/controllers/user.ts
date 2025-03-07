@@ -11,27 +11,34 @@ export const register = async (req: Request, res: Response) => {
   if (!email || !password || !username || !firstname || !lastname) {
     return res.status(400).json({ error: "Missing required fields" });
   }
-  // Register a new user
+
   try {
+    const existingUser = await sql`
+      SELECT id FROM profile WHERE username = ${username};
+    `;
+    if (existingUser.length > 0) {
+      return res.status(400).json({ error: "Username already taken" });
+    }
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
     });
     if (error) throw error;
     if (!data.user) {
-      throw "User failed to sign in";
+      throw new Error("User failed to sign in");
     }
+
     await sql`
-            INSERT INTO profile (id, username, first_name, last_name)
-            VALUES (${data.user.id}, ${username}, ${firstname}, ${lastname});
-            `;
+      INSERT INTO profile (id, username, first_name, last_name)
+      VALUES (${data.user.id}, ${username}, ${firstname}, ${lastname});
+    `;
 
     res.status(201).json({
       message: "User registered successfully",
       session: data.session,
     });
   } catch (error) {
-    console.log(error);
+    console.error(error);
     res
       .status(500)
       .json({ error: (error as Error).message || "An unknown error occurred" });
@@ -73,6 +80,12 @@ export const changeUsername = async (req: Request, res: Response) => {
   }
 
   try {
+    const currentUser = await sql`
+      SELECT username FROM profile WHERE id = ${userId};
+    `;
+    if (currentUser.length > 0 && currentUser[0].username == newUsername) {
+      return res.status(400).json({error: "The new username must be different from the current one"});
+    }
     const existingUser = await sql`
       SELECT id FROM profile WHERE username = ${newUsername};
     `;
@@ -209,17 +222,28 @@ export const logout = async (req: Request, res: Response) => {
 
 export const deleteAccount = async (req: Request, res: Response) => {
   const { userId } = req.body;
+
   if (!userId) {
     return res.status(400).json({ error: "Missing userId" });
   }
 
   try {
-    await sql`DELETE FROM profile WHERE id = ${userId};`;
-    console.log("userid: " + userId);
-    const { error } = await supabase.auth.admin.deleteUser(userId);
-    if (error) {
-      console.error("Error deleting user from authentication system:", error);
-      return res.status(500).json({ error: error.message });
+    console.log("Deleting user with ID:", userId);
+    await Promise.all([
+      sql`DELETE FROM profile WHERE id = ${userId};`,
+      sql`DELETE FROM user_group WHERE user_id = ${userId};`,
+      sql`DELETE FROM blocked WHERE user_id = ${userId} OR blocked_id = ${userId};`,
+      sql`DELETE FROM invite WHERE from_user_id = ${userId} OR to_user_id = ${userId};`,
+      sql`DELETE FROM groups WHERE leader_id = ${userId};`,
+    ]);
+
+    const { error: authError } = await supabase.auth.admin.deleteUser(userId);
+    if (authError) {
+      console.error(
+        "Error deleting user from authentication system:",
+        authError
+      );
+      return res.status(500).json({ error: authError.message });
     }
 
     res.status(200).json({ message: "Account deleted successfully" });
