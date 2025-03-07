@@ -38,8 +38,8 @@ class _GroupScreenState extends State<GroupScreen> {
       setState(() {
         group = Group(
           id: data['groupId'],
-          name: data['groupName'],
-          leaderId: data['leaderId'],
+          name: data['name'],
+          leaderId: data['leader_id'],
           isPublic: data['isPublic'] == true, // Ensure it’s a boolean
           iconUrl: data['iconUrl'] as String?, // Allow it to be null
         );
@@ -50,6 +50,7 @@ class _GroupScreenState extends State<GroupScreen> {
                     id: m['id'],
                     name: "${m['first_name']} ${m['last_name']}",
                     avatarUrl: m['profile_picture'],
+                    username: '',
                   ),
                 )
                 .toList();
@@ -425,7 +426,7 @@ class _GroupScreenState extends State<GroupScreen> {
   }
 
   void _showInviteMembersDialog(BuildContext context) {
-    InviteMembersDialog.show(context);
+    InviteMembersDialog.show(context, widget.groupId);
   }
 
   void _showRemoveMemberDialog(BuildContext context, User member) {
@@ -445,7 +446,12 @@ class _GroupScreenState extends State<GroupScreen> {
               child: Text('Cancel'),
             ),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
+                await Auth.makeAuthenticatedPostRequest("groups/remove", {
+                  "groupId": widget.groupId, // Pass the groupId here
+                  "removingUserId": member.id, // Pass the user ID to invite
+                });
+                await fetchGroupDetails();
                 Navigator.pop(context);
               },
               child: Text('Remove', style: TextStyle(color: Colors.white)),

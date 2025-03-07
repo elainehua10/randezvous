@@ -6,12 +6,19 @@ import 'package:frontend/models/user.dart';
 import 'package:http/http.dart';
 
 class InviteMembersDialog {
-  static void show(BuildContext context) {
-    showDialog(context: context, builder: (context) => _InviteMembersDialog());
+  static void show(BuildContext context, String groupId) {
+    showDialog(
+      context: context,
+      builder: (context) => _InviteMembersDialog(groupId: groupId),
+    );
   }
 }
 
 class _InviteMembersDialog extends StatefulWidget {
+  final String groupId;
+
+  const _InviteMembersDialog({required this.groupId});
+
   @override
   _InviteMembersDialogState createState() => _InviteMembersDialogState();
 }
@@ -96,8 +103,20 @@ class _InviteMembersDialogState extends State<_InviteMembersDialog> {
                       subtitle: Text(user.username!),
                       trailing: IconButton(
                         icon: Icon(Icons.add),
-                        onPressed: () {
-                          // Add user functionality to be implemented
+                        onPressed: () async {
+                          await Auth.makeAuthenticatedPostRequest(
+                            "groups/invite",
+                            {
+                              "groupId":
+                                  widget.groupId, // Pass the groupId here
+                              "toUserId": user.id, // Pass the user ID to invite
+                            },
+                          );
+                          Navigator.pop(context);
+                          // Optionally, show a confirmation
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Invited ${user.name}')),
+                          );
                         },
                       ),
                     );
