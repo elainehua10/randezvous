@@ -7,7 +7,7 @@ import sql from "../../db";
 import sharp from "sharp";
 
 // Set limit to how many groups a user can create
-const MAX_GROUPS_PER_USER = 10;
+const MAX_GROUPS_PER_USER = 3;
 
 // ============= Leader of group functions ===================
 
@@ -246,9 +246,11 @@ export const setPublicity = async (req: Request, res: Response) => {
   try {
     // Check fields
     const { userId, groupId, isPublic } = req.body;
-    if (!userId || !groupId || !isPublic) {
+    if (!userId || !groupId || isPublic === undefined) {
       return res.status(400).json({ error: "Missing required fields" });
     }
+
+    console.log(isPublic);
 
     // Update group publicity
     const updatedPublicity = await sql`
@@ -455,7 +457,7 @@ export const getGroupMembers = async (req: Request, res: Response) => {
 
     // Check if the group exists and fetch the leader's ID and group name
     const group = await sql`
-      SELECT leader_id, name, icon_url FROM groups WHERE id = ${groupId};
+      SELECT leader_id, name, icon_url, is_public FROM groups WHERE id = ${groupId};
     `;
 
     if (group.length === 0) {
@@ -465,6 +467,7 @@ export const getGroupMembers = async (req: Request, res: Response) => {
     const leader_id = group[0].leader_id;
     const name = group[0].name;
     const iconUrl = group[0].icon_url;
+    const isPublic = group[0].is_public;
     const isUserLeader = userId === leader_id;
 
     // Fetch all members of the group
@@ -482,6 +485,7 @@ export const getGroupMembers = async (req: Request, res: Response) => {
       isUserLeader,
       members,
       iconUrl,
+      isPublic,
     });
   } catch (error) {
     console.error("Error fetching group members:", error);
