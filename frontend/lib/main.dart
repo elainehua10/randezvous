@@ -23,8 +23,18 @@ class MyApp extends StatelessWidget {
         '/login': (context) => LoginScreen(),
         '/register': (context) => RegisterScreen(),
         '/home': (context) => MapScreen(),
-        '/group': (context) => GroupScreen(groupId: '2'),
         '/profile': (context) => ProfileScreen(),
+      },
+      onGenerateRoute: (settings) {
+        if (settings.name == '/group') {
+          final args = settings.arguments as Map<String, dynamic>?;
+          final groupId = args?['groupId'] ?? ''; // Default to empty if null
+
+          return MaterialPageRoute(
+            builder: (context) => GroupScreen(groupId: groupId),
+          );
+        }
+        return null; // Fallback if the route is not found
       },
       //home: LoginScreen(),
       //home: MapScreen(),
