@@ -3,8 +3,8 @@ import 'package:frontend/widgets/map.dart';
 import 'package:frontend/widgets/groups_bottom_sheet.dart';
 import 'package:frontend/models/group.dart';
 import 'package:frontend/group_screen.dart';
-import 'package:frontend/auth.dart'; // Assuming this contains makeAuthenticatedPostRequest
-import 'dart:convert'; // For JSON decoding
+import 'package:frontend/auth.dart';
+import 'dart:convert';
 
 class MapScreen extends StatefulWidget {
   @override
@@ -20,13 +20,19 @@ class _MapScreenState extends State<MapScreen> {
   void initState() {
     super.initState();
     _checkGroupMembership(); // Check membership on load
-    print("ldlasdfkajdl");
+    _verifyAuthentication();
+  }
+
+  void _verifyAuthentication() {
+    Auth.getAccessToken().then(
+      (value) => {
+        if (value == null) {Navigator.pushReplacementNamed(context, "/login")},
+      },
+    );
   }
 
   Future<void> _checkGroupMembership() async {
     if (_selectedGroupId == null) return; // No group selected, no need to check
-
-    print("HLELLO?");
 
     try {
       final response = await Auth.makeAuthenticatedPostRequest(
@@ -36,9 +42,7 @@ class _MapScreenState extends State<MapScreen> {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        bool isMember =
-            data['isMember'] ?? false; // Adjust based on your API response
-        print("LKjkjalsdfjsl IS MEMBER???? $isMember");
+        bool isMember = data['isMember'] ?? false;
 
         if (!isMember) {
           setState(() {
@@ -63,32 +67,51 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _openGroupsBottomSheet() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return GroupsBottomSheet(
-          selectedGroupId: _selectedGroupId,
-          onGroupSelected: (Group group) {
-            setState(() {
-              if (_selectedGroupId == group.id) {
-                // Deselect if already selected
-                _selectedGroupId = null;
-                _selectedGroupName = null;
-              } else {
-                // Select new group and check membership
-                _selectedGroupId = group.id;
-                _selectedGroupName = group.name;
-                _checkGroupMembership(); // Re-check membership after selection
-              }
-            });
-          },
-        );
-      },
-    );
+    try {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) {
+          return Container(
+            // decoration: BoxDecoration(
+            //   color: Colors.white,
+            //   borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            //   boxShadow: [
+            //     BoxShadow(
+            //       color: Colors.black.withOpacity(0.2),
+            //       blurRadius: 10,
+            //       offset: Offset(0, -2),
+            //     ),
+            //   ],
+            // ),
+            // height: MediaQuery.of(context).size.height * 0.7,
+            child: GroupsBottomSheet(
+              selectedGroupId: _selectedGroupId,
+              onGroupSelected: (Group group) {
+                try {
+                  setState(() {
+                    if (_selectedGroupId == group.id) {
+                      _selectedGroupId = null;
+                      _selectedGroupName = null;
+                    } else {
+                      _selectedGroupId = group.id;
+                      _selectedGroupName = group.name;
+                      _checkGroupMembership(); // Async call, handle carefully
+                    }
+                  });
+                  // Navigator.pop(context);
+                } catch (e) {
+                  print("Error in group selection: $e");
+                }
+              },
+            ),
+          );
+        },
+      );
+    } catch (e) {
+      print("Error opening bottom sheet: $e");
+    }
   }
 
   void _navigateToGroupScreen() async {
@@ -106,84 +129,205 @@ class _MapScreenState extends State<MapScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('RandezVous'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.groups, color: Colors.black),
-          onPressed: _openGroupsBottomSheet,
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.person, color: Colors.black),
-            onPressed: () async {
-              await Navigator.pushNamed(context, '/profile');
-              _checkGroupMembership();
-              print('Profile button tapped');
-            },
-          ),
-        ],
-      ),
       body: Stack(
         children: [
-          // Map takes the full container
+          // Map takes the full screen
           Container(
             decoration: BoxDecoration(color: Colors.grey[200]),
             child: MapWidget(),
           ),
 
-          // Floating group indicator
-          if (_selectedGroupName != null)
-            Positioned(
-              top: 16,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: GestureDetector(
-                  onTap: _navigateToGroupScreen,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+          // Custom AppBar
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 8.0,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Groups button
+                  InkWell(
+                    onTap: _openGroupsBottomSheet,
+                    borderRadius: BorderRadius.circular(50),
+                    child: Container(
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(50),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 8,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        Icons.groups_rounded,
+                        color: Colors.amber[800],
+                        size: 28,
+                      ),
+                    ),
+                  ),
+
+                  // App name
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(
-                      color: Color.fromRGBO(255, 143, 0, 0.8),
+                      color: Colors.white,
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black26,
-                          blurRadius: 6,
-                          offset: Offset(0, 3),
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 8,
+                          offset: Offset(0, 2),
                         ),
                       ],
                     ),
-                    child: Column(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        Icon(Icons.location_on, color: Colors.amber, size: 20),
+                        SizedBox(width: 6),
                         Text(
-                          _selectedGroupName!,
+                          'Randezvous',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: Colors.white,
+                            fontSize: 18,
+                            color: Colors.amber[800],
                           ),
                         ),
                       ],
                     ),
+                  ),
+
+                  // Profile button
+                  InkWell(
+                    onTap: () async {
+                      await Navigator.pushNamed(context, '/profile');
+                      _checkGroupMembership();
+                    },
+                    borderRadius: BorderRadius.circular(50),
+                    child: Container(
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(50),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 8,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        Icons.person_rounded,
+                        color: Colors.amber[800],
+                        size: 28,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Floating group indicator
+          if (_selectedGroupName != null)
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 70,
+              left: 20,
+              right: 20,
+              child: GestureDetector(
+                onTap: _navigateToGroupScreen,
+                child: Container(
+                  padding: EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.amber,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.15),
+                        blurRadius: 10,
+                        offset: Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.group_rounded,
+                            color: Colors.white,
+                            size: 24,
+                          ),
+                          SizedBox(width: 12),
+                          Text(
+                            _selectedGroupName!,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        color: Colors.white,
+                        size: 16,
+                      ),
+                    ],
                   ),
                 ),
               ),
             ),
         ],
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.storefront), label: ' '),
-          BottomNavigationBarItem(icon: Icon(Icons.location_on), label: ' '),
-          BottomNavigationBarItem(icon: Icon(Icons.emoji_events), label: ' '),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: const Color.fromRGBO(255, 143, 0, 1),
-        onTap: _onItemTapped,
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: Offset(0, -5),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: BottomNavigationBar(
+            items: [
+              BottomNavigationBarItem(
+                icon: Icon(Icons.storefront_rounded),
+                label: 'Explore',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.location_on_rounded),
+                label: 'Map',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.emoji_events_rounded),
+                label: 'Events',
+              ),
+            ],
+            currentIndex: _selectedIndex,
+            selectedItemColor: Colors.amber[800],
+            unselectedItemColor: Colors.grey[400],
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            showSelectedLabels: true,
+            showUnselectedLabels: true,
+            type: BottomNavigationBarType.fixed,
+            onTap: _onItemTapped,
+          ),
+        ),
       ),
     );
   }

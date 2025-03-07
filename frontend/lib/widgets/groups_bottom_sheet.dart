@@ -140,41 +140,117 @@ class _GroupsBottomSheetState extends State<GroupsBottomSheet> {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              title: Text("Create Group"),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              title: Text(
+                "Create Group",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.amber[800],
+                ),
+              ),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextField(
                     controller: groupNameController,
-                    decoration: InputDecoration(labelText: "Group Name"),
-                  ),
-                  SizedBox(height: 10),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text("Public"),
-                      Switch(
-                        value: isPublic,
-                        onChanged: (value) {
-                          setState(() {
-                            isPublic = value;
-                          });
-                        },
+                    decoration: InputDecoration(
+                      labelText: "Group Name",
+                      labelStyle: TextStyle(color: Colors.grey[600]),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(color: Colors.grey[300]!),
                       ),
-                    ],
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(color: Colors.amber[800]!),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[50],
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.grey[300]!),
+                    ),
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              isPublic ? Icons.public : Icons.lock,
+                              color: isPublic ? Colors.green : Colors.grey[600],
+                              size: 20,
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              "Public Group",
+                              style: TextStyle(
+                                color: Colors.grey[800],
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Switch(
+                          value: isPublic,
+                          onChanged: (value) {
+                            setState(() {
+                              isPublic = value;
+                            });
+                          },
+                          activeColor: Colors.amber[800],
+                        ),
+                      ],
+                    ),
                   ),
                   SizedBox(height: 10),
                   if (errorMessage != null) // Display error if it exists
-                    Text(
-                      errorMessage!,
-                      style: TextStyle(color: Colors.red, fontSize: 14),
+                    Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.red[50],
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.red[200]!),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.error_outline,
+                            color: Colors.red,
+                            size: 16,
+                          ),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              errorMessage!,
+                              style: TextStyle(
+                                color: Colors.red[800],
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                 ],
               ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: Text("Cancel"),
+                  child: Text(
+                    "Cancel",
+                    style: TextStyle(
+                      color: Colors.grey[700],
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
                 ElevatedButton(
                   onPressed: () async {
@@ -204,6 +280,14 @@ class _GroupsBottomSheetState extends State<GroupsBottomSheet> {
                     }
                   },
                   child: Text("Create"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.amber[800],
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  ),
                 ),
               ],
             );
@@ -215,94 +299,152 @@ class _GroupsBottomSheetState extends State<GroupsBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return DraggableScrollableSheet(
-      initialChildSize: 0.75,
-      minChildSize: 0.3,
-      maxChildSize: 1.0,
-      expand: false,
-      builder: (context, scrollController) {
-        return Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 10,
+            offset: Offset(0, -2),
+          ),
+        ],
+      ),
+      child: DraggableScrollableSheet(
+        initialChildSize: 0.75,
+        minChildSize: 0.3,
+        maxChildSize: 1.0,
+        expand: false,
+        builder: (context, scrollController) {
+          return Column(
             children: [
-              // Title Row with "Create Group" button
-              // In the build method, modify the title row to include a search button
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Your Groups',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  Row(
+              // Drag handle
+              Container(
+                margin: EdgeInsets.only(top: 12, bottom: 8),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Add Search button here
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.pushNamed(context, "/search");
-                        },
-                        icon: Icon(Icons.search, size: 20),
-                        label: Text("Search"),
-                        style: ElevatedButton.styleFrom(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                      // Title Row with "Create Group" button
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Groups',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.amber[800],
+                            ),
                           ),
+                          Row(
+                            children: [
+                              // Add Search button here
+                              ElevatedButton.icon(
+                                onPressed: () {
+                                  Navigator.pushNamed(context, "/search");
+                                },
+                                icon: Icon(Icons.search, size: 20),
+                                label: Text("Search"),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.grey[100],
+                                  foregroundColor: Colors.grey[800],
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                              ),
+                              SizedBox(width: 8), // Add space between buttons
+                              ElevatedButton.icon(
+                                onPressed: _createNewGroup,
+                                icon: Icon(Icons.add, size: 20),
+                                label: Text("Create"),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.amber[800],
+                                  foregroundColor: Colors.white,
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 20),
+
+                      // Pending Invites Section
+                      if (_isLoading)
+                        Center(
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.amber[800]!,
+                            ),
+                          ),
+                        )
+                      else
+                        _buildPendingInvitesSection(),
+                      SizedBox(height: 20),
+
+                      // Your Groups Section
+                      Text(
+                        'Your Groups',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey[800],
                         ),
                       ),
-                      SizedBox(width: 8), // Add space between buttons
-                      ElevatedButton.icon(
-                        onPressed: _createNewGroup,
-                        icon: Icon(Icons.add, size: 20),
-                        label: Text("Create"),
-                        style: ElevatedButton.styleFrom(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
+                      SizedBox(height: 12),
+                      Expanded(
+                        child:
+                            _isLoading
+                                ? Center(
+                                  child: CircularProgressIndicator(
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.amber[800]!,
+                                    ),
+                                  ),
+                                )
+                                : _groups.isEmpty
+                                ? _buildNoGroupsMessage()
+                                : ListView.builder(
+                                  controller: scrollController,
+                                  itemCount: _groups.length,
+                                  itemBuilder: (context, index) {
+                                    final group = _groups[index];
+                                    return GroupItem(
+                                      group: group,
+                                      isSelected: _selectedGroupId == group.id,
+                                      onTap:
+                                          () => _handleGroupSelection(
+                                            group,
+                                            context,
+                                          ),
+                                    );
+                                  },
+                                ),
                       ),
                     ],
                   ),
-                ],
-              ),
-              SizedBox(height: 15),
-
-              // Pending Invites Section
-              _buildPendingInvitesSection(),
-              SizedBox(height: 20),
-
-              // Your Groups Section
-              Text(
-                'Your Groups',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-              ),
-              SizedBox(height: 10),
-              Expanded(
-                child: ListView.builder(
-                  controller: scrollController,
-                  itemCount: _groups.length,
-                  itemBuilder: (context, index) {
-                    final group = _groups[index];
-                    return GroupItem(
-                      group: group,
-                      isSelected: _selectedGroupId == group.id,
-                      onTap: () => _handleGroupSelection(group, context),
-                    );
-                  },
                 ),
               ),
-              if (_selectedGroupId != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 16.0),
-                  child: Text(
-                    'Selected Group ID: $_selectedGroupId',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                  ),
-                ),
             ],
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
@@ -316,21 +458,79 @@ class _GroupsBottomSheetState extends State<GroupsBottomSheet> {
       children: [
         Text(
           'Pending Invites',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.grey[800],
+          ),
         ),
-        SizedBox(height: 10),
-        Column(
-          children:
-              _pendingInvites.map((group) {
-                return ListTile(
-                  leading: Icon(Icons.mail, color: Colors.orange),
-                  title: Text(group.name ?? "Unnamed Group"),
-                  trailing: ElevatedButton(
-                    onPressed: () => _acceptInvite(group.id ?? ""),
-                    child: Text("Accept"),
-                  ),
-                );
-              }).toList(),
+        SizedBox(height: 12),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.orange[50],
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            children:
+                _pendingInvites.map((group) {
+                  return Container(
+                    margin: EdgeInsets.symmetric(vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 4,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: ListTile(
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 4,
+                      ),
+                      leading: Container(
+                        padding: EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.orange[100],
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.mail,
+                          color: Colors.orange[800],
+                          size: 24,
+                        ),
+                      ),
+                      title: Text(
+                        group.name ?? "Unnamed Group",
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                        ),
+                      ),
+                      subtitle: Text("You've been invited to join"),
+                      trailing: ElevatedButton(
+                        onPressed: () => _acceptInvite(group.id ?? ""),
+                        child: Text("Accept"),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange[700],
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+          ),
         ),
       ],
     );
@@ -338,17 +538,96 @@ class _GroupsBottomSheetState extends State<GroupsBottomSheet> {
 
   Widget _buildNoPendingInvites() {
     return Container(
-      padding: EdgeInsets.all(12),
+      padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.grey[300]!),
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
       ),
       child: Row(
         children: [
-          Icon(Icons.mail, color: Colors.orange),
-          SizedBox(width: 10),
-          Text('No pending invites', style: TextStyle(fontSize: 14)),
+          Container(
+            padding: EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.mail_outline, color: Colors.grey[500], size: 24),
+          ),
+          SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'No pending invites',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[800],
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'When someone invites you to a group, it will appear here',
+                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNoGroupsMessage() {
+    return Container(
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.amber[50],
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.group_add, color: Colors.amber[800], size: 40),
+          ),
+          SizedBox(height: 16),
+          Text(
+            'No groups yet',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[800],
+            ),
+          ),
+          SizedBox(height: 8),
+          Text(
+            'Create a new group or search for existing ones to join',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+          ),
+          SizedBox(height: 20),
+          ElevatedButton.icon(
+            onPressed: _createNewGroup,
+            icon: Icon(Icons.add, size: 20),
+            label: Text("Create New Group"),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.amber[800],
+              foregroundColor: Colors.white,
+              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          ),
         ],
       ),
     );
