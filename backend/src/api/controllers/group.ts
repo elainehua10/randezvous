@@ -7,7 +7,7 @@ import sql from "../../db";
 import sharp from "sharp";
 
 // Set limit to how many groups a user can create
-const MAX_GROUPS_PER_USER = 3;
+const MAX_GROUPS_PER_USER = 10;
 
 // ============= Leader of group functions ===================
 
@@ -19,6 +19,8 @@ export const createGroup = async (req: Request, res: Response) => {
     if (!userId || !groupName || isPublic === undefined) {
       return res.status(400).json({ error: "Missing required fields" });
     }
+
+    console.log(isPublic);
 
     // Check if user has reached the limit of groups they can create
     const userProfile = await sql`
@@ -54,7 +56,7 @@ export const createGroup = async (req: Request, res: Response) => {
     // Insert new group (user is the leader)
     let newGroup = await sql`
             INSERT INTO groups (name, is_public, leader_id) 
-            VALUES (${groupName}, ${isPublic ? "TRUE" : "FALSE"}, ${userId})
+            VALUES (${groupName}, ${isPublic}, ${userId})
             RETURNING id;
         `;
 
@@ -487,10 +489,10 @@ export const getUserGroups = async (req: Request, res: Response) => {
 
     // Get all groups the user is part of
     const groups = await sql`
-      SELECT g.id, g.name, g.icon_url
-      FROM user_group ug
-      JOIN groups g ON ug.group_id = g.id
-      WHERE ug.user_id = ${userId};
+      SELECT id, name, COALESCE(icon_url, NULL) AS icon_url
+      FROM groups
+      JOIN user_group ON groups.id = user_group.group_id
+      WHERE user_group.user_id = ${userId};
     `;
 
     return res.status(200).json(groups);
@@ -502,20 +504,23 @@ export const getUserGroups = async (req: Request, res: Response) => {
 
 // Get all invites for the user
 export const getUserInvites = async (req: Request, res: Response) => {
-  try {
-    const { userId } = req.body;
-    if (!userId) {
-      return res.status(400).json({ error: "Missing userId" });
-    }
+  const { userId } = req.body;
+  if (!userId) {
+    return res.status(400).json({ error: "Missing userId" });
+  }
 
-    // Get all invites for the user
+  try {
     const invites = await sql`
-      SELECT i.id, i.group_id, i.from_user_id, p.username, g.name
-      FROM invite i
-      JOIN profile p ON i.from_user_id = p.id
-      JOIN groups g ON i.group_id = g.id
-      WHERE i.to_user_id = ${userId} AND i.status = 'pending';
+      SELECT 
+        groups.id, 
+        groups.name, 
+        COALESCE(groups.icon_url, NULL) AS icon_url 
+      FROM invite
+      JOIN groups ON invite.group_id = groups.id
+      WHERE invite.to_user_id = ${userId} AND invite.status = 'pending';
     `;
+
+    console.log("Sending invites:", invites); // Debugging print
 
     return res.status(200).json(invites);
   } catch (error) {

@@ -60,6 +60,7 @@ class _GroupsBottomSheetState extends State<GroupsBottomSheet> {
         {},
       );
       final inviteData = json.decode(inviteResponse.body);
+      print(inviteData);
 
       if (inviteResponse.statusCode == 200) {
         setState(() {
@@ -104,6 +105,9 @@ class _GroupsBottomSheetState extends State<GroupsBottomSheet> {
   }
 
   Future<void> _createGroup(String groupName, bool isPublic) async {
+    print(groupName);
+    print(isPublic);
+
     try {
       final response = await Auth.makeAuthenticatedPostRequest(
         "groups/create",
@@ -125,88 +129,88 @@ class _GroupsBottomSheetState extends State<GroupsBottomSheet> {
   }
 
   void _createNewGroup() {
-  TextEditingController groupNameController = TextEditingController();
-  bool isPublic = false; // Default to private
-  String? errorMessage; // Store error message
+    TextEditingController groupNameController = TextEditingController();
+    bool isPublic = false; // Default to private
+    String? errorMessage; // Store error message
 
-  showDialog(
-    context: context,
-    builder: (context) {
-      return StatefulBuilder(
-        builder: (context, setState) {
-          return AlertDialog(
-            title: Text("Create Group"),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: groupNameController,
-                  decoration: InputDecoration(labelText: "Group Name"),
-                ),
-                SizedBox(height: 10),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text("Public"),
-                    Switch(
-                      value: isPublic,
-                      onChanged: (value) {
-                        setState(() {
-                          isPublic = value;
-                        });
-                      },
-                    ),
-                  ],
-                ),
-                SizedBox(height: 10),
-                if (errorMessage != null) // Display error if it exists
-                  Text(
-                    errorMessage!,
-                    style: TextStyle(color: Colors.red, fontSize: 14),
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text("Create Group"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: groupNameController,
+                    decoration: InputDecoration(labelText: "Group Name"),
                   ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text("Cancel"),
+                  SizedBox(height: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text("Public"),
+                      Switch(
+                        value: isPublic,
+                        onChanged: (value) {
+                          setState(() {
+                            isPublic = value;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 10),
+                  if (errorMessage != null) // Display error if it exists
+                    Text(
+                      errorMessage!,
+                      style: TextStyle(color: Colors.red, fontSize: 14),
+                    ),
+                ],
               ),
-              ElevatedButton(
-                onPressed: () async {
-                  String groupName = groupNameController.text.trim();
-                  if (groupName.isEmpty) {
-                    setState(() => errorMessage = "Enter a group name.");
-                    return;
-                  }
-
-                  try {
-                    final response = await Auth.makeAuthenticatedPostRequest(
-                      "groups/create",
-                      {"groupName": groupName, "isPublic": isPublic},
-                    );
-
-                    if (response.statusCode == 200) {
-                      Navigator.pop(context);
-                      _fetchGroupsAndInvites(); // Refresh group list
-                    } else {
-                      final errorData = json.decode(response.body);
-                      setState(() {
-                        errorMessage = errorData['error'];
-                      });
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text("Cancel"),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    String groupName = groupNameController.text.trim();
+                    if (groupName.isEmpty) {
+                      setState(() => errorMessage = "Enter a group name.");
+                      return;
                     }
-                  } catch (e) {
-                    setState(() => errorMessage = "Error creating group.");
-                  }
-                },
-                child: Text("Create"),
-              ),
-            ],
-          );
-        },
-      );
-    },
-  );
-}
+
+                    try {
+                      final response = await Auth.makeAuthenticatedPostRequest(
+                        "groups/create",
+                        {"groupName": groupName, "isPublic": isPublic},
+                      );
+
+                      if (response.statusCode == 200) {
+                        Navigator.pop(context);
+                        _fetchGroupsAndInvites(); // Refresh group list
+                      } else {
+                        final errorData = json.decode(response.body);
+                        setState(() {
+                          errorMessage = errorData['error'];
+                        });
+                      }
+                    } catch (e) {
+                      setState(() => errorMessage = "Error creating group.");
+                    }
+                  },
+                  child: Text("Create"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -300,9 +304,9 @@ class _GroupsBottomSheetState extends State<GroupsBottomSheet> {
               _pendingInvites.map((group) {
                 return ListTile(
                   leading: Icon(Icons.mail, color: Colors.orange),
-                  title: Text(group.name),
+                  title: Text(group.name ?? "Unnamed Group"),
                   trailing: ElevatedButton(
-                    onPressed: () => _acceptInvite(group.id),
+                    onPressed: () => _acceptInvite(group.id ?? ""),
                     child: Text("Accept"),
                   ),
                 );

@@ -41,6 +41,8 @@ class _GroupScreenState extends State<GroupScreen> {
           id: data['groupId'], 
           name: data['groupName'], 
           leaderId: data['leaderId'],
+          isPublic: data['isPublic'] == true, // Ensure it’s a boolean
+          iconUrl: data['iconUrl'] as String?, // Allow it to be null
         );
         members = (data['members'] as List).map((m) => User(
           id: m['id'], 
@@ -111,7 +113,7 @@ class _GroupScreenState extends State<GroupScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(group.name),
+        title: Text(group.name?? "Unnamed Group"),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
@@ -250,7 +252,7 @@ class _GroupScreenState extends State<GroupScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      group.name,
+                      group.name?? "Unnamed Group",
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
