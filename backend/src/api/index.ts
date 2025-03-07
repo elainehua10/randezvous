@@ -72,5 +72,7 @@ router.use("/groups/getinvites", requireAuth, group.getUserInvites);
 router.use("/groups/members", requireAuth, group.getGroupMembers);
 router.use("/groups/check-membership", requireAuth, group.checkMembership);
 router.use("/groups/assign-leader", requireAuth, group.reassignLeader);
+router.use("/groups/search", requireAuth, group.searchPublicGroups);
+router.use("/groups/join", requireAuth, group.joinGroup);
 
 export default router;

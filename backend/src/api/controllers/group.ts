@@ -553,6 +553,88 @@ export const getUserGroups = async (req: Request, res: Response) => {
   }
 };
 
+export const searchPublicGroups = async (req: Request, res: Response) => {
+  try {
+    const { groupName } = req.body;
+
+    // Validate input
+    if (!groupName || typeof groupName !== "string") {
+      return res
+        .status(400)
+        .json({ error: "Group name is required and must be a string" });
+    }
+
+    // Search for public groups where name matches the query (case-insensitive)
+    const result = await sql`
+      SELECT id, name, leader_id, is_public, icon_url
+      FROM groups 
+      WHERE is_public = true 
+      AND LOWER(name) LIKE LOWER(${`%${groupName}%`});
+    `;
+
+    if (result.length === 0) {
+      return res.status(200).json({ groups: [] }); // Return empty array instead of 404
+    }
+
+    // Map results to a clean response format
+    const groups = result.map((group: any) => ({
+      id: group.id,
+      name: group.name,
+      leader_id: group.leader_id,
+      is_public: group.is_public,
+      icon_url: group.icon_url,
+    }));
+
+    console.log("Found groups:", groups);
+
+    res.status(200).json({
+      groups,
+    });
+  } catch (error) {
+    console.error("Error searching public groups:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const joinGroup = async (req: Request, res: Response) => {
+  try {
+    const { groupId, userId } = req.body;
+
+    // Validate group exists and is public
+    const group = await sql`
+      SELECT id, is_public 
+      FROM groups 
+      WHERE id = ${groupId} AND is_public = true;
+    `;
+
+    if (group.length === 0) {
+      return res.status(404).json({ error: "Public group not found" });
+    }
+
+    // Check if user is already a member
+    const membership = await sql`
+      SELECT id 
+      FROM user_group 
+      WHERE group_id = ${groupId} AND user_id = ${userId};
+    `;
+
+    if (membership.length > 0) {
+      return res.status(400).json({ error: "Already a member of this group" });
+    }
+
+    // Add user to group
+    await sql`
+      INSERT INTO user_group (group_id, user_id)
+      VALUES (${groupId}, ${userId});
+    `;
+
+    res.status(200).json({ message: "Successfully joined the group" });
+  } catch (error) {
+    console.error("Error joining group:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 // Get all invites for the user
 export const getUserInvites = async (req: Request, res: Response) => {
   const { userId } = req.body;

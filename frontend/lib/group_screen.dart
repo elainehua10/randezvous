@@ -243,7 +243,7 @@ class _GroupScreenState extends State<GroupScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Group Header with Image and Info
-            _buildGroupHeader(context, group),
+            _buildGroupHeader(context, group, isUserLeader),
 
             // Group Stats
             _buildGroupStats(context, group),
@@ -379,9 +379,11 @@ class _GroupScreenState extends State<GroupScreen> {
     }
   }
 
-  Widget _buildGroupHeader(BuildContext context, Group group) {
-    final bool isUserLeader = true; // Moved from parent scope for this example
-
+  Widget _buildGroupHeader(
+    BuildContext context,
+    Group group,
+    bool isUserLeader,
+  ) {
     return Container(
       height: 200,
       width: double.infinity,
