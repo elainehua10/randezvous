@@ -91,13 +91,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       _formKey.currentState!.save();
       try {
         String? accessToken = await Auth.getAccessToken();
-        
+
         final url = Uri.parse('http://localhost:5001/api/v1/change-username');
         final response = await http.post(
           url,
           headers: {
             'Content-Type': 'application/json',
-            HttpHeaders.authorizationHeader: 'Bearer $accessToken'
+            HttpHeaders.authorizationHeader: 'Bearer $accessToken',
           },
           body: jsonEncode({'userId': username, 'newUsername': new_user}),
         );
@@ -105,18 +105,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           print('Username updated successfully');
           showDialog(
             context: context,
-            builder: (context) => AlertDialog(
-              title: Text('Success!'),
-              content: Text('Username changed to $new_user'),
-              actions: <Widget>[
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop(); 
-                  },
-                  child: Text('OK'),
+            builder:
+                (context) => AlertDialog(
+                  title: Text('Success!'),
+                  content: Text('Username changed to $new_user'),
+                  actions: <Widget>[
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      child: Text('OK'),
+                    ),
+                  ],
                 ),
-              ],
-            ),
           ).then((_) {
             Navigator.pop(context, true);
           });
@@ -124,31 +125,32 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           print('Failed to update username: ${response.body}');
           showDialog(
             context: context,
-            builder: (context) => AlertDialog(
-              title: Text('Update Failed'),
-              content: Text('Username already taken. Please try again.'),
-              actions: <Widget>[
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop(); 
-                  },
-                  child: Text('OK'),
+            builder:
+                (context) => AlertDialog(
+                  title: Text('Update Failed'),
+                  content: Text('Username already taken. Please try again.'),
+                  actions: <Widget>[
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      child: Text('OK'),
+                    ),
+                  ],
                 ),
-              ],
-            ),
           );
         }
       } catch (error) {
         print('Error: $error');
         showDialog(
           context: context,
-          builder: (context) => AlertDialog(
-            title: Text('Error'),
-            content: Text('An error occurred while updating the username.'),
-          ),
+          builder:
+              (context) => AlertDialog(
+                title: Text('Error'),
+                content: Text('An error occurred while updating the username.'),
+              ),
         );
       }
     }
   }
-
 }

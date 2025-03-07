@@ -5,8 +5,20 @@ import 'package:frontend/register.dart';
 import 'package:frontend/map_screen.dart';
 import 'package:frontend/profile.dart';
 import 'package:frontend/edit_profile.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-void main() {
+void main() async {
+  // Ensure widgets are initialized before using Supabase
+  WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load();
+
+  // Initialize Supabase
+  await Supabase.initialize(
+    url: dotenv.env['SUPABASE_URL']!,
+    anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
+  );
+
   runApp(const MyApp());
 }
 

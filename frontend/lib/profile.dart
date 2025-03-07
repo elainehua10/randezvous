@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:http_parser/http_parser.dart';
 import 'package:frontend/edit_profile.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ProfileScreen extends StatefulWidget {
   @override
@@ -132,7 +133,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _deleteAccount() async {
     try {
       String? accessToken = await Auth.getAccessToken();
-      String userId = username;
+
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user != null) {
+        print("User is logged in: ${user.id}");
+      } else {
+        print("No user logged in");
+      }
+      final userId = '4d99defd-6736-4804-b02d-6c308f5a550c';
 
       final url = Uri.parse('http://localhost:5001/api/v1/delete-account');
       final response = await http.post(
