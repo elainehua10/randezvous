@@ -69,7 +69,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           isLoading
               ? Center(
                 child: CircularProgressIndicator(),
-              ) // Show loading indicator
+              )
               : ListView(
                 children: [
                   const SizedBox(height: 20),
@@ -83,12 +83,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _buildListTile(title: "Settings", onTap: () {}),
                   _buildListTile(
                     title: "Log out",
-                    onTap: () => _handleLogout(context),
+                    //onTap: () => _handleLogout(context),
+                    onTap: () => _navigateAndRefresh(context),
                   ),
                   _buildListTile(title: "Delete Account", onTap: () {}),
                 ],
               ),
     );
+  }
+
+  void _navigateAndRefresh(BuildContext context) {
+    Navigator.pushNamed(context, '/edit-profile').then((value) {
+      if (value == true) {
+        _fetchUserDetails();
+      }
+    });
   }
 
   Future<void> _handleLogout(BuildContext context) async {

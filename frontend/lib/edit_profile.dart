@@ -103,7 +103,25 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         );
         if (response.statusCode == 200) {
           print('Username updated successfully');
-          Navigator.pop(context); // Optionally pop back to the previous screen
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: Text('Success!'),
+              content: Text('Username changed to $new_user'),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(); 
+                  },
+                  child: Text('OK'),
+                ),
+              ],
+            ),
+          ).then((_) {
+            // This is called after the dialog is dismissed
+            Navigator.pop(context, true); // Pop the EditProfileScreen
+          });
+          //Navigator.pop(context, true); // Optionally pop back to the previous screen
         } else {
           print('Failed to update username: ${response.body}');
           showDialog(
@@ -111,6 +129,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             builder: (context) => AlertDialog(
               title: Text('Update Failed'),
               content: Text('Username already taken. Please try again.'),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(); 
+                  },
+                  child: Text('OK'),
+                ),
+              ],
             ),
           );
         }
