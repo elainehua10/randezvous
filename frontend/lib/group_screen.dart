@@ -426,7 +426,7 @@ class _GroupScreenState extends State<GroupScreen> {
   }
 
   void _showInviteMembersDialog(BuildContext context) {
-    InviteMembersDialog.show(context, widget.groupId);
+    InviteMembersDialog.show(context, widget.groupId, isUserLeader);
   }
 
   void _showRemoveMemberDialog(BuildContext context, User member) {
