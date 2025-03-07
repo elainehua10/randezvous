@@ -437,6 +437,11 @@ class _GroupScreenState extends State<GroupScreen> {
   }
 
   void _showGroupSettings(BuildContext context, Group group) {
+    // Create a TextEditingController to manage the input
+    final TextEditingController nameController = TextEditingController(
+      text: group.name,
+    );
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -462,7 +467,7 @@ class _GroupScreenState extends State<GroupScreen> {
 
                 // Rename Group Option
                 TextFormField(
-                  initialValue: group.name,
+                  controller: nameController,
                   decoration: InputDecoration(
                     labelText: 'Group Name',
                     border: OutlineInputBorder(),
@@ -477,8 +482,62 @@ class _GroupScreenState extends State<GroupScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
+                    onPressed: () async {
+                      // Show loading indicator
+                      showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder:
+                            (context) =>
+                                Center(child: CircularProgressIndicator()),
+                      );
+
+                      try {
+                        // Make API call to rename group
+                        final response =
+                            await Auth.makeAuthenticatedPostRequest(
+                              "groups/rename",
+                              {
+                                "groupId": widget.groupId,
+                                "newName": nameController.text.trim(),
+                              },
+                            );
+
+                        // Close loading dialog
+                        Navigator.pop(context);
+
+                        if (response.statusCode == 200) {
+                          // Update local group data
+                          fetchGroupDetails();
+
+                          // Close settings dialog
+                          Navigator.pop(context);
+
+                          // Show success message
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Group name updated successfully'),
+                            ),
+                          );
+                        } else {
+                          // Show error message
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Failed to update group name: ${response.body}',
+                              ),
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        // Close loading dialog
+                        Navigator.pop(context);
+
+                        // Show error message
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Error: ${e.toString()}')),
+                        );
+                      }
                     },
                     child: Padding(
                       padding: const EdgeInsets.all(12.0),
