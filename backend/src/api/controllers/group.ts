@@ -403,9 +403,9 @@ export const getGroupMembers = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    // Check if the group exists and fetch the leader's ID
+    // Check if the group exists and fetch the leader's ID and group name
     const group = await sql`
-      SELECT leader_id FROM groups WHERE id = ${groupId};
+      SELECT leader_id, name FROM groups WHERE id = ${groupId};
     `;
 
     if (group.length === 0) {
@@ -413,17 +413,20 @@ export const getGroupMembers = async (req: Request, res: Response) => {
     }
 
     const leaderId = group[0].leader_id;
+    const groupName = group[0].name;
     const isUserLeader = userId === leaderId;
 
     // Fetch all members of the group
     const members = await sql`
-      SELECT u.id, u.name, u.avatar_url
+      SELECT u.id, u.first_name, u.last_name, u.profile_picture
       FROM user_group ug
       JOIN profile u ON ug.user_id = u.id
       WHERE ug.group_id = ${groupId};
     `;
 
     return res.status(200).json({
+      groupId,
+      groupName, 
       leaderId,
       isUserLeader,
       members,
@@ -433,6 +436,7 @@ export const getGroupMembers = async (req: Request, res: Response) => {
     return res.status(500).json({ error: "Internal server error" });
   }
 };
+
 
 // Get locations of other users
 export const getGroupLocations = async (req: Request, res: Response) => {
