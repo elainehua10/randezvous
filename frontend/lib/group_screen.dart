@@ -484,7 +484,7 @@ class _GroupScreenState extends State<GroupScreen> {
         backgroundColor: Colors.grey[300],
         child:
             member.avatarUrl == null
-                ? Icon(Icons.person, size: 80, color: Colors.blue[800])
+                ? Icon(Icons.person, color: Colors.blue[800])
                 : Image.network(
                   member.avatarUrl!,
                   height: 80, // Optional: adding height to match icon size

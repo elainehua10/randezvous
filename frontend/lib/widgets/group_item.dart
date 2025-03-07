@@ -25,7 +25,7 @@ class GroupItem extends StatelessWidget {
         ),
         child:
             group.iconUrl == null
-                ? Icon(Icons.group, size: 80, color: Colors.blue[800])
+                ? Icon(Icons.group, color: Colors.blue[800])
                 : Image.network(
                   group.iconUrl!,
                   height: 80, // Optional: adding height to match icon size

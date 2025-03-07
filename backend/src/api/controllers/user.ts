@@ -105,10 +105,12 @@ export const setProfilePicture = async (req: Request, res: Response) => {
         SET profile_picture = NULL
         WHERE id = ${userId};
       `;
-      return res.status(200).json({message: "Profile picture deleted successfully"});
+      return res
+        .status(200)
+        .json({ message: "Profile picture deleted successfully" });
     } catch (error) {
       console.error(error);
-      return res.status(500).json({error: "Internal server error"});
+      return res.status(500).json({ error: "Internal server error" });
     }
   } else {
     try {
@@ -145,7 +147,9 @@ export const setProfilePicture = async (req: Request, res: Response) => {
 
       if (error) {
         console.error("Error uploading profile picture:", error);
-        return res.status(500).json({ error: "Error uploading profile picture" });
+        return res
+          .status(500)
+          .json({ error: "Error uploading profile picture" });
       }
 
       // Get public URL of the uploaded image
@@ -254,8 +258,7 @@ export const refreshToken = async (req: Request, res: Response) => {
 };
 
 export const search = async (req: Request, res: Response) => {
-  console.log(req.body);
-  const { username } = req.body;
+  const { username, userId } = req.body;
 
   if (!username) {
     return res.status(400).json({ error: "Missing username parameter" });
@@ -265,7 +268,14 @@ export const search = async (req: Request, res: Response) => {
     const results = await sql`
       SELECT id, username, first_name, last_name, profile_picture
       FROM profile
-      WHERE username LIKE ${`%${username}%`}
+      WHERE (username LIKE ${`%${username}%`} 
+             OR first_name LIKE ${`%${username}%`} 
+             OR last_name LIKE ${`%${username}%`})
+        AND id NOT IN (
+          SELECT blocked_id FROM blocked WHERE user_id = ${userId}
+          UNION
+          SELECT user_id FROM blocked WHERE blocked_id = ${userId}
+        )
       LIMIT 4;
     `;
 
@@ -282,6 +292,24 @@ export const search = async (req: Request, res: Response) => {
       error:
         (error as Error).message || "An unknown error occurred during search",
     });
+  }
+};
+
+export const block = async (req: Request, res: Response) => {
+  const { blockedId, userId } = req.body;
+
+  if (!blockedId || !userId) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  try {
+    await sql`
+      INSERT INTO blocked (user_id, blocked_id) VALUES (${userId}, ${blockedId}) ON CONFLICT DO NOTHING;`;
+
+    res.status(200).json({ message: "User blocked successfully" });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Failed to block user" });
   }
 };
 
