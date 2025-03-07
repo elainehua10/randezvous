@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:frontend/widgets/map.dart';
 import 'package:frontend/widgets/groups_bottom_sheet.dart';
 import 'package:frontend/models/group.dart';
+import 'package:frontend/group_screen.dart'; // Add this import
 
 class MapScreen extends StatefulWidget {
   @override
@@ -47,6 +48,17 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
+  void _navigateToGroupScreen() {
+    if (_selectedGroupId != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => GroupScreen(groupId: _selectedGroupId!),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -85,7 +97,7 @@ class _MapScreenState extends State<MapScreen> {
               right: 0,
               child: Center(
                 child: GestureDetector(
-                  onTap: () => Navigator.pushNamed(context, "/group"),
+                  onTap: _navigateToGroupScreen,
                   child: Container(
                     padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                     decoration: BoxDecoration(

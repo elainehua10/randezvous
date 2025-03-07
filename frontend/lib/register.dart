@@ -61,12 +61,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
         } else {
           print('Response Status Code: ${response.statusCode}');
           print('Response Body: ${response.body}');
+          String errorMessage =
+              responseData['error'] ??
+              'Please check your information and try again.';
+
           showDialog(
             context: context,
             builder:
                 (context) => AlertDialog(
                   title: Text('Registration Failed'),
-                  content: Text('Please check your information and try again.'),
+                  content: Text(errorMessage),
                 ),
           );
         }

@@ -67,9 +67,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       body:
           isLoading
-              ? Center(
-                child: CircularProgressIndicator(),
-              )
+              ? Center(child: CircularProgressIndicator())
               : ListView(
                 children: [
                   const SizedBox(height: 20),
@@ -108,7 +106,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text('Delete Account'),
-          content: Text('Are you sure you want to delete your account permanently? This action cannot be undone.'),
+          content: Text(
+            'Are you sure you want to delete your account permanently? This action cannot be undone.',
+          ),
           actions: <Widget>[
             TextButton(
               child: Text('Cancel'),
@@ -130,61 +130,59 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _deleteAccount() async {
-  try {
-    String? accessToken = await Auth.getAccessToken();  // Ensure this is the correct method to get the access token
-    String userId = username;  // Retrieve the user's ID, replace with actual logic to obtain current user ID
+    try {
+      String? accessToken = await Auth.getAccessToken();
+      String userId = username;
 
-    final url = Uri.parse('http://localhost:5001/api/v1/delete-account');  // Update the URL based on your server configuration
-    final response = await http.post(
-      url,
-      headers: {
-        'Content-Type': 'application/json',
-        HttpHeaders.authorizationHeader: 'Bearer $accessToken',
-      },
-      body: jsonEncode({'userId': userId}),
-    );
+      final url = Uri.parse('http://localhost:5001/api/v1/delete-account');
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          HttpHeaders.authorizationHeader: 'Bearer $accessToken',
+        },
+        body: jsonEncode({'userId': userId}),
+      );
 
-    if (response.statusCode == 200) {
-      print('Account deleted successfully');
-      // Optionally log out user and navigate to login screen
-      Auth.removeTokens();  // Assuming you have a method to clear auth tokens
-      Navigator.pushReplacementNamed(context, '/login');
-    } else {
-      // Handle different status codes or server errors
-      final responseData = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        print('Account deleted successfully');
+        Auth.removeTokens();
+        Navigator.pushReplacementNamed(context, '/login');
+      } else {
+        // Handle different status codes or server errors
+        final responseData = jsonDecode(response.body);
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('Failed to Delete Account'),
+              content: Text(responseData['error'] ?? 'Unknown error occurred.'),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: Text('OK'),
+                ),
+              ],
+            );
+          },
+        );
+        print('Failed to delete account: ${response.body}');
+      }
+    } catch (e) {
+      print("Error deleting account: $e");
       showDialog(
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
-            title: Text('Failed to Delete Account'),
-            content: Text(responseData['error'] ?? 'Unknown error occurred.'),
-            actions: <Widget>[
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop(); 
-                },
-                child: Text('OK'),
-              ),
-            ],
+            title: Text('Error'),
+            content: Text('An error occurred while deleting the account.'),
           );
-          
-        }
+        },
       );
-      print('Failed to delete account: ${response.body}');
     }
-  } catch (e) {
-    print("Error deleting account: $e");
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Error'),
-          content: Text('An error occurred while deleting the account.'),
-        );
-      }
-    );
   }
-}
 
   Future<void> _handleLogout(BuildContext context) async {
     try {
@@ -211,8 +209,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
     if (icon != "pfp") {
       return NetworkImage(icon);
-    }
-    else return null;
+    } else
+      return null;
   }
 
   Widget _buildProfileHeader() {
@@ -227,7 +225,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 radius: 50,
                 backgroundColor: Colors.blue,
                 backgroundImage: getBackgroundImage(),
-                child: _profileImage == null ? Icon(Icons.person, size: 50, color: Colors.white) : null,
+                child:
+                    _profileImage == null
+                        ? Icon(Icons.person, size: 50, color: Colors.white)
+                        : null,
               ),
               Container(
                 height: 35,
@@ -263,21 +264,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Wrap(
             children: <Widget>[
               ListTile(
-                  leading: Icon(Icons.photo_library),
-                  title: Text('Choose from library'),
-                  onTap: () {
-                    _pickImage(ImageSource.gallery, context);
-                  }),
+                leading: Icon(Icons.photo_library),
+                title: Text('Choose from library'),
+                onTap: () {
+                  _pickImage(ImageSource.gallery, context);
+                },
+              ),
               ListTile(
                 leading: Icon(Icons.photo_camera),
                 title: Text('Take photo'),
                 onTap: () {
-                    _pickImage(ImageSource.camera, context);
+                  _pickImage(ImageSource.camera, context);
                 },
               ),
               ListTile(
                 leading: Icon(Icons.delete, color: Colors.red),
-                title: Text('Delete photo', style: TextStyle(color: Colors.red)),
+                title: Text(
+                  'Delete photo',
+                  style: TextStyle(color: Colors.red),
+                ),
                 onTap: () {
                   setState(() {
                     _profileImage = null;
@@ -304,14 +309,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
       });
       print("Image picked: ${pickedFile.path}");
       try {
-        Auth.uploadFileWithAuth('/set-profile-picture', File(pickedFile.path), {});
+        Auth.uploadFileWithAuth(
+          '/set-profile-picture',
+          File(pickedFile.path),
+          {},
+        );
       } catch (e) {
         showDialog(
           context: context,
-          builder: (context) => AlertDialog(
-            title: Text('Upload Error'),
-            content: Text('An error occurred while uploading the image. Please try again.'),
-          ),
+          builder:
+              (context) => AlertDialog(
+                title: Text('Upload Error'),
+                content: Text(
+                  'An error occurred while uploading the image. Please try again.',
+                ),
+              ),
         );
       }
     }
@@ -331,4 +343,3 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 }
-

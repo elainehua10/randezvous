@@ -4,6 +4,7 @@ import 'package:frontend/login.dart';
 import 'package:frontend/register.dart';
 import 'package:frontend/map_screen.dart';
 import 'package:frontend/profile.dart';
+import 'package:frontend/edit_profile.dart';
 
 void main() {
   runApp(const MyApp());
@@ -23,8 +24,19 @@ class MyApp extends StatelessWidget {
         '/login': (context) => LoginScreen(),
         '/register': (context) => RegisterScreen(),
         '/home': (context) => MapScreen(),
-        '/group': (context) => GroupScreen(groupId: '2'),
         '/profile': (context) => ProfileScreen(),
+        '/edit-profile': (context) => EditProfileScreen(),
+      },
+      onGenerateRoute: (settings) {
+        if (settings.name == '/group') {
+          final args = settings.arguments as Map<String, dynamic>?;
+          final groupId = args?['groupId'] ?? ''; // Default to empty if null
+
+          return MaterialPageRoute(
+            builder: (context) => GroupScreen(groupId: groupId),
+          );
+        }
+        return null; // Fallback if the route is not found
       },
       //home: LoginScreen(),
       //home: MapScreen(),
