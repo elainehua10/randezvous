@@ -13,6 +13,12 @@ export const register = async (req: Request, res: Response) => {
   }
   // Register a new user
   try {
+    const existingUser = await sql`
+      SELECT id FROM profile WHERE username = ${username};
+    `;
+    if (existingUser.length > 0) {
+      return res.status(400).json({ error: "Username already taken" });
+    }
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
