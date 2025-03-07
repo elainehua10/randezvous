@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:frontend/profile.dart';
+import 'package:frontend/auth.dart';
+import 'dart:io';
 
 class EditProfileScreen extends StatefulWidget {
   @override
@@ -10,7 +11,16 @@ class EditProfileScreen extends StatefulWidget {
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
-  String _username = '';
+  String firstName = "First";
+  String lastName = "Last";
+  String username = "username";
+  String new_user = "";
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserDetails();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +37,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           child: Column(
             children: [
               TextFormField(
-                initialValue: _username,
+                initialValue: new_user,
                 decoration: InputDecoration(labelText: 'New Username'),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -35,11 +45,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   }
                   return null;
                 },
-                onSaved: (value) => _username = value!,
+                onSaved: (value) => new_user = value!,
               ),
               SizedBox(height: 20),
               ElevatedButton(
-                onPressed: _updateProfile,
+                onPressed: _updateUsername,
                 child: Text('Update Profile'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue, // background
@@ -53,30 +63,68 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  Future<void> _updateProfile() async {
+  Future<void> _fetchUserDetails() async {
+    try {
+      final response = await Auth.makeAuthenticatedPostRequest(
+        "get-user-profile-info",
+        {},
+      );
+      final data = json.decode(response.body);
+      print(data);
+      if (response.statusCode == 200) {
+        setState(() {
+          firstName = data['first_name'] ?? 'First';
+          lastName = data['last_name'] ?? 'Last';
+          username = data['username'] ?? 'username';
+        });
+      } else {
+        print(data);
+        throw Exception('Failed to load user details');
+      }
+    } catch (e) {
+      print("Error fetching user details: $e");
+    }
+  }
+
+  Future<void> _updateUsername() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
       try {
+        String? accessToken = await Auth.getAccessToken();
+        
+        final url = Uri.parse('http://localhost:5001/api/v1/change-username');
         final response = await http.post(
-          Uri.parse('http://localhost:5001/api/v1/update-username'),
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({'username': _username}),
+          url,
+          headers: {
+            'Content-Type': 'application/json',
+            HttpHeaders.authorizationHeader: 'Bearer $accessToken'
+          },
+          body: jsonEncode({'userId': username, 'newUsername': new_user}),
         );
         if (response.statusCode == 200) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Profile updated successfully!'))
-          );
-          Navigator.pop(context);
+          print('Username updated successfully');
+          Navigator.pop(context); // Optionally pop back to the previous screen
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to update profile'))
+          print('Failed to update username: ${response.body}');
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: Text('Update Failed'),
+              content: Text('Username already taken. Please try again.'),
+            ),
           );
         }
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error updating profile: $e'))
+      } catch (error) {
+        print('Error: $error');
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text('Error'),
+            content: Text('An error occurred while updating the username.'),
+          ),
         );
       }
     }
   }
+
 }
