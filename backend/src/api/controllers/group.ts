@@ -7,7 +7,7 @@ import sql from "../../db";
 import sharp from "sharp";
 
 // Set limit to how many groups a user can create
-const MAX_GROUPS_PER_USER = 1;
+const MAX_GROUPS_PER_USER = 3;
 
 // ============= Leader of group functions ===================
 
@@ -16,18 +16,21 @@ export const createGroup = async (req: Request, res: Response) => {
   try {
     // Check fields
     const { userId, groupName, isPublic } = req.body;
-    if (!userId || !groupName || !isPublic) {
+    if (!userId || !groupName || isPublic === undefined) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    // Check if user has reached the limit of groups they can create (1 for now)
-    const inGroup = await sql`
-            SELECT in_group FROM profile WHERE id = ${userId};
-        `;
-    if (inGroup.length > 0 && inGroup[0].in_group) {
-      return res
-        .status(403)
-        .json({ error: "You are already part of a group." });
+    // Check if user has reached the limit of groups they can create
+    const userProfile = await sql`
+      SELECT num_groups FROM profile WHERE id = ${userId};
+    `;
+    if (userProfile.length === 0) {
+      return res.status(404).json({ error: "User not found." });
+    }
+    if (userProfile[0].num_groups >= MAX_GROUPS_PER_USER) {
+      return res.status(403).json({
+        error: `You cannot be in more than ${MAX_GROUPS_PER_USER} group.`,
+      });
     }
 
     // Check group name length
@@ -55,7 +58,7 @@ export const createGroup = async (req: Request, res: Response) => {
     // Update profile to reflect that user is in a group
     await sql`
             UPDATE profile 
-            SET in_group = TRUE
+            SET num_groups = num_groups + 1
             WHERE id = ${userId};
         `;
 
@@ -278,7 +281,7 @@ export const removeFromGroup = async (req: Request, res: Response) => {
     // Update profile to not be in a group
     await sql`
             UPDATE profile 
-            SET in_group = FALSE
+            SET num_groups = num_groups - 1
             WHERE id = ${removingUserId};
         `;
 
@@ -317,16 +320,15 @@ export const acceptInvite = async (req: Request, res: Response) => {
 
     // Check if the user is already in a group
     const userProfile = await sql`
-      SELECT in_group FROM profile WHERE id = ${userId} LIMIT 1;
+      SELECT num_groups FROM profile WHERE id = ${userId};
     `;
-    if (userProfile.length !== 0) {
-      console.log("in_group value:", userProfile[0].in_group);
-
-      if (userProfile[0].in_group === true) { 
-        return res.status(403).json({
-          error: "You are already in a group and cannot accept an invite.",
-        });
-      }
+    if (userProfile.length === 0) {
+      return res.status(404).json({ error: "User not found." });
+    }
+    if (userProfile[0].num_groups >= MAX_GROUPS_PER_USER) {
+      return res.status(403).json({
+        error: `You cannot be in more than ${MAX_GROUPS_PER_USER} group.`,
+      });
     }
 
     // Adding user to the user_group table
@@ -346,7 +348,7 @@ export const acceptInvite = async (req: Request, res: Response) => {
     // Update profile to indicate the user is now in a group
     await sql`
       UPDATE profile 
-      SET in_group = TRUE 
+      SET num_groups = num_groups + 1 
       WHERE id = ${userId};
     `;
 
@@ -378,7 +380,7 @@ export const leaveGroup = async (req: Request, res: Response) => {
     // Update profile to not be in a group
     await sql`
             UPDATE profile
-            SET in_group = FALSE
+            SET num_groups = num_groups - 1
             WHERE id = ${userId}
         `;
 
@@ -415,7 +417,7 @@ export const getGroupLocations = async (req: Request, res: Response) => {
     const locations = await sql`
             SELECT p.longitude, p.latitude
             FROM user_group ug
-            JOIN profile p ON ug.user_id = p.user_id
+            JOIN profile p ON ug.user_id = p.id
             WHERE ug.group_id = ${groupId}
         `;
 
