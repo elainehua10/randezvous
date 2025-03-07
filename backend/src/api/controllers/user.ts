@@ -80,6 +80,12 @@ export const changeUsername = async (req: Request, res: Response) => {
   }
 
   try {
+    const currentUser = await sql`
+      SELECT username FROM profile WHERE id = ${userId};
+    `;
+    if (currentUser.length > 0 && currentUser[0].username == newUsername) {
+      return res.status(400).json({error: "The new username must be different from the current one"});
+    }
     const existingUser = await sql`
       SELECT id FROM profile WHERE username = ${newUsername};
     `;

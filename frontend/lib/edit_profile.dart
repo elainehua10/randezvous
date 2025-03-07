@@ -123,12 +123,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           });
         } else {
           print('Failed to update username: ${response.body}');
-          showDialog(
+          final responseData = jsonDecode(response.body);
+          int error = 0;
+          if (responseData['error'] == "The new username must be different from the current one") {
+            error = 1;
+          }
+          if (error == 1) {
+            showDialog(
             context: context,
             builder:
                 (context) => AlertDialog(
                   title: Text('Update Failed'),
-                  content: Text('Username already taken. Please try again.'),
+                  content: Text('The new username must be different from the current one. Please try again.'),
                   actions: <Widget>[
                     TextButton(
                       onPressed: () {
@@ -138,7 +144,25 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ),
                   ],
                 ),
-          );
+            );
+          } else {
+            showDialog(
+              context: context,
+              builder:
+                  (context) => AlertDialog(
+                    title: Text('Update Failed'),
+                    content: Text('Username is unavailable. Please try again.'),
+                    actions: <Widget>[
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        child: Text('OK'),
+                      ),
+                    ],
+                  ),
+            );
+          }
         }
       } catch (error) {
         print('Error: $error');
