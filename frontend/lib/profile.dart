@@ -77,14 +77,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const Divider(),
                   _buildListTile(
                     title: "Edit Profile",
-                    onTap: () => Navigator.pushNamed(context, '/edit-profile'),
+                    onTap: () => _navigateAndRefresh(context),
                   ),
                   _buildListTile(title: "Achievements", onTap: () {}),
                   _buildListTile(title: "Settings", onTap: () {}),
                   _buildListTile(
                     title: "Log out",
-                    //onTap: () => _handleLogout(context),
-                    onTap: () => _navigateAndRefresh(context),
+                    onTap: () => _handleLogout(context),
                   ),
                   _buildListTile(title: "Delete Account", onTap: () {}),
                 ],

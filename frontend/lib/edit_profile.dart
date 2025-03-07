@@ -52,8 +52,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 onPressed: _updateUsername,
                 child: Text('Update Profile'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue, // background
-                  foregroundColor: Colors.white, // foreground
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
                 ),
               ),
             ],
@@ -118,10 +118,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               ],
             ),
           ).then((_) {
-            // This is called after the dialog is dismissed
-            Navigator.pop(context, true); // Pop the EditProfileScreen
+            Navigator.pop(context, true);
           });
-          //Navigator.pop(context, true); // Optionally pop back to the previous screen
         } else {
           print('Failed to update username: ${response.body}');
           showDialog(
