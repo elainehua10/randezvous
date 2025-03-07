@@ -7,7 +7,7 @@ import sql from "../../db";
 import sharp from "sharp";
 
 // Set limit to how many groups a user can create
-const MAX_GROUPS_PER_USER = 3;
+const MAX_GROUPS_PER_USER = 10;
 
 // ============= Leader of group functions ===================
 
@@ -19,6 +19,8 @@ export const createGroup = async (req: Request, res: Response) => {
     if (!userId || !groupName || isPublic === undefined) {
       return res.status(400).json({ error: "Missing required fields" });
     }
+
+    console.log(isPublic);
 
     // Check if user has reached the limit of groups they can create
     const userProfile = await sql`
@@ -53,7 +55,7 @@ export const createGroup = async (req: Request, res: Response) => {
     // Insert new group (user is the leader)
     let newGroup = await sql`
             INSERT INTO groups (name, is_public, leader_id) 
-            VALUES (${groupName}, ${isPublic ? "TRUE" : "FALSE"}, ${userId})
+            VALUES (${groupName}, ${isPublic}, ${userId})
             RETURNING id;
         `;
 

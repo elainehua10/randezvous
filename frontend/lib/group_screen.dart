@@ -113,7 +113,7 @@ class _GroupScreenState extends State<GroupScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(group.name),
+        title: Text(group.name?? "Unnamed Group"),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
@@ -252,7 +252,7 @@ class _GroupScreenState extends State<GroupScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      group.name,
+                      group.name?? "Unnamed Group",
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
