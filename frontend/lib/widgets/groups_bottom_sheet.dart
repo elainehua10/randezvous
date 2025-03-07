@@ -1,5 +1,8 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:frontend/auth.dart';
 import 'package:frontend/models/group.dart';
+import 'package:frontend/models/user.dart';
 import 'package:frontend/widgets/group_item.dart';
 
 class GroupsBottomSheet extends StatefulWidget {
@@ -18,36 +21,96 @@ class GroupsBottomSheet extends StatefulWidget {
 
 class _GroupsBottomSheetState extends State<GroupsBottomSheet> {
   String? _selectedGroupId;
-
-  // Sample data - in a real app, this would come from a service
-  final List<Group> _groups = [
-    Group(id: 'friends_group_id', name: 'Friends Group'),
-    Group(id: 'work_buddies_id', name: 'Work Buddies'),
-    Group(id: 'gaming_squad_id', name: 'Gaming Squad'),
-  ];
+  List<Group> _groups = [];
+  List<Group> _pendingInvites = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _selectedGroupId = widget.selectedGroupId;
+    _fetchGroupsAndInvites();
+  }
+
+  Future<void> _fetchGroupsAndInvites() async {
+    setState(() => _isLoading = true);
+    try {
+      // Fetch user groups
+      final response = await Auth.makeAuthenticatedPostRequest(
+        "groups/getgroups",
+        {},
+      );
+      final data = json.decode(response.body);
+      print(data);
+
+      if (response.statusCode == 200) {
+        setState(() {
+          _groups = (data as List).map((group) => Group.fromJson(group)).toList();
+          _isLoading = false;
+        });
+      } else {
+        print("Failed to load groups: ${response.body}");
+        throw Exception('Failed to load groups');
+      }
+
+      // Fetch pending invites
+      final inviteResponse = await Auth.makeAuthenticatedPostRequest(
+        "groups/invites",
+        {},
+      );
+      final inviteData = json.decode(inviteResponse.body);
+
+      if (inviteResponse.statusCode == 200) {
+        setState(() {
+          _pendingInvites = (inviteData as List).map((invite) => Group.fromJson(invite)).toList();
+        });
+      } else {
+        print("Failed to load invites: ${inviteResponse.body}");
+      }
+    } catch (e) {
+      print("Error fetching groups/invites: $e");
+      setState(() => _isLoading = false);
+    }
   }
 
   void _handleGroupSelection(Group group, BuildContext context) {
     setState(() {
-      if (_selectedGroupId == group.id) {
-        _selectedGroupId = null;
-      } else {
-        _selectedGroupId = group.id;
-      }
+      _selectedGroupId = (_selectedGroupId == group.id) ? null : group.id;
     });
 
     widget.onGroupSelected(group);
     Navigator.pop(context);
   }
 
+  Future<void> _acceptInvite(String groupId) async {
+    try {
+      final response = await Auth.makeAuthenticatedPostRequest(
+        "groups/accept",
+        {"groupId": groupId},
+      );
+
+      if (response.statusCode == 200) {
+        _fetchGroupsAndInvites(); // Refresh groups and invites after accepting
+      } else {
+        print("Error accepting invite: ${response.body}");
+      }
+    } catch (e) {
+      print("Error accepting invite: $e");
+    }
+  }
+
   void _createNewGroup() {
     print('Create New Group Tapped');
     // Navigate to group creation screen or show dialog
+    // todo
+
+
+
+
+
+
+
+
   }
 
   @override
@@ -125,6 +188,10 @@ class _GroupsBottomSheetState extends State<GroupsBottomSheet> {
   }
 
   Widget _buildPendingInvitesSection() {
+    if (_pendingInvites.isEmpty) {
+      return _buildNoPendingInvites();
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -133,22 +200,37 @@ class _GroupsBottomSheetState extends State<GroupsBottomSheet> {
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
         SizedBox(height: 10),
-        Container(
-          padding: EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.grey[100],
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: Colors.grey[300]!),
-          ),
-          child: Row(
-            children: [
-              Icon(Icons.mail, color: Colors.orange),
-              SizedBox(width: 10),
-              Text('No pending invites', style: TextStyle(fontSize: 14)),
-            ],
-          ),
+        Column(
+          children: _pendingInvites.map((group) {
+            return ListTile(
+              leading: Icon(Icons.mail, color: Colors.orange),
+              title: Text(group.name),
+              trailing: ElevatedButton(
+                onPressed: () => _acceptInvite(group.id),
+                child: Text("Accept"),
+              ),
+            );
+          }).toList(),
         ),
       ],
+    );
+  }
+
+  Widget _buildNoPendingInvites() {
+    return Container(
+      padding: EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.mail, color: Colors.orange),
+          SizedBox(width: 10),
+          Text('No pending invites', style: TextStyle(fontSize: 14)),
+        ],
+      ),
     );
   }
 }

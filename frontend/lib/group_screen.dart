@@ -12,7 +12,7 @@ class GroupScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Static group data - in a real app, this would be fetched based on groupId
-    final group = Group(id: groupId, name: 'Friends Group');
+    final group = Group(id: groupId, name: 'Friends Group', imageUrl: null, leaderId: 'user3', isPublic: false);
 
     // Static member data - in a real app, this would be fetched based on groupId
     final members = [
