@@ -144,7 +144,6 @@ class _SearchScreenState extends State<SearchScreen>
 
       if (response.statusCode == 200) {
         _showSuccessSnackBar('Successfully joined the group!');
-        // Optionally refresh the search results or update UI
         _performSearch(_searchController.text);
       } else {
         _showErrorSnackBar('Failed to join group: ${response.body}');
@@ -155,6 +154,26 @@ class _SearchScreenState extends State<SearchScreen>
       setState(() {
         _joiningGroups.remove(groupId);
       });
+    }
+  }
+
+  Future<void> _blockUser(String blockedUserId) async {
+    try {
+      final response = await Auth.makeAuthenticatedPostRequest("user/block", {
+        "blockedId": blockedUserId,
+      });
+
+      if (response.statusCode == 200) {
+        _showSuccessSnackBar('User blocked successfully!');
+        // Remove the blocked user from the results
+        setState(() {
+          _userResults.removeWhere((user) => user.id == blockedUserId);
+        });
+      } else {
+        _showErrorSnackBar('Failed to block user: ${response.body}');
+      }
+    } catch (e) {
+      _showErrorSnackBar('Error blocking user: $e');
     }
   }
 
@@ -250,9 +269,58 @@ class _SearchScreenState extends State<SearchScreen>
           ),
           title: Text(user.name ?? 'Unnamed User'),
           subtitle: Text('@${user.username ?? ''}'),
+          trailing: PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == 'block') {
+                _showBlockConfirmationDialog(user);
+              }
+            },
+            itemBuilder:
+                (context) => [
+                  const PopupMenuItem(
+                    value: 'block',
+                    child: Row(
+                      children: [
+                        Icon(Icons.block, color: Colors.red),
+                        SizedBox(width: 8),
+                        Text('Block'),
+                      ],
+                    ),
+                  ),
+                ],
+            icon: const Icon(Icons.more_vert),
+          ),
           onTap: () {
             // TODO: Implement user profile navigation
           },
+        );
+      },
+    );
+  }
+
+  void _showBlockConfirmationDialog(User user) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Block User'),
+          content: Text(
+            'Are you sure you want to block ${user.name}? This action cannot be undone.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _blockUser(user.id ?? '');
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              child: const Text('Block'),
+            ),
+          ],
         );
       },
     );
