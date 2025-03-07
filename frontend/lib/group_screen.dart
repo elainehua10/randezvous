@@ -43,6 +43,8 @@ class _GroupScreenState extends State<GroupScreen> {
           id: data['groupId'], 
           name: data['groupName'], 
           leaderId: data['leaderId'],
+          isPublic: data['isPublic'] == true, // Ensure it’s a boolean
+          iconUrl: data['iconUrl'] as String?, // Allow it to be null
         );
         members = (data['members'] as List).map((m) => User(
           id: m['id'], 

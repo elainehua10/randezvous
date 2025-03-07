@@ -60,6 +60,7 @@ class _GroupsBottomSheetState extends State<GroupsBottomSheet> {
         {},
       );
       final inviteData = json.decode(inviteResponse.body);
+      print(inviteData);
 
       if (inviteResponse.statusCode == 200) {
         setState(() {
