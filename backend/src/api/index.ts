@@ -26,18 +26,8 @@ router.use("/get-user-profile-info", requireAuth, getUserProfileInfo);
 
 // Group routes
 router.use("/groups/create", requireAuth, group.createGroup);
-router.use(
-  "/groups/rename",
-  requireAuth,
-  requireGroupLeader,
-  group.renameGroup
-);
-router.use(
-  "/groups/setpub",
-  requireAuth,
-  requireGroupLeader,
-  group.setPublicity
-);
+router.use("/groups/rename", requireAuth, requireGroupLeader, group.renameGroup);
+router.use("/groups/setpub", requireAuth, requireGroupLeader, group.setPublicity);
 router.use(
   "/groups/invite",
   requireAuth,
@@ -55,5 +45,6 @@ router.use("/groups/accept", requireAuth, group.acceptInvite);
 router.use("/groups/leave", requireAuth, group.leaveGroup);
 router.use("/groups/locations", requireAuth, group.getGroupLocations);
 router.use("/groups/getgroups", requireAuth, group.getUserGroups);
+router.use("/groups/getinvites", requireAuth, group.getUserInvites);
 
 export default router;

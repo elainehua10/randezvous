@@ -40,6 +40,16 @@ export const createGroup = async (req: Request, res: Response) => {
         .json({ error: "Group name must be between 3 and 30 characters." });
     }
 
+    // Check for duplicate name
+    const existingGroup = await sql`
+      SELECT id FROM groups WHERE name = ${groupName};
+    `;
+    if (existingGroup.length > 0) {
+      return res.status(409).json({
+        error: "A group with this name already exists. Please choose a different name.",
+      });
+    }
+
     // Insert new group (user is the leader)
     let newGroup = await sql`
             INSERT INTO groups (name, is_public, leader_id) 
@@ -430,6 +440,8 @@ export const getGroupLocations = async (req: Request, res: Response) => {
   }
 };
 
+// ============= General group functions ===================
+
 // Get all groups the user is part of
 export const getUserGroups = async (req: Request, res: Response) => {
   try {
@@ -452,3 +464,27 @@ export const getUserGroups = async (req: Request, res: Response) => {
     return res.status(500).json({ error: "Internal server error" });
   }
 };
+
+// Get all invites for the user
+export const getUserInvites = async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.body;
+    if (!userId) {
+      return res.status(400).json({ error: "Missing userId" });
+    }
+
+    // Get all invites for the user
+    const invites = await sql`
+      SELECT i.id, i.group_id, i.from_user_id, p.username, g.name
+      FROM invite i
+      JOIN profile p ON i.from_user_id = p.id
+      JOIN groups g ON i.group_id = g.id
+      WHERE i.to_user_id = ${userId} AND i.status = 'pending';
+    `;
+
+    return res.status(200).json(invites);
+  } catch (error) {
+    console.error("Error fetching user invites:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+}
