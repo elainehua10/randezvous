@@ -538,11 +538,13 @@ export const getUserGroups = async (req: Request, res: Response) => {
 
     // Get all groups the user is part of
     const groups = await sql`
-      SELECT groups.id, name, COALESCE(icon_url, NULL) AS icon_url
+      SELECT groups.id, name,icon_url
       FROM groups
       JOIN user_group ON groups.id = user_group.group_id
       WHERE user_group.user_id = ${userId};
     `;
+
+    console.log(groups.map((group) => group["icon_url"]));
 
     return res.status(200).json(groups);
   } catch (error) {

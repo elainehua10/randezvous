@@ -476,12 +476,18 @@ class _GroupScreenState extends State<GroupScreen> {
     User member,
     bool isUserLeader,
   ) {
+    print(member.avatarUrl);
     return ListTile(
       leading: CircleAvatar(
         backgroundColor: Colors.grey[300],
-        child: Icon(Icons.person, color: Colors.white),
-        // In a real app, you would use a network image:
-        // backgroundImage: NetworkImage(member.avatarUrl),
+        child:
+            member.avatarUrl == null
+                ? Icon(Icons.person, size: 80, color: Colors.blue[800])
+                : Image.network(
+                  member.avatarUrl!,
+                  height: 80, // Optional: adding height to match icon size
+                  width: 80, // Optional: adding width to match icon size
+                ),
       ),
       title: Row(
         children: [

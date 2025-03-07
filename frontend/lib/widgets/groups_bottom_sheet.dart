@@ -44,6 +44,7 @@ class _GroupsBottomSheetState extends State<GroupsBottomSheet> {
       print(data);
 
       if (response.statusCode == 200) {
+        print("sakldfja $data");
         setState(() {
           _groups =
               (data as List).map((group) => Group.fromJson(group)).toList();
