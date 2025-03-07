@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:http_parser/http_parser.dart';
 import 'package:frontend/edit_profile.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ProfileScreen extends StatefulWidget {
   @override
@@ -131,17 +132,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _deleteAccount() async {
     try {
-      String? accessToken = await Auth.getAccessToken();
-      String userId = username;
-
-      final url = Uri.parse('http://localhost:5001/api/v1/delete-account');
-      final response = await http.post(
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          HttpHeaders.authorizationHeader: 'Bearer $accessToken',
-        },
-        body: jsonEncode({'userId': userId}),
+      final response = await Auth.makeAuthenticatedPostRequest(
+        "delete-account",
+        {"refreshToken": await Auth.getRefreshToken()},
       );
 
       if (response.statusCode == 200) {
@@ -226,7 +219,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 radius: 50,
                 backgroundColor: Colors.blue,
                 backgroundImage: getBackgroundImage(),
-                child: getBackgroundImage() == null ? Icon(Icons.person, size: 50, color: Colors.white) : null,
+                child:
+                    getBackgroundImage() == null
+                        ? Icon(Icons.person, size: 50, color: Colors.white)
+                        : null,
               ),
               Container(
                 height: 35,
@@ -337,8 +333,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
     try {
       final response = await Auth.makeAuthenticatedPostRequest(
-        '/set-profile-picture', 
-        {'deletePhoto': true}
+        '/set-profile-picture',
+        {'deletePhoto': true},
       );
       final responseData = jsonDecode(response.body);
       print(responseData);
@@ -354,7 +350,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 'An error occurred while deleting the photo. Please try again.',
               ),
             ),
-        );
+      );
     }
   }
 

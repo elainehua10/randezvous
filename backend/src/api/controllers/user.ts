@@ -209,17 +209,27 @@ export const logout = async (req: Request, res: Response) => {
 
 export const deleteAccount = async (req: Request, res: Response) => {
   const { userId } = req.body;
+
   if (!userId) {
     return res.status(400).json({ error: "Missing userId" });
   }
 
   try {
+    console.log("Deleting user with ID:", userId);
     await sql`DELETE FROM profile WHERE id = ${userId};`;
-    console.log("userid: " + userId);
-    const { error } = await supabase.auth.admin.deleteUser(userId);
-    if (error) {
-      console.error("Error deleting user from authentication system:", error);
-      return res.status(500).json({ error: error.message });
+    await sql`DELETE FROM user_group WHERE user_id = ${userId};`;
+    await sql`DELETE FROM blocked WHERE user_id = ${userId};`;
+    await sql`DELETE FROM blocked WHERE blocked_id = ${userId};`;
+    await sql`DELETE FROM invite WHERE from_user_id = ${userId};`;
+    await sql`DELETE FROM invite WHERE to_user_id = ${userId};`;
+    await sql`DELETE FROM groups WHERE leader_id = ${userId};`;
+    const { error: authError } = await supabase.auth.admin.deleteUser(userId);
+    if (authError) {
+      console.error(
+        "Error deleting user from authentication system:",
+        authError
+      );
+      return res.status(500).json({ error: authError.message });
     }
 
     res.status(200).json({ message: "Account deleted successfully" });

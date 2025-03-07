@@ -3,6 +3,8 @@ import 'package:frontend/auth.dart';
 import 'package:frontend/map_screen.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -39,6 +41,7 @@ class _LoginScreenState extends State<LoginScreen> {
           String refresh_token = responseData["session"]["refresh_token"];
           int expire_time = responseData["session"]["expires_at"];
           Auth.saveTokens(access_token, refresh_token, expire_time);
+
           Navigator.pushReplacementNamed(context, '/home');
         } else {
           print('Login failed: ${response.body}');
