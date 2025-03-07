@@ -282,10 +282,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   style: TextStyle(color: Colors.red),
                 ),
                 onTap: () {
-                  setState(() {
-                    _profileImage = null;
-                  });
-                  Navigator.pop(context);
+                  _deletePhoto(context);
+                  //Navigator.pop(context);
                 },
               ),
               ListTile(
@@ -329,7 +327,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
         );
       }
     }
-    Navigator.pop(context);
+    //Navigator.pop(context);
+  }
+
+  Future<void> _deletePhoto(BuildContext context) async {
+    setState(() {
+      _profileImage = null;
+      icon = "pfp";
+    });
+    try {
+      final response = await Auth.makeAuthenticatedPostRequest(
+        '/set-profile-picture', 
+        {'deletePhoto': true}
+      );
+      final responseData = jsonDecode(response.body);
+      print(responseData);
+      //_fetchUserDetails();
+    } catch (e) {
+      print(e);
+      showDialog(
+        context: context,
+        builder:
+            (context) => AlertDialog(
+              title: Text('Delete Error'),
+              content: Text(
+                'An error occurred while deleting the photo. Please try again.',
+              ),
+            ),
+        );
+    }
   }
 
   Widget _buildListTile({required String title, required VoidCallback onTap}) {
