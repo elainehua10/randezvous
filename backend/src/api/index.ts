@@ -54,5 +54,6 @@ router.use(
 router.use("/groups/accept", requireAuth, group.acceptInvite);
 router.use("/groups/leave", requireAuth, group.leaveGroup);
 router.use("/groups/locations", requireAuth, group.getGroupLocations);
+router.use("/groups/getgroups", requireAuth, group.getUserGroups);
 
 export default router;
