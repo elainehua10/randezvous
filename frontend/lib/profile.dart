@@ -151,7 +151,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: IconButton(
                   icon: Icon(Icons.edit, color: Colors.white, size: 15),
                   onPressed: () => _showEditPhotoOptions(context),
-                    // Action to edit user info
                 ),
               ),
             ],
