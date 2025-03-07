@@ -8,6 +8,7 @@ import {
   deleteAccount,
   refreshToken,
   getUserProfileInfo,
+  search,
 } from "./controllers/user";
 import MessageResponse from "../interfaces/MessageResponse";
 import emojis from "./emojis";
