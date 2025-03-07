@@ -69,18 +69,20 @@ class _GroupScreenState extends State<GroupScreen> {
 
   // API call to leave the group
   void _leaveGroup() async {
-    final response = await Auth.makeAuthenticatedPostRequest("groups/leave", {
-      "userId": "your_user_id",
-      "groupId": widget.groupId,
-    });
+    if (!isUserLeader) {
+      final response = await Auth.makeAuthenticatedPostRequest("groups/leave", {
+        "groupId": widget.groupId,
+      });
 
-    if (response.statusCode == 200) {
-      Navigator.pop(context);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("You have left the group.")));
-    } else {
-      print("Error leaving group: ${response.body}");
+      if (response.statusCode == 200) {
+        Navigator.pop(context);
+        Navigator.pushReplacementNamed(context, "/home");
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("You have left the group.")));
+      } else {
+        print("Error leaving group: ${response.body}");
+      }
     }
   }
 

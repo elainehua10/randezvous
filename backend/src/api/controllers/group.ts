@@ -530,3 +530,44 @@ export const getUserInvites = async (req: Request, res: Response) => {
     return res.status(500).json({ error: "Internal server error" });
   }
 };
+
+export const checkMembership = async (req: Request, res: Response) => {
+  try {
+    const { userId, groupId } = req.body;
+
+    // Validate input
+    if (!userId || !groupId) {
+      return res
+        .status(400)
+        .json({
+          error: "Missing required fields: userId and groupId are required",
+        });
+    }
+
+    // Check if the group exists
+    const groupCheck = await sql`
+      SELECT id FROM groups WHERE id = ${groupId};
+    `;
+    if (groupCheck.length === 0) {
+      return res.status(404).json({ error: "Group not found" });
+    }
+
+    // Check if the user is a member of the group
+    const membershipCheck = await sql`
+      SELECT user_id 
+      FROM user_group 
+      WHERE user_id = ${userId} AND group_id = ${groupId};
+    `;
+
+    const isMember = membershipCheck.length > 0;
+
+    return res.status(200).json({
+      groupId,
+      userId,
+      isMember,
+    });
+  } catch (error) {
+    console.error("Error checking group membership:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
