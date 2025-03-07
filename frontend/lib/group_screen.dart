@@ -22,55 +22,59 @@ class _GroupScreenState extends State<GroupScreen> {
   @override
   void initState() {
     super.initState();
-    fetchGroupDetails(); 
+    fetchGroupDetails();
   }
 
   bool isUserLeader = false;
 
   // Fetch group details from the backend
   Future<void> fetchGroupDetails() async {
-    final response = await Auth.makeAuthenticatedPostRequest(
-      "groups/members",
-      { "groupId": widget.groupId}, 
-    );
+    final response = await Auth.makeAuthenticatedPostRequest("groups/members", {
+      "groupId": widget.groupId,
+    });
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       setState(() {
         group = Group(
-          id: data['groupId'], 
-          name: data['groupName'], 
-          leaderId: data['leaderId'],
+          id: data['groupId'],
+          name: data['name'],
+          leaderId: data['leader_id'],
           isPublic: data['isPublic'] == true, // Ensure it’s a boolean
           iconUrl: data['iconUrl'] as String?, // Allow it to be null
         );
-        members = (data['members'] as List).map((m) => User(
-          id: m['id'], 
-          name: "${m['first_name']} ${m['last_name']}",  
-          avatarUrl: m['profile_picture'],
-        )).toList();
-      
+        members =
+            (data['members'] as List)
+                .map(
+                  (m) => User(
+                    id: m['id'],
+                    name: "${m['first_name']} ${m['last_name']}",
+                    avatarUrl: m['profile_picture'],
+                    username: '',
+                  ),
+                )
+                .toList();
+
         isUserLeader = data['isUserLeader'];
         isLoading = false;
       });
     } else {
       print("Failed to load group data");
     }
-
   }
 
   // API call to leave the group
   void _leaveGroup() async {
-    final response = await Auth.makeAuthenticatedPostRequest(
-      "groups/leave",
-      {"userId": "your_user_id", "groupId": widget.groupId},
-    );
+    final response = await Auth.makeAuthenticatedPostRequest("groups/leave", {
+      "userId": "your_user_id",
+      "groupId": widget.groupId,
+    });
 
     if (response.statusCode == 200) {
       Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("You have left the group.")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("You have left the group.")));
     } else {
       print("Error leaving group: ${response.body}");
     }
@@ -83,7 +87,9 @@ class _GroupScreenState extends State<GroupScreen> {
       builder: (context) {
         return AlertDialog(
           title: Text("Leave Group"),
-          content: Text("Are you sure you want to leave this group? You will need an invite to rejoin."),
+          content: Text(
+            "Are you sure you want to leave this group? You will need an invite to rejoin.",
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -101,19 +107,20 @@ class _GroupScreenState extends State<GroupScreen> {
       },
     );
   }
+
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
       return Scaffold(
-        body: Center(child: CircularProgressIndicator()), // Show loading animation
+        body: Center(
+          child: CircularProgressIndicator(),
+        ), // Show loading animation
       );
     }
 
-
-
     return Scaffold(
       appBar: AppBar(
-        title: Text(group.name?? "Unnamed Group"),
+        title: Text(group.name ?? "Unnamed Group"),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
@@ -196,8 +203,7 @@ class _GroupScreenState extends State<GroupScreen> {
   }
 
   Widget _buildGroupHeader(BuildContext context, Group group) {
-    final bool isUserLeader =
-        true; // Moved from parent scope for this example
+    final bool isUserLeader = true; // Moved from parent scope for this example
 
     return Container(
       height: 200,
@@ -252,7 +258,7 @@ class _GroupScreenState extends State<GroupScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      group.name?? "Unnamed Group",
+                      group.name ?? "Unnamed Group",
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
@@ -420,7 +426,7 @@ class _GroupScreenState extends State<GroupScreen> {
   }
 
   void _showInviteMembersDialog(BuildContext context) {
-    InviteMembersDialog.show(context);
+    InviteMembersDialog.show(context, widget.groupId);
   }
 
   void _showRemoveMemberDialog(BuildContext context, User member) {
@@ -440,7 +446,12 @@ class _GroupScreenState extends State<GroupScreen> {
               child: Text('Cancel'),
             ),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
+                await Auth.makeAuthenticatedPostRequest("groups/remove", {
+                  "groupId": widget.groupId, // Pass the groupId here
+                  "removingUserId": member.id, // Pass the user ID to invite
+                });
+                await fetchGroupDetails();
                 Navigator.pop(context);
               },
               child: Text('Remove', style: TextStyle(color: Colors.white)),

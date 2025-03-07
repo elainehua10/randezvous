@@ -190,6 +190,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final response = await Auth.makeAuthenticatedPostRequest("logout", {});
       Auth.removeTokens();
+
+      Auth.removeTokens();
       if (response.statusCode == 200) {
         print("Logout successful");
 
