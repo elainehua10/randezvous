@@ -18,7 +18,6 @@ class _GroupScreenState extends State<GroupScreen> {
   late Group group;
   late List<User> members;
   bool isLoading = true;
-  String? userId;
 
   @override
   void initState() {
@@ -26,15 +25,14 @@ class _GroupScreenState extends State<GroupScreen> {
     fetchGroupDetails(); 
   }
 
+  bool isUserLeader = false;
+
   // Fetch group details from the backend
   Future<void> fetchGroupDetails() async {
     final response = await Auth.makeAuthenticatedPostRequest(
       "groups/members",
       { "groupId": widget.groupId}, 
     );
-
-
-    
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
@@ -51,7 +49,8 @@ class _GroupScreenState extends State<GroupScreen> {
           name: "${m['first_name']} ${m['last_name']}",  
           avatarUrl: m['profile_picture'],
         )).toList();
-        userId = data['userId'];
+      
+        isUserLeader = data['isUserLeader'];
         isLoading = false;
       });
     } else {
@@ -110,7 +109,6 @@ class _GroupScreenState extends State<GroupScreen> {
       );
     }
 
-    final bool isCurrentUserLeader = userId != null && group.leaderId == userId;
 
 
     return Scaffold(
@@ -120,14 +118,14 @@ class _GroupScreenState extends State<GroupScreen> {
         foregroundColor: Colors.black,
         elevation: 0,
         actions: [
-          if (isCurrentUserLeader)
+          if (isUserLeader)
             IconButton(
               icon: Icon(Icons.settings),
               onPressed: () {
                 _showGroupSettings(context, group);
               },
             ),
-          if (!isCurrentUserLeader)
+          if (!isUserLeader)
             IconButton(
               icon: Icon(Icons.exit_to_app),
               onPressed: () {
@@ -156,7 +154,7 @@ class _GroupScreenState extends State<GroupScreen> {
                     'Members (${members.length})',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                  if (isCurrentUserLeader)
+                  if (isUserLeader)
                     ElevatedButton.icon(
                       onPressed: () {
                         _showInviteMembersDialog(context);
@@ -180,7 +178,7 @@ class _GroupScreenState extends State<GroupScreen> {
               itemCount: members.length,
               itemBuilder: (context, index) {
                 final member = members[index];
-                return _buildMemberItem(context, member, isCurrentUserLeader);
+                return _buildMemberItem(context, member, isUserLeader);
               },
             ),
           ],
@@ -198,7 +196,7 @@ class _GroupScreenState extends State<GroupScreen> {
   }
 
   Widget _buildGroupHeader(BuildContext context, Group group) {
-    final bool isCurrentUserLeader =
+    final bool isUserLeader =
         true; // Moved from parent scope for this example
 
     return Container(
@@ -217,7 +215,7 @@ class _GroupScreenState extends State<GroupScreen> {
           ),
 
           // Upload Button (visible only to group leader)
-          if (isCurrentUserLeader)
+          if (isUserLeader)
             Positioned(
               top: 8,
               left: 8,
@@ -286,7 +284,7 @@ class _GroupScreenState extends State<GroupScreen> {
   Widget _buildMemberItem(
     BuildContext context,
     User member,
-    bool isCurrentUserLeader,
+    bool isUserLeader,
   ) {
     return ListTile(
       leading: CircleAvatar(
@@ -315,7 +313,7 @@ class _GroupScreenState extends State<GroupScreen> {
         ],
       ),
       trailing:
-          isCurrentUserLeader && member.id != group.leaderId
+          isUserLeader && member.id != group.leaderId
               ? PopupMenuButton(
                 icon: Icon(Icons.more_vert),
                 onSelected: (value) {
