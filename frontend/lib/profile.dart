@@ -209,8 +209,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
     if (icon != "pfp") {
       return NetworkImage(icon);
-    } else
+    } else {
       return null;
+    }
   }
 
   Widget _buildProfileHeader() {
