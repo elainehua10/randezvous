@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:io';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart';
@@ -64,6 +65,7 @@ class Auth {
     final response = await http.get(
       Uri.parse('http://localhost:5001/api/v1/$endpoint'),
       headers: {HttpHeaders.authorizationHeader: 'Bearer $token'},
+      headers: {HttpHeaders.authorizationHeader: 'Bearer $token'},
     );
     return response;
   }
@@ -77,6 +79,9 @@ class Auth {
     print(body);
 
     print('Bearer $token');
+    print(body);
+
+    print('Bearer $token');
     final response = await http.post(
       Uri.parse('http://localhost:5001/api/v1/$endpoint'),
       headers: {
@@ -87,6 +92,14 @@ class Auth {
     );
     return response;
   }
+
+  static Future<void> removeTokens() async {
+    String token = (await getAccessToken())!;
+    print(token);
+    await storage.delete(key: 'access_token');
+    await storage.delete(key: 'refresh_token');
+  }
+}
 
   static Future<void> removeTokens() async {
     String token = (await getAccessToken())!;

@@ -61,6 +61,8 @@ export function requireAuth(
       return;
     }
 
+    console.log("hi");
+
     console.log(Date.now() / 1000);
     console.log(decoded.exp || 0 < Date.now() / 1000);
 
@@ -70,10 +72,13 @@ export function requireAuth(
       return;
     }
 
+    console.log(decoded);
+
     req.body.userId = decoded.user_metadata.sub;
 
     next();
-  } catch {
+  } catch (err) {
+    console.log(err);
     const error = new Error("Unauthorized: Invalid token/secret");
     next(error);
     return;
