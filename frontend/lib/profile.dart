@@ -323,7 +323,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         );
       }
     }
-    //Navigator.pop(context);
   }
 
   Future<void> _deletePhoto(BuildContext context) async {
@@ -338,7 +337,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
       final responseData = jsonDecode(response.body);
       print(responseData);
-      //_fetchUserDetails();
     } catch (e) {
       print(e);
       showDialog(
