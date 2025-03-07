@@ -7,7 +7,7 @@ import {
   setProfilePicture,
   deleteAccount,
   refreshToken,
-  search,
+  getUserProfileInfo,
 } from "./controllers/user";
 import MessageResponse from "../interfaces/MessageResponse";
 import emojis from "./emojis";
@@ -32,6 +32,7 @@ router.use("/logout", requireAuth, logout);
 router.use("/set-profile-picture", requireAuth, setProfilePicture);
 router.use("/delete-account", requireAuth, deleteAccount);
 router.use("/refresh-token", refreshToken);
+router.use("/get-user-profile-info", requireAuth, getUserProfileInfo);
 
 // Group routes
 router.use("/groups/create", requireAuth, group.createGroup);

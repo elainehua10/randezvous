@@ -4,6 +4,7 @@ import sql from "../../db";
 import sharp from "sharp";
 import { UploadedFile } from "express-fileupload";
 
+
 // Register
 export const register = async (req: Request, res: Response) => {
   const { email, password, username, firstname, lastname } = req.body;
@@ -74,13 +75,13 @@ export const changeUsername = async (req: Request, res: Response) => {
 
   try {
     const existingUser = await sql`
-      SELECT id FROM profile WHERE username = ${newUsername}
+      SELECT id FROM profile WHERE username = ${newUsername};
     `;
     if (existingUser.length > 0) {
       return res.status(400).json({ error: "Username already taken" });
     }
     await sql`
-      UPDATE profile SET username = ${newUsername} WHERE id = ${userId}
+      UPDATE profile SET username = ${newUsername} WHERE id = ${userId};
     `;
     res.status(200).json({ message: "Username updated successfully" });
   } catch (error) {
@@ -142,7 +143,7 @@ export const setProfilePicture = async (req: Request, res: Response) => {
     await sql`
       UPDATE profile
       SET profile_picture_url = ${data.publicUrl}
-      WHERE id = ${userId}
+      WHERE id = ${userId};
     `;
     return res
       .status(200)
@@ -186,7 +187,7 @@ export const deleteAccount = async (req: Request, res: Response) => {
   }
 };
 
-// refresh
+// Refresh token
 export const refreshToken = async (req: Request, res: Response) => {
   const { refreshToken } = req.body;
 
@@ -245,3 +246,34 @@ export const search = async (req: Request, res: Response) => {
     });
   }
 };
+
+// Retrieve user profile information
+export const getUserProfileInfo = async (req: Request, res: Response) => {
+  try {
+    const userId = req.body.userId;
+    const result = await sql`
+      SELECT first_name, last_name, username 
+      FROM profile 
+      WHERE id = ${userId};
+    `;
+
+    if (result.length === 0) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const { first_name, last_name, username } = result[0];
+
+    console.log("First Name:", first_name);
+    console.log("Last Name:", last_name);
+    console.log("Username:", username);
+
+    res.status(200).json({
+      first_name,
+      last_name,
+      username,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+}
