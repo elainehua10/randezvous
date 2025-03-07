@@ -41,7 +41,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           firstName = data['first_name'] ?? 'First';
           lastName = data['last_name'] ?? 'Last';
           username = data['username'] ?? 'username';
-          icon = data['icon_url'] ?? 'pfp';
+          icon = data['profile_picture'] ?? 'pfp';
           isLoading = false;
         });
       } else {
@@ -309,12 +309,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
       });
       print("Image picked: ${pickedFile.path}");
       try {
-        Auth.uploadFileWithAuth(
+        final response = await Auth.uploadFileWithAuth(
           '/set-profile-picture',
           File(pickedFile.path),
           {},
         );
+        final responseData = jsonDecode(response.body);
+        print(responseData);
       } catch (e) {
+        print(e);
         showDialog(
           context: context,
           builder:
