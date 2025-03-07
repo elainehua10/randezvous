@@ -225,10 +225,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 radius: 50,
                 backgroundColor: Colors.blue,
                 backgroundImage: getBackgroundImage(),
-                child:
-                    _profileImage == null
-                        ? Icon(Icons.person, size: 50, color: Colors.white)
-                        : null,
+                child: getBackgroundImage() == null ? Icon(Icons.person, size: 50, color: Colors.white) : null,
               ),
               Container(
                 height: 35,
