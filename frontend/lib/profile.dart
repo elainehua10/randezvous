@@ -1,9 +1,11 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:frontend/auth.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import 'package:http_parser/http_parser.dart';
 
 class ProfileScreen extends StatefulWidget {
   @override
@@ -15,6 +17,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String lastName = "Last";
   String username = "username";
   bool isLoading = true;
+  String icon = "pfp";
+  final ImagePicker _picker = ImagePicker();
+  File? _profileImage;
 
   @override
   void initState() {
@@ -35,6 +40,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           firstName = data['first_name'] ?? 'First';
           lastName = data['last_name'] ?? 'Last';
           username = data['username'] ?? 'username';
+          icon = data['icon_url'] ?? 'pfp';
           isLoading = false;
         });
       } else {
@@ -68,7 +74,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: 20),
                   _buildProfileHeader(),
                   const Divider(),
-                  _buildListTile(title: "Account Details", onTap: () {}),
+                  _buildListTile(title: "Edit Profile", onTap: () {}),
                   _buildListTile(title: "Achievements", onTap: () {}),
                   _buildListTile(title: "Settings", onTap: () {}),
                   _buildListTile(
@@ -109,7 +115,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               CircleAvatar(
                 radius: 50,
                 backgroundColor: Colors.blue,
-                child: Icon(Icons.person, size: 50, color: Colors.white),
+                backgroundImage: _profileImage != null ? FileImage(_profileImage!) : null,
+                child: _profileImage == null ? Icon(Icons.person, size: 50, color: Colors.white) : null,
               ),
               Container(
                 height: 35,
@@ -121,9 +128,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 child: IconButton(
                   icon: Icon(Icons.edit, color: Colors.white, size: 15),
-                  onPressed: () {
+                  onPressed: () => _showEditPhotoOptions(context),
                     // Action to edit user info
-                  },
                 ),
               ),
             ],
@@ -139,9 +145,98 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  void _showEditPhotoOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext bc) {
+        return SafeArea(
+          child: Wrap(
+            children: <Widget>[
+              ListTile(
+                  leading: Icon(Icons.photo_library),
+                  title: Text('Choose from library'),
+                  onTap: () {
+                    //Navigator.pop(context);
+                    _pickImage(ImageSource.gallery, context);
+                  }),
+              ListTile(
+                leading: Icon(Icons.photo_camera),
+                title: Text('Take photo'),
+                onTap: () {
+                    //Navigator.pop(context);
+                    _pickImage(ImageSource.camera, context);
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.delete, color: Colors.red),
+                title: Text('Delete photo', style: TextStyle(color: Colors.red)),
+                onTap: () {
+                  setState(() {
+                    _profileImage = null;
+                  });
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                title: Text('Cancel'),
+                onTap: () => Navigator.pop(context),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _pickImage(ImageSource source, BuildContext context) async {
+    final pickedFile = await _picker.pickImage(source: source);
+    if (pickedFile != null) {
+      //File imageFile = File(pickedFile.path);
+      setState(() {
+        _profileImage = File(pickedFile.path);
+      });
+      print("Image picked: ${pickedFile.path}");
+      try {
+        final uri = Uri.parse('http://localhost:5001/api/v1/set-profile-picture');
+        var request = http.MultipartRequest('POST', uri)
+          ..fields['username'] = username
+          ..files.add(await http.MultipartFile.fromPath(
+            'icon',
+            _profileImage!.path,
+            contentType: MediaType('image', _profileImage!.path.split('.').last),
+          ));
+
+        var streamedResponse = await request.send();
+        var response = await http.Response.fromStream(streamedResponse);
+
+        if (response.statusCode == 200) {
+          print('Profile picture uploaded successfully.');
+          //final responseData = jsonDecode(response.body);
+        } else {
+          print('Failed to upload profile picture.');
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: Text('Upload Failed'),
+              content: Text('Failed to upload profile picture. Please try again.'),
+            )
+          );
+        }
+      } catch (e) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text('Upload Error'),
+            content: Text('An error occurred while uploading the image. Please try again.'),
+          ),
+        );
+      }
+    }
+    Navigator.pop(context);
+  }
+
   Widget _buildListTile({required String title, required VoidCallback onTap}) {
     return ListTile(
-      //leading: Icon(icon),
       title: Text(
         title,
         style: TextStyle(

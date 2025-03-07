@@ -106,7 +106,7 @@ export const setProfilePicture = async (req: Request, res: Response) => {
     }
 
     // Validate file type
-    const allowedExtensions = [".png", ".jpg", ".jpeg", ".gif"];
+    const allowedExtensions = ["png", "jpg", "jpeg", "gif"];
     const fileExtension = iconFile.name.split(".").at(-1);
     if (!allowedExtensions.includes(fileExtension || "")) {
       return res
@@ -122,7 +122,7 @@ export const setProfilePicture = async (req: Request, res: Response) => {
       .toBuffer();
 
     // Upload to Supabase Storage (Bucket: "images")
-    const fileName = `user_${userId}_${Date.now()}${fileExtension}`;
+    const fileName = `user_${userId}_${Date.now()}.${fileExtension}`;
     const { error } = await supabase.storage
       .from("images")
       .upload(fileName, resizedImageBuffer, {
@@ -142,9 +142,9 @@ export const setProfilePicture = async (req: Request, res: Response) => {
       .getPublicUrl(fileName);
 
     // Update user profile with the new profile picture URL
-    await sql`
+    const updatedUser = await sql`
       UPDATE profile
-      SET profile_picture_url = ${data.publicUrl}
+      SET icon_url = ${data.publicUrl}
       WHERE id = ${userId};
     `;
     return res
