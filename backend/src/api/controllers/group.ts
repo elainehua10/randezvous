@@ -46,7 +46,8 @@ export const createGroup = async (req: Request, res: Response) => {
     `;
     if (existingGroup.length > 0) {
       return res.status(409).json({
-        error: "A group with this name already exists. Please choose a different name.",
+        error:
+          "A group with this name already exists. Please choose a different name.",
       });
     }
 
@@ -134,11 +135,9 @@ export const uploadIcon = async (req: Request, res: Response) => {
             SELECT id FROM groups WHERE id = ${groupId} AND leader_id = ${userId};
         `;
     if (group.length === 0) {
-      return res
-        .status(403)
-        .json({
-          error: "You are not authorized to upload an icon for this group.",
-        });
+      return res.status(403).json({
+        error: "You are not authorized to upload an icon for this group.",
+      });
     }
 
     // Extract file
@@ -151,11 +150,9 @@ export const uploadIcon = async (req: Request, res: Response) => {
     const allowedExtensions = ["png", "jpg", "jpeg", "gif"];
     const fileExtension = iconFile.name.split(".").at(-1);
     if (!allowedExtensions.includes(fileExtension || "")) {
-      return res
-        .status(400)
-        .json({
-          error: "Invalid file type. Only PNG, JPG, JPEG, and GIF are allowed.",
-        });
+      return res.status(400).json({
+        error: "Invalid file type. Only PNG, JPG, JPEG, and GIF are allowed.",
+      });
     }
 
     // Size the file down
@@ -178,9 +175,7 @@ export const uploadIcon = async (req: Request, res: Response) => {
     }
 
     // Get public URL
-    const { data } = supabase.storage
-      .from("images")
-      .getPublicUrl(fileName);
+    const { data } = supabase.storage.from("images").getPublicUrl(fileName);
 
     // Update group icon URL
     const updatedGroup = await sql`
@@ -275,11 +270,9 @@ export const removeFromGroup = async (req: Request, res: Response) => {
             SELECT id FROM groups WHERE id = ${groupId} AND leader_id = ${userId};
         `;
     if (group.length === 0) {
-      return res
-        .status(403)
-        .json({
-          error: "You are not authorized to remove people from this group.",
-        });
+      return res.status(403).json({
+        error: "You are not authorized to remove people from this group.",
+      });
     }
 
     // Remove user from user_group table
@@ -420,9 +413,9 @@ export const getGroupMembers = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Group not found." });
     }
 
-    const leaderId = group[0].leader_id;
-    const groupName = group[0].name;
-    const isUserLeader = userId === leaderId;
+    const leader_id = group[0].leader_id;
+    const name = group[0].name;
+    const isUserLeader = userId === leader_id;
 
     // Fetch all members of the group
     const members = await sql`
@@ -434,8 +427,8 @@ export const getGroupMembers = async (req: Request, res: Response) => {
 
     return res.status(200).json({
       groupId,
-      groupName, 
-      leaderId,
+      name,
+      leader_id,
       isUserLeader,
       members,
     });
@@ -444,7 +437,6 @@ export const getGroupMembers = async (req: Request, res: Response) => {
     return res.status(500).json({ error: "Internal server error" });
   }
 };
-
 
 // Get locations of other users
 export const getGroupLocations = async (req: Request, res: Response) => {
@@ -530,4 +522,4 @@ export const getUserInvites = async (req: Request, res: Response) => {
     console.error("Error fetching user invites:", error);
     return res.status(500).json({ error: "Internal server error" });
   }
-}
+};
