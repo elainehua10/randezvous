@@ -309,13 +309,7 @@ export const acceptInvite = async (req: Request, res: Response) => {
         AND status = 'pending'
       LIMIT 1;
     `;
-    if (invite.length === 0) {
-      return res
-        .status(404)
-        .json({ error: "No pending invite found for this user and group" });
-    }
-
-    if (!invite) {
+    if (!invite || invite.length === 0) {
       return res
         .status(404)
         .json({ error: "No pending invite found for this user and group" });
@@ -323,14 +317,16 @@ export const acceptInvite = async (req: Request, res: Response) => {
 
     // Check if the user is already in a group
     const userProfile = await sql`
-      SELECT in_group FROM profile WHERE id = ${userId};
+      SELECT in_group FROM profile WHERE id = ${userId} LIMIT 1;
     `;
-    if (userProfile.length > 0 && userProfile[0].in_group) {
-      return res
-        .status(403)
-        .json({
+    if (userProfile.length !== 0) {
+      console.log("in_group value:", userProfile[0].in_group);
+
+      if (userProfile[0].in_group === true) { 
+        return res.status(403).json({
           error: "You are already in a group and cannot accept an invite.",
         });
+      }
     }
 
     // Adding user to the user_group table
