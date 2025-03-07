@@ -216,13 +216,14 @@ export const deleteAccount = async (req: Request, res: Response) => {
 
   try {
     console.log("Deleting user with ID:", userId);
-    await sql`DELETE FROM profile WHERE id = ${userId};`;
-    await sql`DELETE FROM user_group WHERE user_id = ${userId};`;
-    await sql`DELETE FROM blocked WHERE user_id = ${userId};`;
-    await sql`DELETE FROM blocked WHERE blocked_id = ${userId};`;
-    await sql`DELETE FROM invite WHERE from_user_id = ${userId};`;
-    await sql`DELETE FROM invite WHERE to_user_id = ${userId};`;
-    await sql`DELETE FROM groups WHERE leader_id = ${userId};`;
+    await Promise.all([
+      sql`DELETE FROM profile WHERE id = ${userId};`,
+      sql`DELETE FROM user_group WHERE user_id = ${userId};`,
+      sql`DELETE FROM blocked WHERE user_id = ${userId} OR blocked_id = ${userId};`,
+      sql`DELETE FROM invite WHERE from_user_id = ${userId} OR to_user_id = ${userId};`,
+      sql`DELETE FROM groups WHERE leader_id = ${userId};`,
+    ]);
+
     const { error: authError } = await supabase.auth.admin.deleteUser(userId);
     if (authError) {
       console.error(
