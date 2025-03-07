@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:io';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart';
@@ -74,6 +75,9 @@ class Auth {
   ) async {
     await refreshTokenIfNeeded();
     final token = await getAccessToken();
+    print(body);
+
+    print('Bearer $token');
     print(body);
 
     print('Bearer $token');
