@@ -538,10 +538,11 @@ class _GroupScreenState extends State<GroupScreen> {
   }
 
   void _showGroupSettings(BuildContext context, Group group) {
-    // Create a TextEditingController to manage the input
     final TextEditingController nameController = TextEditingController(
       text: group.name,
     );
+
+    bool isPublic = group.isPublic; // Local copy of group's publicity status
 
     showModalBottomSheet(
       context: context,
@@ -550,127 +551,211 @@ class _GroupScreenState extends State<GroupScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-          ),
-          child: Container(
-            padding: EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Group Settings',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                SizedBox(height: 24),
-
-                // Rename Group Option
-                TextFormField(
-                  controller: nameController,
-                  decoration: InputDecoration(
-                    labelText: 'Group Name',
-                    border: OutlineInputBorder(),
-                    suffixIcon: Icon(Icons.edit),
-                  ),
-                ),
-                SizedBox(height: 16),
-
-                SizedBox(height: 24),
-
-                // Save Button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      // Show loading indicator
-                      showDialog(
-                        context: context,
-                        barrierDismissible: false,
-                        builder:
-                            (context) =>
-                                Center(child: CircularProgressIndicator()),
-                      );
-
-                      try {
-                        // Make API call to rename group
-                        final response =
-                            await Auth.makeAuthenticatedPostRequest(
-                              "groups/rename",
-                              {
-                                "groupId": widget.groupId,
-                                "newName": nameController.text.trim(),
-                              },
-                            );
-
-                        // Close loading dialog
-                        Navigator.pop(context);
-
-                        if (response.statusCode == 200) {
-                          // Update local group data
-                          fetchGroupDetails();
-
-                          // Close settings dialog
-                          Navigator.pop(context);
-
-                          // Show success message
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Group name updated successfully'),
-                            ),
-                          );
-                        } else {
-                          // Show error message
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Failed to update group name: ${response.body}',
-                              ),
-                            ),
-                          );
-                        }
-                      } catch (e) {
-                        // Close loading dialog
-                        Navigator.pop(context);
-
-                        // Show error message
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Error: ${e.toString()}')),
-                        );
-                      }
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Text('Save Changes'),
-                    ),
-                  ),
-                ),
-                SizedBox(height: 16),
-
-                // Leave Group Option
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      _showLeaveGroupDialog();
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Text(
-                        'Leave Group',
-                        style: TextStyle(color: Colors.red),
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+              ),
+              child: Container(
+                padding: EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Group Settings',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: Colors.red),
+                    SizedBox(height: 24),
+
+                    // Rename Group Option
+                    TextFormField(
+                      controller: nameController,
+                      decoration: InputDecoration(
+                        labelText: 'Group Name',
+                        border: OutlineInputBorder(),
+                        suffixIcon: Icon(Icons.edit),
+                      ),
                     ),
-                  ),
+                    SizedBox(height: 16),
+
+                    // Toggle for Group Publicity
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              isPublic ? Icons.public : Icons.lock,
+                              color: isPublic ? Colors.green : Colors.grey[600],
+                              size: 20,
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              isPublic ? "Public Group" : "Private Group",
+                              style: TextStyle(
+                                color: Colors.grey[800],
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Switch(
+                          value: isPublic,
+                          onChanged: (value) async {
+                            setState(() {
+                              isPublic = value; // Update UI immediately
+                            });
+
+                            // Show loading indicator
+                            showDialog(
+                              context: context,
+                              barrierDismissible: false,
+                              builder:
+                                  (context) => Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
+                            );
+
+                            try {
+                              final response =
+                                  await Auth.makeAuthenticatedPostRequest(
+                                    "/groups/setpub",
+                                    {
+                                      "groupId": widget.groupId,
+                                      "isPublic":
+                                          value, // Send new public status
+                                    },
+                                  );
+
+                              // Close loading dialog
+                              Navigator.pop(context);
+
+                              if (response.statusCode == 200) {
+                                setState(() {
+                                  isPublic = value;
+                                });
+                                fetchGroupDetails(); // Refresh group details
+
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'Group publicity updated successfully',
+                                    ),
+                                  ),
+                                );
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'Failed to update publicity: ${response.body}',
+                                    ),
+                                  ),
+                                );
+                              }
+                            } catch (e) {
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Error: ${e.toString()}'),
+                                ),
+                              );
+                            }
+                          },
+                          activeColor: Colors.amber[800],
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 24),
+
+                    // Save Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder:
+                                (context) =>
+                                    Center(child: CircularProgressIndicator()),
+                          );
+
+                          try {
+                            final response =
+                                await Auth.makeAuthenticatedPostRequest(
+                                  "groups/rename",
+                                  {
+                                    "groupId": widget.groupId,
+                                    "newName": nameController.text.trim(),
+                                  },
+                                );
+
+                            Navigator.pop(context);
+
+                            if (response.statusCode == 200) {
+                              fetchGroupDetails();
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Group name updated successfully',
+                                  ),
+                                ),
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Failed to update group name: ${response.body}',
+                                  ),
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Error: ${e.toString()}')),
+                            );
+                          }
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: Text('Save Changes'),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 16),
+
+                    // Leave Group Option
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _showLeaveGroupDialog();
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: Text(
+                            'Leave Group',
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: Colors.red),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
     );

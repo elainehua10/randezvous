@@ -70,7 +70,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         {},
       );
       final data = json.decode(response.body);
-      print(data);
       if (response.statusCode == 200) {
         setState(() {
           firstName = data['first_name'] ?? 'First';
@@ -78,7 +77,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           username = data['username'] ?? 'username';
         });
       } else {
-        print(data);
         throw Exception('Failed to load user details');
       }
     } catch (e) {
@@ -125,25 +123,28 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           print('Failed to update username: ${response.body}');
           final responseData = jsonDecode(response.body);
           int error = 0;
-          if (responseData['error'] == "The new username must be different from the current one") {
+          if (responseData['error'] ==
+              "The new username must be different from the current one") {
             error = 1;
           }
           if (error == 1) {
             showDialog(
-            context: context,
-            builder:
-                (context) => AlertDialog(
-                  title: Text('Update Failed'),
-                  content: Text('The new username must be different from the current one. Please try again.'),
-                  actions: <Widget>[
-                    TextButton(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                      },
-                      child: Text('OK'),
+              context: context,
+              builder:
+                  (context) => AlertDialog(
+                    title: Text('Update Failed'),
+                    content: Text(
+                      'The new username must be different from the current one. Please try again.',
                     ),
-                  ],
-                ),
+                    actions: <Widget>[
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        child: Text('OK'),
+                      ),
+                    ],
+                  ),
             );
           } else {
             showDialog(

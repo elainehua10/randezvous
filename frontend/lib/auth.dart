@@ -75,12 +75,6 @@ class Auth {
   ) async {
     await refreshTokenIfNeeded();
     final token = await getAccessToken();
-    print(body);
-
-    print('Bearer $token');
-    print(body);
-
-    print('Bearer $token');
     final response = await http.post(
       Uri.parse('http://localhost:5001/api/v1/$endpoint'),
       headers: {
