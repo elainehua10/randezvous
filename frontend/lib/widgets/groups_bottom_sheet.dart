@@ -21,10 +21,11 @@ class _GroupsBottomSheetState extends State<GroupsBottomSheet> {
 
   // Sample data - in a real app, this would come from a service
   final List<Group> _groups = [
-    Group(id: 'friends_group_id', name: 'Friends Group'),
-    Group(id: 'work_buddies_id', name: 'Work Buddies'),
-    Group(id: 'gaming_squad_id', name: 'Gaming Squad'),
+    Group(id: 'friends_group_id', name: 'Friends Group', leaderId: 'leader_1'),
+    Group(id: 'work_buddies_id', name: 'Work Buddies', leaderId: 'leader_2'),
+    Group(id: 'gaming_squad_id', name: 'Gaming Squad', leaderId: 'leader_3'),
   ];
+
 
   @override
   void initState() {
