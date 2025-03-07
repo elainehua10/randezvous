@@ -131,10 +131,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _deleteAccount() async {
   try {
-    String? accessToken = await Auth.getAccessToken();  // Ensure this is the correct method to get the access token
-    String userId = username;  // Retrieve the user's ID, replace with actual logic to obtain current user ID
+    String? accessToken = await Auth.getAccessToken(); 
+    String userId = username;
 
-    final url = Uri.parse('http://localhost:5001/api/v1/delete-account');  // Update the URL based on your server configuration
+    final url = Uri.parse('http://localhost:5001/api/v1/delete-account');
     final response = await http.post(
       url,
       headers: {
@@ -146,8 +146,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (response.statusCode == 200) {
       print('Account deleted successfully');
-      // Optionally log out user and navigate to login screen
-      Auth.removeTokens();  // Assuming you have a method to clear auth tokens
+      Auth.removeTokens();
       Navigator.pushReplacementNamed(context, '/login');
     } else {
       // Handle different status codes or server errors

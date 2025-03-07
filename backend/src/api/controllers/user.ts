@@ -168,7 +168,7 @@ export const logout = async (req: Request, res: Response) => {
 };
 
 // Delete account
-export const deleteAccount = async (req: Request, res: Response) => {
+/*export const deleteAccount = async (req: Request, res: Response) => {
   const { userId } = req.body;
   if (!userId) {
     return res.status(400).json({ error: "Missing userId" });
@@ -177,7 +177,7 @@ export const deleteAccount = async (req: Request, res: Response) => {
     await sql`
       DELETE FROM profile WHERE id = ${userId};
     `;
-    const { data, error } = await supabase.auth.admin.deleteUser(userId);
+    const { error } = await supabase.auth.admin.deleteUser(userId);
     if (error) {
       return res.status(500).json({ error: error.message });
     }
@@ -185,7 +185,31 @@ export const deleteAccount = async (req: Request, res: Response) => {
   } catch (error) {
     res.status(500).json({ error: "Internal server error" });
   }
+};*/
+
+export const deleteAccount = async (req: Request, res: Response) => {
+  const { userId } = req.body;
+  if (!userId) {
+    return res.status(400).json({ error: "Missing userId" });
+  }
+
+  try {
+    await sql`DELETE FROM profile WHERE id = ${userId};`;
+
+    const { error } = await supabase.auth.admin.deleteUser(userId);
+    if (error) {
+      console.error("Error deleting user from authentication system:", error);
+      return res.status(500).json({ error: error.message });
+    }
+
+    res.status(200).json({ message: "Account deleted successfully" });
+  } catch (error) {
+    console.error("Error during account deletion:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 };
+
+
 
 // Refresh token
 export const refreshToken = async (req: Request, res: Response) => {
