@@ -20,6 +20,7 @@ router.use("/login", login);
 router.use("/refresh-token", refreshToken);
 
 // Group routes
+router.use("/groups/members", requireAuth, group.getGroupMembers);
 router.use("/groups/create", requireAuth, group.createGroup);
 router.use(
   "/groups/rename",
@@ -49,5 +50,7 @@ router.use(
 router.use("/groups/accept", requireAuth, group.acceptInvite);
 router.use("/groups/leave", requireAuth, group.leaveGroup);
 router.use("/groups/locations", requireAuth, group.getGroupLocations);
+router.use("/groups/members", requireAuth, group.getGroupMembers);
+
 
 export default router;

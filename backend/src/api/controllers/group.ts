@@ -165,7 +165,7 @@ export const uploadIcon = async (req: Request, res: Response) => {
     }
 
     // Get public URL
-    const { data } = await supabase.storage
+    const { data } = supabase.storage
       .from("images")
       .getPublicUrl(fileName);
 
@@ -392,6 +392,45 @@ export const leaveGroup = async (req: Request, res: Response) => {
     return res.status(500).json({
       error: (error as Error).message || "An unknown error occurred",
     });
+  }
+};
+
+export const getGroupMembers = async (req: Request, res: Response) => {
+  try {
+    const { userId, groupId } = req.body;
+
+    if (!userId || !groupId) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    // Check if the group exists and fetch the leader's ID
+    const group = await sql`
+      SELECT leader_id FROM groups WHERE id = ${groupId};
+    `;
+
+    if (group.length === 0) {
+      return res.status(404).json({ error: "Group not found." });
+    }
+
+    const leaderId = group[0].leader_id;
+    const isUserLeader = userId === leaderId;
+
+    // Fetch all members of the group
+    const members = await sql`
+      SELECT u.id, u.name, u.avatar_url
+      FROM user_group ug
+      JOIN profile u ON ug.user_id = u.id
+      WHERE ug.group_id = ${groupId};
+    `;
+
+    return res.status(200).json({
+      leaderId,
+      isUserLeader,
+      members,
+    });
+  } catch (error) {
+    console.error("Error fetching group members:", error);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
