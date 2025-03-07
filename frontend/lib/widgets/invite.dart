@@ -1,23 +1,33 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:frontend/auth.dart';
 import 'package:frontend/models/user.dart';
 import 'package:http/http.dart';
+import 'package:image_picker/image_picker.dart';
 
 class InviteMembersDialog {
-  static void show(BuildContext context, String groupId) {
+  static void show(BuildContext context, String groupId, bool isUserLeader) {
     showDialog(
       context: context,
-      builder: (context) => _InviteMembersDialog(groupId: groupId),
+      builder:
+          (context) => _InviteMembersDialog(
+            groupId: groupId,
+            isUserLeader: isUserLeader,
+          ),
     );
   }
 }
 
 class _InviteMembersDialog extends StatefulWidget {
   final String groupId;
+  final bool isUserLeader;
 
-  const _InviteMembersDialog({required this.groupId});
+  const _InviteMembersDialog({
+    required this.groupId,
+    required this.isUserLeader,
+  });
 
   @override
   _InviteMembersDialogState createState() => _InviteMembersDialogState();
@@ -26,6 +36,8 @@ class _InviteMembersDialog extends StatefulWidget {
 class _InviteMembersDialogState extends State<_InviteMembersDialog> {
   final TextEditingController _searchController = TextEditingController();
   List<User> _searchResults = [];
+  File? _selectedImage;
+  final ImagePicker _picker = ImagePicker();
 
   void _performUserSearch(String userId) async {
     if (userId.isEmpty) return;
@@ -36,7 +48,6 @@ class _InviteMembersDialogState extends State<_InviteMembersDialog> {
     final responseData = jsonDecode(response.body);
 
     if (response.statusCode == 200) {
-      print(responseData["users"]);
       List<User> results =
           responseData["users"]
               .map<User>(
@@ -53,9 +64,19 @@ class _InviteMembersDialogState extends State<_InviteMembersDialog> {
         _searchResults = results;
       });
     } else {
-      print(responseData);
       setState(() {
         _searchResults = [];
+      });
+    }
+  }
+
+  Future<void> _pickImage() async {
+    final XFile? pickedImage = await _picker.pickImage(
+      source: ImageSource.gallery,
+    );
+    if (pickedImage != null) {
+      setState(() {
+        _selectedImage = File(pickedImage.path);
       });
     }
   }
@@ -64,8 +85,7 @@ class _InviteMembersDialogState extends State<_InviteMembersDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text('Invite Members'),
-      content: Container(
-        width: double.maxFinite,
+      content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -106,14 +126,9 @@ class _InviteMembersDialogState extends State<_InviteMembersDialog> {
                         onPressed: () async {
                           await Auth.makeAuthenticatedPostRequest(
                             "groups/invite",
-                            {
-                              "groupId":
-                                  widget.groupId, // Pass the groupId here
-                              "toUserId": user.id, // Pass the user ID to invite
-                            },
+                            {"groupId": widget.groupId, "toUserId": user.id},
                           );
                           Navigator.pop(context);
-                          // Optionally, show a confirmation
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text('Invited ${user.name}')),
                           );
@@ -125,6 +140,19 @@ class _InviteMembersDialogState extends State<_InviteMembersDialog> {
               )
             else if (_searchController.text.isNotEmpty)
               Text('No results found'),
+            SizedBox(height: 16),
+            if (widget.isUserLeader) ...[
+              ElevatedButton.icon(
+                onPressed: _pickImage,
+                icon: Icon(Icons.upload),
+                label: Text('Upload Image'),
+              ),
+              if (_selectedImage != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Image.file(_selectedImage!, height: 100),
+                ),
+            ],
           ],
         ),
       ),
