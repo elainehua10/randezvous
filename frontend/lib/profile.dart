@@ -1,9 +1,12 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:frontend/auth.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import 'package:http_parser/http_parser.dart';
+import 'package:frontend/edit_profile.dart';
 
 class ProfileScreen extends StatefulWidget {
   @override
@@ -15,6 +18,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String lastName = "Last";
   String username = "username";
   bool isLoading = true;
+  String icon = "pfp";
+  final ImagePicker _picker = ImagePicker();
+  File? _profileImage;
 
   @override
   void initState() {
@@ -35,6 +41,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           firstName = data['first_name'] ?? 'First';
           lastName = data['last_name'] ?? 'Last';
           username = data['username'] ?? 'username';
+          icon = data['icon_url'] ?? 'pfp';
           isLoading = false;
         });
       } else {
@@ -62,24 +69,122 @@ class _ProfileScreenState extends State<ProfileScreen> {
           isLoading
               ? Center(
                 child: CircularProgressIndicator(),
-              ) // Show loading indicator
+              )
               : ListView(
                 children: [
                   const SizedBox(height: 20),
                   _buildProfileHeader(),
                   const Divider(),
-                  _buildListTile(title: "Account Details", onTap: () {}),
+                  _buildListTile(
+                    title: "Edit Profile",
+                    onTap: () => _navigateAndRefresh(context),
+                  ),
                   _buildListTile(title: "Achievements", onTap: () {}),
                   _buildListTile(title: "Settings", onTap: () {}),
                   _buildListTile(
                     title: "Log out",
                     onTap: () => _handleLogout(context),
                   ),
-                  _buildListTile(title: "Delete Account", onTap: () {}),
+                  _buildListTile(
+                    title: "Delete Account",
+                    onTap: () => _handleDelete(context),
+                  ),
                 ],
               ),
     );
   }
+
+  void _navigateAndRefresh(BuildContext context) {
+    Navigator.pushNamed(context, '/edit-profile').then((value) {
+      if (value == true) {
+        _fetchUserDetails();
+      }
+    });
+  }
+
+  void _handleDelete(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Delete Account'),
+          content: Text('Are you sure you want to delete your account permanently? This action cannot be undone.'),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: Text('Delete', style: TextStyle(color: Colors.red)),
+              onPressed: () {
+                Navigator.of(context).pop(); // close the dialog
+                _deleteAccount(); // call delete function
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _deleteAccount() async {
+  try {
+    String? accessToken = await Auth.getAccessToken();  // Ensure this is the correct method to get the access token
+    String userId = username;  // Retrieve the user's ID, replace with actual logic to obtain current user ID
+
+    final url = Uri.parse('http://localhost:5001/api/v1/delete-account');  // Update the URL based on your server configuration
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        HttpHeaders.authorizationHeader: 'Bearer $accessToken',
+      },
+      body: jsonEncode({'userId': userId}),
+    );
+
+    if (response.statusCode == 200) {
+      print('Account deleted successfully');
+      // Optionally log out user and navigate to login screen
+      Auth.removeTokens();  // Assuming you have a method to clear auth tokens
+      Navigator.pushReplacementNamed(context, '/login');
+    } else {
+      // Handle different status codes or server errors
+      final responseData = jsonDecode(response.body);
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Failed to Delete Account'),
+            content: Text(responseData['error'] ?? 'Unknown error occurred.'),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); 
+                },
+                child: Text('OK'),
+              ),
+            ],
+          );
+          
+        }
+      );
+      print('Failed to delete account: ${response.body}');
+    }
+  } catch (e) {
+    print("Error deleting account: $e");
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Error'),
+          content: Text('An error occurred while deleting the account.'),
+        );
+      }
+    );
+  }
+}
 
   Future<void> _handleLogout(BuildContext context) async {
     try {
@@ -98,6 +203,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  ImageProvider<Object>? getBackgroundImage() {
+    if (_profileImage != null) {
+      return FileImage(_profileImage!);
+    }
+    if (icon != "pfp") {
+      return NetworkImage(icon);
+    }
+    else return null;
+  }
+
   Widget _buildProfileHeader() {
     return Center(
       child: Column(
@@ -109,7 +224,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               CircleAvatar(
                 radius: 50,
                 backgroundColor: Colors.blue,
-                child: Icon(Icons.person, size: 50, color: Colors.white),
+                backgroundImage: getBackgroundImage(),
+                child: _profileImage == null ? Icon(Icons.person, size: 50, color: Colors.white) : null,
               ),
               Container(
                 height: 35,
@@ -121,9 +237,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 child: IconButton(
                   icon: Icon(Icons.edit, color: Colors.white, size: 15),
-                  onPressed: () {
-                    // Action to edit user info
-                  },
+                  onPressed: () => _showEditPhotoOptions(context),
                 ),
               ),
             ],
@@ -139,9 +253,71 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  void _showEditPhotoOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext bc) {
+        return SafeArea(
+          child: Wrap(
+            children: <Widget>[
+              ListTile(
+                  leading: Icon(Icons.photo_library),
+                  title: Text('Choose from library'),
+                  onTap: () {
+                    _pickImage(ImageSource.gallery, context);
+                  }),
+              ListTile(
+                leading: Icon(Icons.photo_camera),
+                title: Text('Take photo'),
+                onTap: () {
+                    _pickImage(ImageSource.camera, context);
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.delete, color: Colors.red),
+                title: Text('Delete photo', style: TextStyle(color: Colors.red)),
+                onTap: () {
+                  setState(() {
+                    _profileImage = null;
+                  });
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                title: Text('Cancel'),
+                onTap: () => Navigator.pop(context),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _pickImage(ImageSource source, BuildContext context) async {
+    final pickedFile = await _picker.pickImage(source: source);
+    if (pickedFile != null) {
+      setState(() {
+        _profileImage = File(pickedFile.path);
+      });
+      print("Image picked: ${pickedFile.path}");
+      try {
+        Auth.uploadFileWithAuth('/set-profile-picture', File(pickedFile.path), {});
+      } catch (e) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text('Upload Error'),
+            content: Text('An error occurred while uploading the image. Please try again.'),
+          ),
+        );
+      }
+    }
+    Navigator.pop(context);
+  }
+
   Widget _buildListTile({required String title, required VoidCallback onTap}) {
     return ListTile(
-      //leading: Icon(icon),
       title: Text(
         title,
         style: TextStyle(
@@ -153,3 +329,4 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 }
+

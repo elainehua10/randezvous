@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:io';
-
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
+import 'package:path/path.dart';
 
 class Auth {
   static final storage = FlutterSecureStorage();
@@ -98,4 +98,31 @@ class Auth {
     await storage.delete(key: 'access_token');
     await storage.delete(key: 'refresh_token');
   }
+
+  static Future<Response> uploadFileWithAuth(String endpoint, File file, Object body) async {
+    await refreshTokenIfNeeded();
+    final token = await getAccessToken();
+
+    var request = http.MultipartRequest(
+      'POST', 
+      Uri.parse('http://localhost:5001/api/v1/$endpoint')
+    );
+
+    request.headers.addAll({
+      HttpHeaders.authorizationHeader: 'Bearer $token',
+    });
+
+    request.files.add(await http.MultipartFile.fromPath(
+      'icon',
+      file.path,
+      contentType: MediaType('image', extension(file.path).substring(1)),
+    ));
+
+    var streamedResponse = await request.send();
+
+    var response = await http.Response.fromStream(streamedResponse);
+
+    return response;
+  }
 }
+
