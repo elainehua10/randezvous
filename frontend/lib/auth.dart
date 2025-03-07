@@ -99,24 +99,33 @@ class Auth {
     await storage.delete(key: 'refresh_token');
   }
 
-  static Future<Response> uploadFileWithAuth(String endpoint, File file, Object body) async {
+  static Future<http.Response> uploadFileWithAuth(
+    String endpoint,
+    File file,
+    Map<String, dynamic> body,
+  ) async {
     await refreshTokenIfNeeded();
     final token = await getAccessToken();
 
     var request = http.MultipartRequest(
-      'POST', 
-      Uri.parse('http://localhost:5001/api/v1/$endpoint')
+      'POST',
+      Uri.parse('http://localhost:5001/api/v1/$endpoint'),
     );
 
-    request.headers.addAll({
-      HttpHeaders.authorizationHeader: 'Bearer $token',
+    request.headers.addAll({HttpHeaders.authorizationHeader: 'Bearer $token'});
+
+    // Add all body parameters as fields
+    body.forEach((key, value) {
+      request.fields[key] = value.toString();
     });
 
-    request.files.add(await http.MultipartFile.fromPath(
-      'icon',
-      file.path,
-      contentType: MediaType('image', extension(file.path).substring(1)),
-    ));
+    request.files.add(
+      await http.MultipartFile.fromPath(
+        'icon',
+        file.path,
+        contentType: MediaType('image', extension(file.path).substring(1)),
+      ),
+    );
 
     var streamedResponse = await request.send();
 
@@ -125,4 +134,3 @@ class Auth {
     return response;
   }
 }
-

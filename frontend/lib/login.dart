@@ -73,6 +73,7 @@ class _LoginScreenState extends State<LoginScreen> {
         elevation: 0,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
+        automaticallyImplyLeading: false,
       ),
       body: Padding(
         padding: EdgeInsets.all(20.0),

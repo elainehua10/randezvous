@@ -4,6 +4,8 @@ import 'package:frontend/login.dart';
 import 'package:frontend/register.dart';
 import 'package:frontend/map_screen.dart';
 import 'package:frontend/profile.dart';
+import 'package:frontend/edit_profile.dart';
+import 'package:frontend/search_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -20,10 +22,12 @@ class MyApp extends StatelessWidget {
       initialRoute: '/login',
       home: LoginScreen(),
       routes: {
+        '/search': (context) => SearchScreen(),
         '/login': (context) => LoginScreen(),
         '/register': (context) => RegisterScreen(),
         '/home': (context) => MapScreen(),
         '/profile': (context) => ProfileScreen(),
+        '/edit-profile': (context) => EditProfileScreen(),
       },
       onGenerateRoute: (settings) {
         if (settings.name == '/group') {

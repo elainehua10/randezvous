@@ -44,6 +44,7 @@ class _GroupsBottomSheetState extends State<GroupsBottomSheet> {
       print(data);
 
       if (response.statusCode == 200) {
+        print("sakldfja $data");
         setState(() {
           _groups =
               (data as List).map((group) => Group.fromJson(group)).toList();
@@ -226,6 +227,7 @@ class _GroupsBottomSheetState extends State<GroupsBottomSheet> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Title Row with "Create Group" button
+              // In the build method, modify the title row to include a search button
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -233,15 +235,33 @@ class _GroupsBottomSheetState extends State<GroupsBottomSheet> {
                     'Your Groups',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                  ElevatedButton.icon(
-                    onPressed: _createNewGroup,
-                    icon: Icon(Icons.add, size: 20),
-                    label: Text("Create"),
-                    style: ElevatedButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                  Row(
+                    children: [
+                      // Add Search button here
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.pushNamed(context, "/search");
+                        },
+                        icon: Icon(Icons.search, size: 20),
+                        label: Text("Search"),
+                        style: ElevatedButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
                       ),
-                    ),
+                      SizedBox(width: 8), // Add space between buttons
+                      ElevatedButton.icon(
+                        onPressed: _createNewGroup,
+                        icon: Icon(Icons.add, size: 20),
+                        label: Text("Create"),
+                        style: ElevatedButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

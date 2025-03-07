@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:frontend/widgets/map.dart';
 import 'package:frontend/widgets/groups_bottom_sheet.dart';
 import 'package:frontend/models/group.dart';
-import 'package:frontend/group_screen.dart'; // Add this import
+import 'package:frontend/group_screen.dart';
+import 'package:frontend/auth.dart'; // Assuming this contains makeAuthenticatedPostRequest
+import 'dart:convert'; // For JSON decoding
 
 class MapScreen extends StatefulWidget {
   @override
@@ -13,6 +15,46 @@ class _MapScreenState extends State<MapScreen> {
   int _selectedIndex = 1; // Start with index 1 which corresponds to 'Location'
   String? _selectedGroupId; // Track the currently selected group's ID
   String? _selectedGroupName; // Track the currently selected group's Name
+
+  @override
+  void initState() {
+    super.initState();
+    _checkGroupMembership(); // Check membership on load
+    print("ldlasdfkajdl");
+  }
+
+  Future<void> _checkGroupMembership() async {
+    if (_selectedGroupId == null) return; // No group selected, no need to check
+
+    print("HLELLO?");
+
+    try {
+      final response = await Auth.makeAuthenticatedPostRequest(
+        "groups/check-membership",
+        {"groupId": _selectedGroupId},
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        bool isMember =
+            data['isMember'] ?? false; // Adjust based on your API response
+        print("LKjkjalsdfjsl IS MEMBER???? $isMember");
+
+        if (!isMember) {
+          setState(() {
+            _selectedGroupId = null; // Clear if user is not a member
+            _selectedGroupName = null;
+          });
+        }
+      }
+    } catch (e) {
+      print("Error checking group membership: $e");
+      setState(() {
+        _selectedGroupId = null; // Clear on error
+        _selectedGroupName = null;
+      });
+    }
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -37,9 +79,10 @@ class _MapScreenState extends State<MapScreen> {
                 _selectedGroupId = null;
                 _selectedGroupName = null;
               } else {
-                // Select new group
+                // Select new group and check membership
                 _selectedGroupId = group.id;
                 _selectedGroupName = group.name;
+                _checkGroupMembership(); // Re-check membership after selection
               }
             });
           },
@@ -48,14 +91,15 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  void _navigateToGroupScreen() {
+  void _navigateToGroupScreen() async {
     if (_selectedGroupId != null) {
-      Navigator.push(
+      await Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => GroupScreen(groupId: _selectedGroupId!),
         ),
       );
+      _checkGroupMembership();
     }
   }
 
@@ -74,8 +118,9 @@ class _MapScreenState extends State<MapScreen> {
         actions: [
           IconButton(
             icon: Icon(Icons.person, color: Colors.black),
-            onPressed: () {
-              Navigator.pushNamed(context, '/profile');
+            onPressed: () async {
+              await Navigator.pushNamed(context, '/profile');
+              _checkGroupMembership();
               print('Profile button tapped');
             },
           ),

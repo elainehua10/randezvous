@@ -14,6 +14,7 @@ import MessageResponse from "../interfaces/MessageResponse";
 import emojis from "./emojis";
 import { requireAuth, requireGroupLeader } from "../middlewares";
 import * as group from "./controllers/group";
+import { reassignLeader } from "./controllers/group";
 
 const router = express.Router();
 
@@ -38,8 +39,18 @@ router.use("/get-user-profile-info", requireAuth, getUserProfileInfo);
 // Group routes
 router.use("/groups/members", requireAuth, group.getGroupMembers);
 router.use("/groups/create", requireAuth, group.createGroup);
-router.use("/groups/rename", requireAuth, requireGroupLeader, group.renameGroup);
-router.use("/groups/setpub", requireAuth, requireGroupLeader, group.setPublicity);
+router.use(
+  "/groups/rename",
+  requireAuth,
+  requireGroupLeader,
+  group.renameGroup
+);
+router.use(
+  "/groups/setpub",
+  requireAuth,
+  requireGroupLeader,
+  group.setPublicity
+);
 router.use(
   "/groups/invite",
   requireAuth,
@@ -59,6 +70,9 @@ router.use("/groups/locations", requireAuth, group.getGroupLocations);
 router.use("/groups/getgroups", requireAuth, group.getUserGroups);
 router.use("/groups/getinvites", requireAuth, group.getUserInvites);
 router.use("/groups/members", requireAuth, group.getGroupMembers);
-
+router.use("/groups/check-membership", requireAuth, group.checkMembership);
+router.use("/groups/assign-leader", requireAuth, group.reassignLeader);
+router.use("/groups/search", requireAuth, group.searchPublicGroups);
+router.use("/groups/join", requireAuth, group.joinGroup);
 
 export default router;

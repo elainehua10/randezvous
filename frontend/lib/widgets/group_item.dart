@@ -23,9 +23,16 @@ class GroupItem extends StatelessWidget {
           shape: BoxShape.circle,
           color: Colors.grey[300],
         ),
-        child: Icon(Icons.group, color: Colors.white),
+        child:
+            group.iconUrl == null
+                ? Icon(Icons.group, size: 80, color: Colors.blue[800])
+                : Image.network(
+                  group.iconUrl!,
+                  height: 80, // Optional: adding height to match icon size
+                  width: 80, // Optional: adding width to match icon size
+                ),
       ),
-      title: Text(group.name?? 'Unnamed Group'),
+      title: Text(group.name ?? 'Unnamed Group'),
       tileColor: isSelected ? Colors.blue[100] : null,
       onTap: onTap,
     );

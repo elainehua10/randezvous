@@ -82,6 +82,53 @@ export const createGroup = async (req: Request, res: Response) => {
   }
 };
 
+export const reassignLeader = async (req: Request, res: Response) => {
+  try {
+    // Check fields
+    const { groupId, userId, newLeaderId } = req.body;
+    if (!groupId || !userId || !newLeaderId) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    // Check if the user is the current leader of the group
+    const group = await sql`
+      SELECT leader_id FROM groups WHERE id = ${groupId};
+    `;
+    if (group.length === 0) {
+      return res.status(404).json({ error: "Group not found." });
+    }
+    if (group[0].leader_id !== userId) {
+      return res
+        .status(403)
+        .json({ error: "Only the current leader can reassign leadership." });
+    }
+
+    // Check if the new leader is a member of the group
+    const member = await sql`
+      SELECT user_id FROM user_group WHERE group_id = ${groupId} AND user_id = ${newLeaderId};
+    `;
+    if (member.length === 0) {
+      return res
+        .status(400)
+        .json({ error: "New leader must be a member of the group." });
+    }
+
+    // Update the leader in the groups table
+    await sql`
+      UPDATE groups 
+      SET leader_id = ${newLeaderId} 
+      WHERE id = ${groupId};
+    `;
+
+    return res
+      .status(200)
+      .json({ success: true, message: "Leader reassigned successfully." });
+  } catch (error) {
+    console.error("Error reassigning leader:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
 // Rename group (only leader can change)
 export const renameGroup = async (req: Request, res: Response) => {
   try {
@@ -408,7 +455,7 @@ export const getGroupMembers = async (req: Request, res: Response) => {
 
     // Check if the group exists and fetch the leader's ID and group name
     const group = await sql`
-      SELECT leader_id, name FROM groups WHERE id = ${groupId};
+      SELECT leader_id, name, icon_url FROM groups WHERE id = ${groupId};
     `;
 
     if (group.length === 0) {
@@ -417,6 +464,7 @@ export const getGroupMembers = async (req: Request, res: Response) => {
 
     const leader_id = group[0].leader_id;
     const name = group[0].name;
+    const iconUrl = group[0].icon_url;
     const isUserLeader = userId === leader_id;
 
     // Fetch all members of the group
@@ -433,6 +481,7 @@ export const getGroupMembers = async (req: Request, res: Response) => {
       leader_id,
       isUserLeader,
       members,
+      iconUrl,
     });
   } catch (error) {
     console.error("Error fetching group members:", error);
@@ -489,16 +538,100 @@ export const getUserGroups = async (req: Request, res: Response) => {
 
     // Get all groups the user is part of
     const groups = await sql`
-      SELECT id, name, COALESCE(icon_url, NULL) AS icon_url
+      SELECT groups.id, name,icon_url
       FROM groups
       JOIN user_group ON groups.id = user_group.group_id
       WHERE user_group.user_id = ${userId};
     `;
 
+    console.log(groups.map((group) => group["icon_url"]));
+
     return res.status(200).json(groups);
   } catch (error) {
     console.error("Error fetching user groups:", error);
     return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const searchPublicGroups = async (req: Request, res: Response) => {
+  try {
+    const { groupName } = req.body;
+
+    // Validate input
+    if (!groupName || typeof groupName !== "string") {
+      return res
+        .status(400)
+        .json({ error: "Group name is required and must be a string" });
+    }
+
+    // Search for public groups where name matches the query (case-insensitive)
+    const result = await sql`
+      SELECT id, name, leader_id, is_public, icon_url
+      FROM groups 
+      WHERE is_public = true 
+      AND LOWER(name) LIKE LOWER(${`%${groupName}%`});
+    `;
+
+    if (result.length === 0) {
+      return res.status(200).json({ groups: [] }); // Return empty array instead of 404
+    }
+
+    // Map results to a clean response format
+    const groups = result.map((group: any) => ({
+      id: group.id,
+      name: group.name,
+      leader_id: group.leader_id,
+      is_public: group.is_public,
+      icon_url: group.icon_url,
+    }));
+
+    console.log("Found groups:", groups);
+
+    res.status(200).json({
+      groups,
+    });
+  } catch (error) {
+    console.error("Error searching public groups:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const joinGroup = async (req: Request, res: Response) => {
+  try {
+    const { groupId, userId } = req.body;
+
+    // Validate group exists and is public
+    const group = await sql`
+      SELECT id, is_public 
+      FROM groups 
+      WHERE id = ${groupId} AND is_public = true;
+    `;
+
+    if (group.length === 0) {
+      return res.status(404).json({ error: "Public group not found" });
+    }
+
+    // Check if user is already a member
+    const membership = await sql`
+      SELECT id 
+      FROM user_group 
+      WHERE group_id = ${groupId} AND user_id = ${userId};
+    `;
+
+    if (membership.length > 0) {
+      return res.status(400).json({ error: "Already a member of this group" });
+    }
+
+    // Add user to group
+    await sql`
+      INSERT INTO user_group (group_id, user_id)
+      VALUES (${groupId}, ${userId});
+    `;
+
+    res.status(200).json({ message: "Successfully joined the group" });
+  } catch (error) {
+    console.error("Error joining group:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -525,6 +658,45 @@ export const getUserInvites = async (req: Request, res: Response) => {
     return res.status(200).json(invites);
   } catch (error) {
     console.error("Error fetching user invites:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const checkMembership = async (req: Request, res: Response) => {
+  try {
+    const { userId, groupId } = req.body;
+
+    // Validate input
+    if (!userId || !groupId) {
+      return res.status(400).json({
+        error: "Missing required fields: userId and groupId are required",
+      });
+    }
+
+    // Check if the group exists
+    const groupCheck = await sql`
+      SELECT id FROM groups WHERE id = ${groupId};
+    `;
+    if (groupCheck.length === 0) {
+      return res.status(404).json({ error: "Group not found" });
+    }
+
+    // Check if the user is a member of the group
+    const membershipCheck = await sql`
+      SELECT user_id 
+      FROM user_group 
+      WHERE user_id = ${userId} AND group_id = ${groupId};
+    `;
+
+    const isMember = membershipCheck.length > 0;
+
+    return res.status(200).json({
+      groupId,
+      userId,
+      isMember,
+    });
+  } catch (error) {
+    console.error("Error checking group membership:", error);
     return res.status(500).json({ error: "Internal server error" });
   }
 };
