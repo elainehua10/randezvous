@@ -217,21 +217,28 @@ class _GroupScreenState extends State<GroupScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(group.name ?? "Unnamed Group"),
+        title: Text(
+          group.name ?? "Unnamed Group",
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+            color: Colors.amber[800],
+          ),
+        ),
         backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
         elevation: 0,
+        iconTheme: IconThemeData(color: Colors.amber[800]),
         actions: [
           if (isUserLeader)
             IconButton(
-              icon: Icon(Icons.settings),
+              icon: Icon(Icons.settings, color: Colors.amber[800]),
               onPressed: () {
                 _showGroupSettings(context, group);
               },
             ),
           if (!isUserLeader)
             IconButton(
-              icon: Icon(Icons.exit_to_app),
+              icon: Icon(Icons.exit_to_app, color: Colors.amber[800]),
               onPressed: () {
                 _showLeaveGroupDialog();
               },
@@ -249,6 +256,7 @@ class _GroupScreenState extends State<GroupScreen> {
             _buildGroupStats(context, group),
 
             // Members Section
+            // Members Section
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Row(
@@ -256,7 +264,11 @@ class _GroupScreenState extends State<GroupScreen> {
                 children: [
                   Text(
                     'Members (${members.length})',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.amber[800],
+                    ),
                   ),
                   if (isUserLeader)
                     ElevatedButton.icon(
@@ -266,6 +278,8 @@ class _GroupScreenState extends State<GroupScreen> {
                       icon: Icon(Icons.person_add, size: 20),
                       label: Text('Invite'),
                       style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.amber[800],
+                        foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -392,17 +406,12 @@ class _GroupScreenState extends State<GroupScreen> {
           Container(
             height: 150,
             width: double.infinity,
-            color: Colors.blue[100],
+            color: Colors.amber[100],
             child: Center(
               child:
                   group.iconUrl == null
-                      ? Icon(Icons.group, size: 80, color: Colors.blue[800])
-                      : Image.network(
-                        group.iconUrl!,
-                        height:
-                            80, // Optional: adding height to match icon size
-                        width: 80, // Optional: adding width to match icon size
-                      ),
+                      ? Icon(Icons.group, size: 80, color: Colors.amber[800])
+                      : Image.network(group.iconUrl!, height: 80, width: 80),
             ),
           ),
 
@@ -418,10 +427,9 @@ class _GroupScreenState extends State<GroupScreen> {
                     color: Color.fromRGBO(255, 255, 255, 0.6),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(Icons.upload, color: Colors.blue[800], size: 24),
+                  child: Icon(Icons.upload, color: Colors.amber[800], size: 24),
                 ),
                 onPressed: () {
-                  // Image upload functionality to be implemented
                   _handleImageUpload(context);
                 },
                 tooltip: 'Upload Group Image',
@@ -436,7 +444,7 @@ class _GroupScreenState extends State<GroupScreen> {
             child: Card(
               elevation: 4,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
               ),
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -448,6 +456,7 @@ class _GroupScreenState extends State<GroupScreen> {
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
+                        color: Colors.amber[800],
                       ),
                     ),
                   ],
@@ -478,62 +487,69 @@ class _GroupScreenState extends State<GroupScreen> {
     User member,
     bool isUserLeader,
   ) {
-    print(member.avatarUrl);
-    return ListTile(
-      leading: CircleAvatar(
-        backgroundColor: Colors.grey[300],
-        child:
-            member.avatarUrl == null
-                ? Icon(Icons.person, color: Colors.blue[800])
-                : Image.network(
-                  member.avatarUrl!,
-                  height: 80, // Optional: adding height to match icon size
-                  width: 80, // Optional: adding width to match icon size
-                ),
-      ),
-      title: Row(
-        children: [
-          Text(member.name),
-          SizedBox(width: 8),
-          if (member.id == group.leaderId)
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: Colors.amber[100],
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.amber),
-              ),
-              child: Text(
-                'Leader',
-                style: TextStyle(fontSize: 12, color: Colors.amber[800]),
+    return Card(
+      margin: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 1,
+      child: ListTile(
+        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: CircleAvatar(
+          backgroundColor: Colors.amber[100],
+          child:
+              member.avatarUrl == null
+                  ? Icon(Icons.person, color: Colors.amber[800])
+                  : Image.network(member.avatarUrl!, height: 80, width: 80),
+        ),
+        title: Row(
+          children: [
+            Text(
+              member.name,
+              style: TextStyle(
+                fontWeight: FontWeight.w500,
+                color: Colors.grey[800],
               ),
             ),
-        ],
-      ),
-      trailing:
-          isUserLeader && member.id != group.leaderId
-              ? PopupMenuButton(
-                icon: Icon(Icons.more_vert),
-                onSelected: (value) {
-                  if (value == 'remove') {
-                    _showRemoveMemberDialog(context, member);
-                  }
-                },
-                itemBuilder:
-                    (context) => [
-                      PopupMenuItem(
-                        value: 'remove',
-                        child: Row(
-                          children: [
-                            Icon(Icons.person_remove, color: Colors.red),
-                            SizedBox(width: 8),
-                            Text('Remove'),
-                          ],
+            SizedBox(width: 8),
+            if (member.id == group.leaderId)
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.amber[100],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.amber),
+                ),
+                child: Text(
+                  'Leader',
+                  style: TextStyle(fontSize: 12, color: Colors.amber[800]),
+                ),
+              ),
+          ],
+        ),
+        trailing:
+            isUserLeader && member.id != group.leaderId
+                ? PopupMenuButton(
+                  icon: Icon(Icons.more_vert, color: Colors.amber[800]),
+                  onSelected: (value) {
+                    if (value == 'remove') {
+                      _showRemoveMemberDialog(context, member);
+                    }
+                  },
+                  itemBuilder:
+                      (context) => [
+                        PopupMenuItem(
+                          value: 'remove',
+                          child: Row(
+                            children: [
+                              Icon(Icons.person_remove, color: Colors.red),
+                              SizedBox(width: 8),
+                              Text('Remove'),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
-              )
-              : null,
+                      ],
+                )
+                : null,
+      ),
     );
   }
 
@@ -673,59 +689,23 @@ class _GroupScreenState extends State<GroupScreen> {
                     SizedBox(height: 24),
 
                     // Save Button
+                    // Save Button
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () async {
-                          showDialog(
-                            context: context,
-                            barrierDismissible: false,
-                            builder:
-                                (context) =>
-                                    Center(child: CircularProgressIndicator()),
-                          );
-
-                          try {
-                            final response =
-                                await Auth.makeAuthenticatedPostRequest(
-                                  "groups/rename",
-                                  {
-                                    "groupId": widget.groupId,
-                                    "newName": nameController.text.trim(),
-                                  },
-                                );
-
-                            Navigator.pop(context);
-
-                            if (response.statusCode == 200) {
-                              fetchGroupDetails();
-                              Navigator.pop(context);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    'Group name updated successfully',
-                                  ),
-                                ),
-                              );
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    'Failed to update group name: ${response.body}',
-                                  ),
-                                ),
-                              );
-                            }
-                          } catch (e) {
-                            Navigator.pop(context);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Error: ${e.toString()}')),
-                            );
-                          }
+                          // existing code...
                         },
                         child: Padding(
                           padding: const EdgeInsets.all(12.0),
                           child: Text('Save Changes'),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.amber[800],
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                       ),
                     ),
@@ -748,6 +728,9 @@ class _GroupScreenState extends State<GroupScreen> {
                         ),
                         style: OutlinedButton.styleFrom(
                           side: BorderSide(color: Colors.red),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                       ),
                     ),
@@ -791,7 +774,12 @@ class _GroupScreenState extends State<GroupScreen> {
                 Navigator.pop(context);
               },
               child: Text('Remove', style: TextStyle(color: Colors.white)),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
             ),
           ],
         );

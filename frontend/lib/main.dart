@@ -7,7 +7,7 @@ import 'package:frontend/profile.dart';
 import 'package:frontend/edit_profile.dart';
 import 'package:frontend/search_screen.dart';
 // import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+// import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
   // Ensure widgets are initialized before using Supabase
