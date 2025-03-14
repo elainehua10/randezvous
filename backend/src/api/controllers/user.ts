@@ -337,6 +337,27 @@ export const block = async (req: Request, res: Response) => {
   }
 };
 
+// Enable or disable notifications
+
+export const toggleNotifications = async (req: Request, res: Response) => {
+  const { userId, enableNotifications } = req.body;
+  if (!userId || enableNotifications === undefined) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+  try {
+    await sql`
+      UPDATE profile
+      SET notifications_enabled = ${enableNotifications}
+      WHERE id = ${userId};
+    `;
+    res.status(200).json({ message: `Notifications ${enableNotifications ? "enabled" : "disabled"} successfully` });
+  } catch (error) {
+    console.error("Error updating notifcation preferences: ", error);
+    res.status(500).json({ error: "Failed to update notification preferences" });
+  }
+}
+
+
 // Retrieve user profile information
 export const getUserProfileInfo = async (req: Request, res: Response) => {
   try {
