@@ -84,7 +84,9 @@ export const changeUsername = async (req: Request, res: Response) => {
       SELECT username FROM profile WHERE id = ${userId};
     `;
     if (currentUser.length > 0 && currentUser[0].username == newUsername) {
-      return res.status(400).json({error: "The new username must be different from the current one"});
+      return res.status(400).json({
+        error: "The new username must be different from the current one",
+      });
     }
     const existingUser = await sql`
       SELECT id FROM profile WHERE username = ${newUsername};
@@ -199,26 +201,6 @@ export const logout = async (req: Request, res: Response) => {
       .json({ error: (error as Error).message || "Internal server error" });
   }
 };
-
-// Delete account
-/*export const deleteAccount = async (req: Request, res: Response) => {
-  const { userId } = req.body;
-  if (!userId) {
-    return res.status(400).json({ error: "Missing userId" });
-  }
-  try {
-    await sql`
-      DELETE FROM profile WHERE id = ${userId};
-    `;
-    const { error } = await supabase.auth.admin.deleteUser(userId);
-    if (error) {
-      return res.status(500).json({ error: error.message });
-    }
-    res.status(200).json({ message: "Account deleted successfully" });
-  } catch (error) {
-    res.status(500).json({ error: "Internal server error" });
-  }
-};*/
 
 export const deleteAccount = async (req: Request, res: Response) => {
   const { userId } = req.body;
@@ -350,13 +332,18 @@ export const toggleNotifications = async (req: Request, res: Response) => {
       SET notifications_enabled = ${enableNotifications}
       WHERE id = ${userId};
     `;
-    res.status(200).json({ message: `Notifications ${enableNotifications ? "enabled" : "disabled"} successfully` });
+    res.status(200).json({
+      message: `Notifications ${
+        enableNotifications ? "enabled" : "disabled"
+      } successfully`,
+    });
   } catch (error) {
     console.error("Error updating notifcation preferences: ", error);
-    res.status(500).json({ error: "Failed to update notification preferences" });
+    res
+      .status(500)
+      .json({ error: "Failed to update notification preferences" });
   }
-}
-
+};
 
 // Retrieve user profile information
 export const getUserProfileInfo = async (req: Request, res: Response) => {
@@ -387,5 +374,56 @@ export const getUserProfileInfo = async (req: Request, res: Response) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const updateLocation = async (req: Request, res: Response) => {
+  const { userId, longitude, latitude } = req.body;
+
+  // Check if required fields are present
+  if (!userId || longitude === undefined || latitude === undefined) {
+    return res
+      .status(400)
+      .json({ error: "Missing userId, longitude, or latitude" });
+  }
+
+  // Validate longitude and latitude values
+  if (typeof longitude !== "number" || typeof latitude !== "number") {
+    return res
+      .status(400)
+      .json({ error: "Longitude and latitude must be numbers" });
+  }
+  if (longitude < -180 || longitude > 180) {
+    return res
+      .status(400)
+      .json({ error: "Longitude must be between -180 and 180" });
+  }
+  if (latitude < -90 || latitude > 90) {
+    return res
+      .status(400)
+      .json({ error: "Latitude must be between -90 and 90" });
+  }
+
+  try {
+    // Check if user exists
+    const userExists = await sql`
+      SELECT id FROM profile WHERE id = ${userId};
+    `;
+    if (userExists.length === 0) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Update location
+    await sql`
+      UPDATE profile 
+      SET longitude = ${longitude}, latitude = ${latitude} 
+      WHERE id = ${userId};
+    `;
+
+    res.status(200).json({ message: "Location updated successfully" });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ error: (error as Error).message || "An unknown error occurred" });
   }
 };
