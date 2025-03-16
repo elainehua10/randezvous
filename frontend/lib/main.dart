@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/auth.dart';
 import 'package:frontend/group_screen.dart';
+import 'package:frontend/location_service.dart';
 import 'package:frontend/login.dart';
 import 'package:frontend/register.dart';
 import 'package:frontend/map_screen.dart';
@@ -17,8 +19,28 @@ void main() async {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  late LocationService _locationService;
+
+  @override
+  void initState() {
+    super.initState();
+    _locationService = LocationService();
+    _locationService.startLocationUpdates();
+  }
+
+  @override
+  void dispose() {
+    _locationService.stopLocationUpdates();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
