@@ -4,7 +4,6 @@ import MessageResponse from "../interfaces/MessageResponse";
 import emojis from "./emojis";
 import { requireAuth, requireGroupLeader } from "../middlewares";
 import * as group from "./controllers/group";
-import { reassignLeader } from "./controllers/group";
 
 const router = express.Router();
 
