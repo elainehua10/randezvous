@@ -66,8 +66,8 @@ flutter:
 
   # Add .env file to the assets section with proper indentation
   
-  assets:
-    - .env
+assets:
+  - .env
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

@@ -1,21 +1,9 @@
 import express from "express";
-import {
-  register,
-  login,
-  changeUsername,
-  logout,
-  setProfilePicture,
-  deleteAccount,
-  refreshToken,
-  getUserProfileInfo,
-  search,
-  block,
-} from "./controllers/user";
+import * as user from "./controllers/user";
 import MessageResponse from "../interfaces/MessageResponse";
 import emojis from "./emojis";
 import { requireAuth, requireGroupLeader } from "../middlewares";
 import * as group from "./controllers/group";
-import { reassignLeader } from "./controllers/group";
 
 const router = express.Router();
 
@@ -27,16 +15,17 @@ router.get<{}, MessageResponse>("/", (req, res) => {
 
 // User routes
 router.use("/emojis", emojis);
-router.use("/register", register);
-router.use("/login", login);
-router.use("/user/search", requireAuth, search);
-router.use("/user/block", requireAuth, block);
-router.use("/change-username", requireAuth, changeUsername);
-router.use("/logout", requireAuth, logout);
-router.use("/set-profile-picture", requireAuth, setProfilePicture);
-router.use("/delete-account", requireAuth, deleteAccount);
-router.use("/refresh-token", refreshToken);
-router.use("/get-user-profile-info", requireAuth, getUserProfileInfo);
+router.use("/register", user.register);
+router.use("/login", user.login);
+router.use("/user/search", requireAuth, user.search);
+router.use("/user/block", requireAuth, user.block);
+router.use("/change-username", requireAuth, user.changeUsername);
+router.use("/logout", requireAuth, user.logout);
+router.use("/set-profile-picture", requireAuth, user.setProfilePicture);
+router.use("/delete-account", requireAuth, user.deleteAccount);
+router.use("/update-location", requireAuth, user.updateLocation);
+router.use("/refresh-token", user.refreshToken);
+router.use("/get-user-profile-info", requireAuth, user.getUserProfileInfo);
 
 // Group routes
 router.use("/groups/members", requireAuth, group.getGroupMembers);
@@ -73,7 +62,12 @@ router.use("/groups/getgroups", requireAuth, group.getUserGroups);
 router.use("/groups/getinvites", requireAuth, group.getUserInvites);
 router.use("/groups/members", requireAuth, group.getGroupMembers);
 router.use("/groups/check-membership", requireAuth, group.checkMembership);
-router.use("/groups/assign-leader", requireAuth, group.reassignLeader);
+router.use(
+  "/groups/assign-leader",
+  requireAuth,
+  requireGroupLeader,
+  group.reassignLeader
+);
 router.use("/groups/search", requireAuth, group.searchPublicGroups);
 router.use("/groups/join", requireAuth, group.joinGroup);
 
