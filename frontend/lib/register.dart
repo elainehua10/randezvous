@@ -188,6 +188,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     autocorrect: false,
                     enableSuggestions: false,
+                    textCapitalization: TextCapitalization.none,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please enter your first name';
