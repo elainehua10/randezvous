@@ -186,6 +186,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       filled: true,
                       fillColor: Colors.white,
                     ),
+                    autocorrect: false,
+                    enableSuggestions: false,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please enter your first name';
