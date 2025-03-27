@@ -398,6 +398,14 @@ export const getMemberProfile = async (req: Request, res: Response) => {
       WHERE user_group.user_id = ${userId};
     `;
 
+    console.log(`getMemberProfile: Found ${groups.length} groups for user ${userId}`);
+    if (groups.length > 0) {
+      console.log("Group details:");
+      groups.forEach((group: any, index: number) => {
+        console.log(`  [${index}] id: ${group.id}, name: ${group.name}, icon_url: ${group.icon_url}`);
+      });
+    }
+
     res.status(200).json({
       profile: {
         first_name: result[0].first_name,
@@ -405,8 +413,9 @@ export const getMemberProfile = async (req: Request, res: Response) => {
         username: result[0].username,
         profile_picture: result[0].profile_picture
       },
-      //groups
+      groups: groups,
     });
+
   } catch (error) {
     console.error("Error fetching user profile:", error);
     res.status(500).json({error: "Internal server error"});
