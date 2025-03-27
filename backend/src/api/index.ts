@@ -69,6 +69,7 @@ router.use(
   group.reassignLeader
 );
 router.use("/groups/search", requireAuth, group.searchPublicGroups);
+router.use("/groups/all-public", requireAuth, group.getAllPublicGroups);
 router.use("/groups/join", requireAuth, group.joinGroup);
 
 export default router;

@@ -32,8 +32,13 @@ class _SearchScreenState extends State<SearchScreen>
           _userResults = [];
           _groupResults = [];
         });
+        // Perform an empty search right away to load all public groups
+        _performSearch('');
       }
     });
+    if (_tabController.index == 1) {
+      _performSearch('');
+    }
   }
 
   @override
@@ -44,17 +49,21 @@ class _SearchScreenState extends State<SearchScreen>
   }
 
   Future<void> _performSearch(String query) async {
+    setState(() {
+      _isLoading = true;
+    });
+
     if (query.trim().isEmpty) {
+      await _fetchAllPublicGroups();
+      return;
+      /*
       setState(() {
         _userResults = [];
         _groupResults = [];
       });
       return;
+      */
     }
-
-    setState(() {
-      _isLoading = true;
-    });
 
     try {
       if (_tabController.index == 0) {
@@ -125,6 +134,44 @@ class _SearchScreenState extends State<SearchScreen>
         _userResults = [];
         _groupResults = [];
       });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _fetchAllPublicGroups() async {
+    try {
+      Response response = await Auth.makeAuthenticatedPostRequest(
+        "groups/all-public",
+        {},
+      );
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        List<Group> results =
+            (responseData["groups"] as List)
+                .map(
+                  (group) => Group(
+                    id: group["id"],
+                    name: group["name"],
+                    leaderId: group["leader_id"],
+                    isPublic: group["is_public"],
+                    iconUrl: group["icon_url"],
+                  ),
+                )
+                .toList();
+        setState(() {
+          _groupResults = results;
+          _userResults = [];
+        });
+      } else {
+        _showErrorSnackBar(
+          'Failed to load all public groups: ${response.body}',
+        );
+      }
+    } catch (e) {
+      _showErrorSnackBar('Failed loading public groups: $e');
     } finally {
       setState(() {
         _isLoading = false;

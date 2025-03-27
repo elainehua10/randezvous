@@ -600,6 +600,23 @@ export const searchPublicGroups = async (req: Request, res: Response) => {
   }
 };
 
+export const getAllPublicGroups = async (req: Request, res: Response) => {
+  try {
+    const results = await sql`
+      SELECT id, name, leader_id, is_public, icon_url
+      FROM groups 
+      WHERE is_public = true 
+      ORDER BY name ASC
+    `;
+    res.status(200).json({
+      groups: results,
+    });
+  } catch (error) {
+    console.error("Error fetching all public groups:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 export const joinGroup = async (req: Request, res: Response) => {
   try {
     const { groupId, userId } = req.body;
@@ -704,3 +721,4 @@ export const checkMembership = async (req: Request, res: Response) => {
     return res.status(500).json({ error: "Internal server error" });
   }
 };
+

@@ -320,7 +320,6 @@ export const block = async (req: Request, res: Response) => {
 };
 
 // Enable or disable notifications
-
 export const toggleNotifications = async (req: Request, res: Response) => {
   const { userId, enableNotifications } = req.body;
   if (!userId || enableNotifications === undefined) {
