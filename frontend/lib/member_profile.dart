@@ -24,6 +24,7 @@ class _MemberProfileScreenState extends State<MemberProfileScreen> {
 
   Future<void> _fetchUserDetails() async {
     try {
+      print("Sending userId: ${widget.userId}");
       final response = await Auth.makeAuthenticatedPostRequest(
         "user/view-profile",
         {"userId": widget.userId},
@@ -49,15 +50,25 @@ class _MemberProfileScreenState extends State<MemberProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: Text('Profile'),
+        title: Text('Profile', style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         foregroundColor: Colors.amber[800],
         elevation: 0,
         centerTitle: true,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_rounded),
+          onPressed: () => Navigator.pop(context),
+        )
       ),
-      body: isLoading
-          ? Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Colors.amber[800]!)))
+      body:
+        isLoading
+          ? Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.amber[800]!),
+              ),
+            )
           : SingleChildScrollView(
               child: Column(
                 children: [
@@ -107,26 +118,3 @@ class _MemberProfileScreenState extends State<MemberProfileScreen> {
     );
   }
 }
-
-  //@override
-  /*Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Member Profile'),
-      ),
-      body: isLoading
-          ? Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              child: Column(
-                children: [
-                  Text(userProfile!['username'] ?? 'N/A'),
-                  Text('${userProfile!['first_name'] ?? 'First'} ${userProfile!['last_name'] ?? 'Last'}'),
-                  userProfile?['profile_picture'] != null
-                      ? Image.network(userProfile?['profile_picture'])
-                      : SizedBox(height: 200, child: Icon(Icons.account_circle, size: 200)),
-                ],
-              ),
-            ),
-    );
-  }*/
-//}
