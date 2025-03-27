@@ -376,6 +376,52 @@ export const getUserProfileInfo = async (req: Request, res: Response) => {
   }
 };
 
+// retrieve other user profile information
+export const getMemberProfile = async (req: Request, res: Response) => {
+  try {
+    console.log('Received userId:', req.body.userId);
+    const userId = req.body.userId;
+    const result = await sql`
+      SELECT first_name, last_name, username, profile_picture, num_groups
+      FROM profile
+      WHERE id = ${userId};
+    `;
+
+    if (result.length == 0) {
+      return res.status(404).json({ error: "User not found"});
+    }
+
+    const groups = await sql`
+      SELECT groups.id, groups.name, groups.icon_url
+      FROM groups
+      JOIN user_group ON groups.id = user_group.group_id
+      WHERE user_group.user_id = ${userId};
+    `;
+
+    console.log(`getMemberProfile: Found ${groups.length} groups for user ${userId}`);
+    if (groups.length > 0) {
+      console.log("Group details:");
+      groups.forEach((group: any, index: number) => {
+        console.log(`  [${index}] id: ${group.id}, name: ${group.name}, icon_url: ${group.icon_url}`);
+      });
+    }
+
+    res.status(200).json({
+      profile: {
+        first_name: result[0].first_name,
+        last_name: result[0].last_name,
+        username: result[0].username,
+        profile_picture: result[0].profile_picture
+      },
+      groups: groups,
+    });
+
+  } catch (error) {
+    console.error("Error fetching user profile:", error);
+    res.status(500).json({error: "Internal server error"});
+  }
+}
+
 export const updateLocation = async (req: Request, res: Response) => {
   const { userId, longitude, latitude } = req.body;
 

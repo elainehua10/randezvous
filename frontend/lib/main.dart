@@ -8,6 +8,7 @@ import 'package:frontend/map_screen.dart';
 import 'package:frontend/profile.dart';
 import 'package:frontend/edit_profile.dart';
 import 'package:frontend/search_screen.dart';
+import 'package:frontend/member_profile.dart';
 // import 'package:supabase_flutter/supabase_flutter.dart';
 // import 'package:flutter_dotenv/flutter_dotenv.dart';
 
@@ -56,6 +57,7 @@ class _MyAppState extends State<MyApp> {
         '/home': (context) => MapScreen(),
         '/profile': (context) => ProfileScreen(),
         '/edit-profile': (context) => EditProfileScreen(),
+        '/member-profile': (context) => MemberProfileScreen(userId: '',),
       },
       onGenerateRoute: (settings) {
         if (settings.name == '/group') {
@@ -68,8 +70,6 @@ class _MyAppState extends State<MyApp> {
         }
         return null; // Fallback if the route is not found
       },
-      //home: LoginScreen(),
-      //home: MapScreen(),
     );
   }
 }
