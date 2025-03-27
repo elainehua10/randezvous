@@ -376,6 +376,43 @@ export const getUserProfileInfo = async (req: Request, res: Response) => {
   }
 };
 
+// retrieve other user profile information
+export const getMemberProfile = async (req: Request, res: Response) => {
+  const userId = req.params.userId || req.body.userId;
+
+  try {
+    const userProfile = await sql`
+      SELECT first_name, last_name, username, profile_picture
+      FROM profile
+      WHERE id = ${userId};
+    `;
+
+    if (userProfile.length == 0) {
+      return res.status(404).json({ error: "User not found"});
+    }
+
+    const groups = await sql`
+      SELECT g.id, g.name, ug.points, ug.rank
+      FROM user_group ug
+      JOIN groups g ON ug.group_id = g.id
+      WHERE ug.user_id = ${userId};
+    `;
+
+    res.status(200).json({
+      profile: {
+        first_name: userProfile[0].first_name,
+        last_name: userProfile[0].last_name,
+        username: userProfile[0].username,
+        profile_picture: userProfile[0].profile_picture
+      },
+      groups
+    });
+  } catch (error) {
+    console.error("Error fetching user profile:", error);
+    res.status(500).json({error: "Internal server error"});
+  }
+}
+
 export const updateLocation = async (req: Request, res: Response) => {
   const { userId, longitude, latitude } = req.body;
 
