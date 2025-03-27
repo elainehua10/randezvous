@@ -382,7 +382,7 @@ export const getMemberProfile = async (req: Request, res: Response) => {
     console.log('Received userId:', req.body.userId);
     const userId = req.body.userId;
     const result = await sql`
-      SELECT first_name, last_name, username, profile_picture
+      SELECT first_name, last_name, username, profile_picture, num_groups
       FROM profile
       WHERE id = ${userId};
     `;
@@ -391,12 +391,12 @@ export const getMemberProfile = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "User not found"});
     }
 
-    /*const groups = await sql`
-      SELECT g.id, g.name, ug.points, ug.rank
-      FROM user_group ug
-      JOIN groups g ON ug.group_id = g.id
-      WHERE ug.user_id = ${userId};
-    `;*/
+    const groups = await sql`
+      SELECT groups.id, groups.name, groups.icon_url
+      FROM groups
+      JOIN user_group ON groups.id = user_group.group_id
+      WHERE user_group.user_id = ${userId};
+    `;
 
     res.status(200).json({
       profile: {

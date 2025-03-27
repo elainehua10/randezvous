@@ -82,20 +82,48 @@ class _MemberProfileScreenState extends State<MemberProfileScreen> {
 
   Widget _buildProfileHeader() {
     return Container(
-      padding: EdgeInsets.symmetric(vertical: 20),
       width: double.infinity,
-      color: Colors.white,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      padding: EdgeInsets.symmetric(vertical: 30),
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          CircleAvatar(
-            radius: 60,
-            backgroundColor: Colors.amber[50],
-            backgroundImage: userProfile != null && userProfile!['profile_picture'] != null
-                ? NetworkImage(userProfile!['profile_picture'])
-                : null,
-            child: userProfile == null || userProfile!['profile_picture'] == null
-                ? Icon(Icons.person, size: 60, color: Colors.amber[800])
-                : null,
+          Stack(
+            alignment: Alignment.bottomRight,
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.amber[100]!, width: 4),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: CircleAvatar(
+                  radius: 60,
+                  backgroundColor: Colors.amber[50],
+                  backgroundImage: userProfile != null && userProfile!['profile_picture'] != null
+                      ? NetworkImage(userProfile!['profile_picture'])
+                      : null,
+                  child: userProfile == null || userProfile!['profile_picture'] == null
+                      ? Icon(Icons.person, size: 60, color: Colors.amber[800])
+                      : null,
+                ),
+              ),
+            ],
           ),
           SizedBox(height: 16),
           Text(
@@ -103,15 +131,23 @@ class _MemberProfileScreenState extends State<MemberProfileScreen> {
             style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 24,
+              color: Colors.grey[900],
             ),
           ),
           SizedBox(height: 4),
-          Text(
-            '@${userProfile?['username'] ?? 'username'}',
-            style: TextStyle(
-              color: Colors.amber[800],
-              fontWeight: FontWeight.w500,
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.amber[50],
+              borderRadius: BorderRadius.circular(20),
             ),
+            child: Text(
+              '@${userProfile?['username'] ?? 'username'}',
+              style: TextStyle(
+                color: Colors.amber[800],
+                fontWeight: FontWeight.w500,
+              ),
+          ),
           ),
         ],
       ),
