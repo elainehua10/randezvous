@@ -70,8 +70,6 @@ class _MyAppState extends State<MyApp> {
         }
         return null; // Fallback if the route is not found
       },
-      //home: LoginScreen(),
-      //home: MapScreen(),
     );
   }
 }

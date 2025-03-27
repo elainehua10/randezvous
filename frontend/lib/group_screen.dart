@@ -490,6 +490,7 @@ class _GroupScreenState extends State<GroupScreen> {
   ) {
     return InkWell(
       onTap: () {
+        print('Navigating to member profile with ID: ${member.id}');
         Navigator.push(
           context,
           MaterialPageRoute(
