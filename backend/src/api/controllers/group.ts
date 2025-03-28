@@ -15,7 +15,7 @@ const MAX_GROUPS_PER_USER = 3;
 export const createGroup = async (req: Request, res: Response) => {
   try {
     // Check fields
-    const { userId, groupName, isPublic } = req.body;
+    const { userId, groupName, isPublic, beaconFrequency = 86400 } = req.body;
     if (!userId || !groupName || isPublic === undefined) {
       return res.status(400).json({ error: "Missing required fields" });
     }
@@ -55,8 +55,8 @@ export const createGroup = async (req: Request, res: Response) => {
 
     // Insert new group (user is the leader)
     let newGroup = await sql`
-            INSERT INTO groups (name, is_public, leader_id) 
-            VALUES (${groupName}, ${isPublic}, ${userId})
+            INSERT INTO groups (name, is_public, leader_id, beacon_frequency) 
+            VALUES (${groupName}, ${isPublic}, ${userId}, ${beaconFrequency})
             RETURNING id;
         `;
 
@@ -346,6 +346,56 @@ export const removeFromGroup = async (req: Request, res: Response) => {
     throw error;
   }
 };
+
+// Set beacon frequency
+export const setBeaconFreq = async (req: Request, res: Response) => {
+  try {
+    const { userId, groupId, frequency } = req.body;
+
+    // Validate input
+    if (!userId || !groupId || frequency === undefined) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    // Frequency should be a reasonable number (e.g., between 10 seconds and 1 day)
+    if (typeof frequency !== "number" || frequency < 10 || frequency > 86400) {
+      return res.status(400).json({ error: "Invalid frequency value" });
+    }
+
+    // Check if user is the leader of the group
+    const group = await sql`
+      SELECT leader_id FROM groups WHERE id = ${groupId};
+    `;
+
+    if (group.length === 0) {
+      return res.status(404).json({ error: "Group not found" });
+    }
+
+    if (group[0].leader_id !== userId) {
+      return res.status(403).json({
+        error: "Only the group leader can set the beacon frequency",
+      });
+    }
+
+    // Update the beacon frequency
+    const updatedGroup = await sql`
+      UPDATE groups 
+      SET beacon_frequency = ${frequency}
+      WHERE id = ${groupId}
+      RETURNING *;
+    `;
+
+    return res.status(200).json({
+      success: true,
+      message: "Beacon frequency updated successfully",
+      group: updatedGroup[0],
+    });
+  } catch (error) {
+    console.error("Error setting beacon frequency:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
 
 // ============= Member of group functions ===================
 
