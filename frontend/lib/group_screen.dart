@@ -48,7 +48,8 @@ class _GroupScreenState extends State<GroupScreen> {
           beaconFrequency: data['beaconFrequency'],
         );
 
-        print(group.iconUrl);
+        // print(group.iconUrl);
+        // print("Fetched beacon frequency: ${data['beaconFrequency']}, ${group.beaconFrequency}");
         members =
             (data['members'] as List)
                 .map(
@@ -564,71 +565,6 @@ class _GroupScreenState extends State<GroupScreen> {
         ),
       ),
     );
-
-    /*return Card(
-      margin: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 1,
-      child: ListTile(
-        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: CircleAvatar(
-          backgroundColor: Colors.amber[100],
-          child:
-              member.avatarUrl == null
-                  ? Icon(Icons.person, color: Colors.amber[800])
-                  : Image.network(member.avatarUrl!, height: 80, width: 80),
-        ),
-        title: Row(
-          children: [
-            Text(
-              member.name,
-              style: TextStyle(
-                fontWeight: FontWeight.w500,
-                color: Colors.grey[800],
-              ),
-            ),
-            SizedBox(width: 8),
-            if (member.id == group.leaderId)
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.amber[100],
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.amber),
-                ),
-                child: Text(
-                  'Leader',
-                  style: TextStyle(fontSize: 12, color: Colors.amber[800]),
-                ),
-              ),
-          ],
-        ),
-        trailing:
-            isUserLeader && member.id != group.leaderId
-                ? PopupMenuButton(
-                  icon: Icon(Icons.more_vert, color: Colors.amber[800]),
-                  onSelected: (value) {
-                    if (value == 'remove') {
-                      _showRemoveMemberDialog(context, member);
-                    }
-                  },
-                  itemBuilder:
-                      (context) => [
-                        PopupMenuItem(
-                          value: 'remove',
-                          child: Row(
-                            children: [
-                              Icon(Icons.person_remove, color: Colors.red),
-                              SizedBox(width: 8),
-                              Text('Remove'),
-                            ],
-                          ),
-                        ),
-                      ],
-                )
-                : null,
-      ),
-    );*/
   }
 
   void _showGroupSettings(BuildContext context, Group group) {
@@ -637,6 +573,8 @@ class _GroupScreenState extends State<GroupScreen> {
     );
 
     bool isPublic = group.isPublic; // Local copy of group's publicity status
+    int beaconFrequency = (group.beaconFrequency ?? 86400).round();
+    print("Dropdown value: $beaconFrequency");
 
     showModalBottomSheet(
       context: context,
@@ -723,11 +661,11 @@ class _GroupScreenState extends State<GroupScreen> {
                         ),
                         SizedBox(height: 8),
                         DropdownButtonFormField<int>(
-                          value: group.beaconFrequency ?? 86400,
+                          value: beaconFrequency,
                           items: const [
                             DropdownMenuItem(
                               value: 0,
-                              child: Text("0 times per day (Disabled)"),
+                              child: Text("0 times per day"),
                             ),
                             DropdownMenuItem(
                               value: 86400,
@@ -748,7 +686,7 @@ class _GroupScreenState extends State<GroupScreen> {
                           ],
                           onChanged: (value) {
                             setState(() {
-                              group.beaconFrequency = value!;
+                              beaconFrequency = value!;
                             });
                           },
                           decoration: InputDecoration(
@@ -768,7 +706,6 @@ class _GroupScreenState extends State<GroupScreen> {
                       child: ElevatedButton(
                         onPressed: () async {
                           final newName = nameController.text.trim();
-                          final frequency = group.beaconFrequency ?? 86400;
 
                           showDialog(
                             context: context,
@@ -779,13 +716,20 @@ class _GroupScreenState extends State<GroupScreen> {
                           );
 
                           try {
+                            // Update name
+                            final nameResponse =
+                                await Auth.makeAuthenticatedPostRequest(
+                                  "/groups/rename",
+                                  {"groupId": widget.groupId, "newName": newName},
+                                );
+
                             // Update beacon frequency
                             final freqResponse =
                                 await Auth.makeAuthenticatedPostRequest(
                                   "/groups/setbfreq",
                                   {
                                     "groupId": widget.groupId,
-                                    "frequency": frequency,
+                                    "frequency": beaconFrequency,
                                   },
                                 );
 

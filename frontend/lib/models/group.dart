@@ -6,7 +6,7 @@ class Group {
   final bool isPublic;
   final bool isUserLeader;
   final String? iconUrl;
-  int? beaconFrequency;
+  final int? beaconFrequency;
 
   Group({
     this.id, 

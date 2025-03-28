@@ -136,7 +136,7 @@ class _GroupsBottomSheetState extends State<GroupsBottomSheet> {
 
     int selectedFrequency = 86400; // Default: once a day
     final Map<int, String> frequencyOptions = {
-      0: "0 times per day (disabled)",
+      0: "0 times per day",
       86400: "Once a day",          // 1 day
       604800: "Once a week",        // 7 days
       1209600: "Once every 2 weeks",// 14 days

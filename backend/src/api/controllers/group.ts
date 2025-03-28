@@ -507,7 +507,7 @@ export const getGroupMembers = async (req: Request, res: Response) => {
 
     // Check if the group exists and fetch the leader's ID and group name
     const group = await sql`
-      SELECT leader_id, name, icon_url, is_public FROM groups WHERE id = ${groupId};
+      SELECT leader_id, name, icon_url, is_public, beacon_frequency FROM groups WHERE id = ${groupId};
     `;
 
     if (group.length === 0) {
@@ -519,6 +519,7 @@ export const getGroupMembers = async (req: Request, res: Response) => {
     const iconUrl = group[0].icon_url;
     const isPublic = group[0].is_public;
     const isUserLeader = userId === leader_id;
+    const beaconFrequency = group[0].beacon_frequency;
 
     // Fetch all members of the group
     const members = await sql`
@@ -536,6 +537,7 @@ export const getGroupMembers = async (req: Request, res: Response) => {
       members,
       iconUrl,
       isPublic,
+      beaconFrequency,
     });
   } catch (error) {
     console.error("Error fetching group members:", error);
