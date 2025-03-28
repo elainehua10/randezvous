@@ -17,6 +17,7 @@ class _GroupPreviewState extends State<GroupPreview> {
   late List<User> members;
   bool isLoading = true;
   String? groupIconUrl;
+  String? groupName;
 
   @override
   void initState() {
@@ -34,6 +35,7 @@ class _GroupPreviewState extends State<GroupPreview> {
       final data = jsonDecode(response.body);
       setState(() {
         groupIconUrl = data['iconUrl']; // Set the group icon URL
+        groupName = data['groupName'] ?? 'Group'; // Add group name
 
         members =
             (data['members'] as List)
@@ -50,55 +52,173 @@ class _GroupPreviewState extends State<GroupPreview> {
       });
     } else {
       print("Failed to load group data");
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Group Preview')),
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Colors.white,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: Text(
+          'Group Details',
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+      ),
       body:
           isLoading
-              ? const Center(child: CircularProgressIndicator())
+              ? Center(
+                child: CircularProgressIndicator(color: Colors.blue[600]),
+              )
               : members.isEmpty
-              ? const Center(child: Text('No members found'))
-              : Column(
-                children: [
-                  // Display Group Icon
-                  groupIconUrl != null
-                      ? CircleAvatar(
-                        radius: 50,
-                        backgroundImage: NetworkImage(groupIconUrl!),
-                      )
-                      : const Icon(Icons.group, size: 100),
-                  const SizedBox(height: 20),
-                  // Display Members
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: members.length,
-                      itemBuilder: (context, index) {
-                        final member = members[index];
-                        return ListTile(
-                          leading: CircleAvatar(
-                            backgroundImage:
-                                member.avatarUrl != null &&
-                                        member.avatarUrl!.isNotEmpty
-                                    ? NetworkImage(member.avatarUrl!)
-                                    : null,
-                            child:
-                                member.avatarUrl == null ||
-                                        member.avatarUrl!.isEmpty
-                                    ? Text(
-                                      member.name.isNotEmpty
-                                          ? member.name[0]
-                                          : "U",
-                                    )
-                                    : null,
+              ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.group_off, size: 100, color: Colors.grey[300]),
+                    SizedBox(height: 16),
+                    Text(
+                      'No members in this group',
+                      style: TextStyle(color: Colors.grey[600], fontSize: 18),
+                    ),
+                  ],
+                ),
+              )
+              : CustomScrollView(
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 20),
+                      child: Column(
+                        children: [
+                          // Group Icon
+                          Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.withOpacity(0.3),
+                                  spreadRadius: 2,
+                                  blurRadius: 10,
+                                ),
+                              ],
+                            ),
+                            child: CircleAvatar(
+                              radius: 60,
+                              backgroundColor: Colors.grey[200],
+                              backgroundImage:
+                                  groupIconUrl != null
+                                      ? NetworkImage(groupIconUrl!)
+                                      : null,
+                              child:
+                                  groupIconUrl == null
+                                      ? Icon(
+                                        Icons.group,
+                                        size: 60,
+                                        color: Colors.grey[500],
+                                      )
+                                      : null,
+                            ),
                           ),
-                          title: Text(member.name),
-                          subtitle: Text('@${member.username}'),
+                          SizedBox(height: 16),
+                          Text(
+                            groupName ?? 'Group',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          Text(
+                            '${members.length} Members',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // Members List
+                  SliverPadding(
+                    padding: EdgeInsets.symmetric(horizontal: 16),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate((context, index) {
+                        final member = members[index];
+                        return Container(
+                          margin: EdgeInsets.only(bottom: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withOpacity(0.1),
+                                spreadRadius: 1,
+                                blurRadius: 5,
+                              ),
+                            ],
+                          ),
+                          child: ListTile(
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            leading: Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.blue[100]!,
+                                  width: 2,
+                                ),
+                              ),
+                              child: CircleAvatar(
+                                radius: 28,
+                                backgroundColor: Colors.grey[200],
+                                backgroundImage:
+                                    member.avatarUrl != null &&
+                                            member.avatarUrl!.isNotEmpty
+                                        ? NetworkImage(member.avatarUrl!)
+                                        : null,
+                                child:
+                                    member.avatarUrl == null ||
+                                            member.avatarUrl!.isEmpty
+                                        ? Text(
+                                          member.name.isNotEmpty
+                                              ? member.name[0].toUpperCase()
+                                              : "U",
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.blue[600],
+                                          ),
+                                        )
+                                        : null,
+                              ),
+                            ),
+                            title: Text(
+                              member.name,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            subtitle: Text(
+                              '@${member.username}',
+                              style: TextStyle(color: Colors.grey[600]),
+                            ),
+                          ),
                         );
-                      },
+                      }, childCount: members.length),
                     ),
                   ),
                 ],
