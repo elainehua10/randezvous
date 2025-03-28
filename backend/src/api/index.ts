@@ -19,6 +19,7 @@ router.use("/register", user.register);
 router.use("/login", user.login);
 router.use("/user/search", requireAuth, user.search);
 router.use("/user/block", requireAuth, user.block);
+router.use("/user/view-profile", user.getMemberProfile);
 router.use("/change-username", requireAuth, user.changeUsername);
 router.use("/logout", requireAuth, user.logout);
 router.use("/set-profile-picture", requireAuth, user.setProfilePicture);
