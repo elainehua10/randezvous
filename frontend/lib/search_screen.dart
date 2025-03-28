@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:frontend/auth.dart';
 import 'package:frontend/models/group.dart';
 import 'package:frontend/models/user.dart';
+import 'package:frontend/group_preview.dart';
 import 'package:http/http.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -417,7 +418,12 @@ class _SearchScreenState extends State<SearchScreen>
             ),
           ),
           onTap: () {
-            // TODO: Implement group navigation
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => GroupPreview(groupId: group.id ?? ''),
+              ),
+            );
           },
         );
       },
