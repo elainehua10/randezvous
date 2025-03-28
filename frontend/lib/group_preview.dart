@@ -42,7 +42,7 @@ class _GroupPreviewState extends State<GroupPreview> {
                     id: m['id'],
                     name: "${m['first_name']} ${m['last_name']}",
                     avatarUrl: m['profile_picture'],
-                    username: '',
+                    username: m['username'] ?? '',
                   ),
                 )
                 .toList();

@@ -472,7 +472,7 @@ export const getGroupMembers = async (req: Request, res: Response) => {
 
     // Fetch all members of the group
     const members = await sql`
-      SELECT u.id, u.first_name, u.last_name, u.profile_picture
+      SELECT u.id, u.first_name, u.last_name, u.profile_picture, u.username
       FROM user_group ug
       JOIN profile u ON ug.user_id = u.id
       WHERE ug.group_id = ${groupId};

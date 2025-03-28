@@ -507,60 +507,60 @@ class _GroupScreenState extends State<GroupScreen> {
           leading: CircleAvatar(
             backgroundColor: Colors.amber[100],
             child:
-              member.avatarUrl == null
-                  ? Icon(Icons.person, color: Colors.amber[800])
-                  : Image.network(member.avatarUrl!, height: 80, width: 80),
-        ),
-        title: Row(
-          children: [
-            Text(
-              member.name,
-              style: TextStyle(
-                fontWeight: FontWeight.w500,
-                color: Colors.grey[800],
-              ),
-            ),
-            SizedBox(width: 8),
-            if (member.id == group.leaderId)
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.amber[100],
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.amber),
-                ),
-                child: Text(
-                  'Leader',
-                  style: TextStyle(fontSize: 12, color: Colors.amber[800]),
-                ),
-              ),
-          ],
-        ),
-        trailing:
-            isUserLeader && member.id != group.leaderId
-                ? PopupMenuButton(
-                  icon: Icon(Icons.more_vert, color: Colors.amber[800]),
-                  onSelected: (value) {
-                    if (value == 'remove') {
-                      _showRemoveMemberDialog(context, member);
-                    }
-                  },
-                  itemBuilder:
-                      (context) => [
-                        PopupMenuItem(
-                          value: 'remove',
-                          child: Row(
-                            children: [
-                              Icon(Icons.person_remove, color: Colors.red),
-                              SizedBox(width: 8),
-                              Text('Remove'),
-                            ],
-                          ),
-                        ),
-                      ],
-                )
-                : null,
+                member.avatarUrl == null
+                    ? Icon(Icons.person, color: Colors.amber[800])
+                    : Image.network(member.avatarUrl!, height: 80, width: 80),
           ),
+          title: Row(
+            children: [
+              Text(
+                member.name,
+                style: TextStyle(
+                  fontWeight: FontWeight.w500,
+                  color: Colors.grey[800],
+                ),
+              ),
+              SizedBox(width: 8),
+              if (member.id == group.leaderId)
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.amber[100],
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.amber),
+                  ),
+                  child: Text(
+                    'Leader',
+                    style: TextStyle(fontSize: 12, color: Colors.amber[800]),
+                  ),
+                ),
+            ],
+          ),
+          trailing:
+              isUserLeader && member.id != group.leaderId
+                  ? PopupMenuButton(
+                    icon: Icon(Icons.more_vert, color: Colors.amber[800]),
+                    onSelected: (value) {
+                      if (value == 'remove') {
+                        _showRemoveMemberDialog(context, member);
+                      }
+                    },
+                    itemBuilder:
+                        (context) => [
+                          PopupMenuItem(
+                            value: 'remove',
+                            child: Row(
+                              children: [
+                                Icon(Icons.person_remove, color: Colors.red),
+                                SizedBox(width: 8),
+                                Text('Remove'),
+                              ],
+                            ),
+                          ),
+                        ],
+                  )
+                  : null,
+        ),
       ),
     );
 
