@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:http_parser/http_parser.dart';
 import 'package:frontend/edit_profile.dart';
+import 'package:frontend/settings.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -133,7 +134,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             title: "Settings",
                             subtitle: "Notification and privacy preferences",
                             icon: Icons.settings_rounded,
-                            onTap: () {},
+                            onTap:
+                                () => Navigator.pushNamed(context, '/settings'),
                           ),
                         ],
                       ),
