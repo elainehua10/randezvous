@@ -72,5 +72,6 @@ router.use(
 router.use("/groups/search", requireAuth, group.searchPublicGroups);
 router.use("/groups/all-public", requireAuth, group.getAllPublicGroups);
 router.use("/groups/join", requireAuth, group.joinGroup);
+router.use("/groups/setbfreq", requireAuth, group.setBeaconFreq);
 
 export default router;
