@@ -45,6 +45,7 @@ class _GroupScreenState extends State<GroupScreen> {
           leaderId: data['leader_id'],
           isPublic: data['isPublic'] == true, // Ensure it’s a boolean
           iconUrl: data['iconUrl'] as String?, // Allow it to be null
+          beaconFrequency: data['beaconFrequency'],
         );
 
         print(group.iconUrl);
@@ -703,86 +704,138 @@ class _GroupScreenState extends State<GroupScreen> {
                             setState(() {
                               isPublic = value; // Update UI immediately
                             });
-
-                            // Show loading indicator
-                            showDialog(
-                              context: context,
-                              barrierDismissible: false,
-                              builder:
-                                  (context) => Center(
-                                    child: CircularProgressIndicator(),
-                                  ),
-                            );
-
-                            try {
-                              final response =
-                                  await Auth.makeAuthenticatedPostRequest(
-                                    "/groups/setpub",
-                                    {
-                                      "groupId": widget.groupId,
-                                      "isPublic":
-                                          value, // Send new public status
-                                    },
-                                  );
-
-                              // Close loading dialog
-                              Navigator.pop(context);
-
-                              if (response.statusCode == 200) {
-                                setState(() {
-                                  isPublic = value;
-                                });
-                                fetchGroupDetails(); // Refresh group details
-
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      'Group publicity updated successfully',
-                                    ),
-                                  ),
-                                );
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      'Failed to update publicity: ${response.body}',
-                                    ),
-                                  ),
-                                );
-                              }
-                            } catch (e) {
-                              Navigator.pop(context);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Error: ${e.toString()}'),
-                                ),
-                              );
-                            }
                           },
                           activeColor: Colors.amber[800],
                         ),
                       ],
                     ),
                     SizedBox(height: 24),
-
-                    // Save Button
+                    // Beacon Frequency Option
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Beacon Frequency",
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        DropdownButtonFormField<int>(
+                          value: group.beaconFrequency ?? 86400,
+                          items: const [
+                            DropdownMenuItem(
+                              value: 0,
+                              child: Text("0 times per day (Disabled)"),
+                            ),
+                            DropdownMenuItem(
+                              value: 86400,
+                              child: Text("Once a day"),
+                            ),
+                            DropdownMenuItem(
+                              value: 604800,
+                              child: Text("Once a week"),
+                            ),
+                            DropdownMenuItem(
+                              value: 1209600,
+                              child: Text("Once every two weeks"),
+                            ),
+                            DropdownMenuItem(
+                              value: 2592000,
+                              child: Text("Once a month"),
+                            ),
+                          ],
+                          onChanged: (value) {
+                            setState(() {
+                              group.beaconFrequency = value!;
+                            });
+                          },
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(),
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 24),
+                      ],
+                    ),
                     // Save Button
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () async {
-                          // existing code...
+                          final newName = nameController.text.trim();
+                          final frequency = group.beaconFrequency ?? 86400;
+
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder:
+                                (_) =>
+                                    Center(child: CircularProgressIndicator()),
+                          );
+
+                          try {
+                            // Update beacon frequency
+                            final freqResponse =
+                                await Auth.makeAuthenticatedPostRequest(
+                                  "/groups/setbfreq",
+                                  {
+                                    "groupId": widget.groupId,
+                                    "frequency": frequency,
+                                  },
+                                );
+
+                            // Update public/private
+                            final pubResponse =
+                                await Auth.makeAuthenticatedPostRequest(
+                                  "/groups/setpub",
+                                  {
+                                    "groupId": widget.groupId,
+                                    "isPublic": isPublic,
+                                  },
+                                );
+
+                            Navigator.pop(context); // Close loading dialog
+
+                            if (freqResponse.statusCode == 200 &&
+                                pubResponse.statusCode == 200) {
+                              Navigator.pop(context); // Close modal
+                              fetchGroupDetails(); // Refresh UI
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Group settings updated.'),
+                                ),
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Failed to update group settings.',
+                                  ),
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text("Error: ${e.toString()}")),
+                            );
+                          }
                         },
-                        child: Padding(
-                          padding: const EdgeInsets.all(12.0),
-                          child: Text('Save Changes'),
-                        ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.amber[800],
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: Text('Save Changes'),
                         ),
                       ),
                     ),
@@ -796,17 +849,17 @@ class _GroupScreenState extends State<GroupScreen> {
                           Navigator.pop(context);
                           _showLeaveGroupDialog();
                         },
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: Colors.red),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
                         child: Padding(
                           padding: const EdgeInsets.all(12.0),
                           child: Text(
                             'Leave Group',
                             style: TextStyle(color: Colors.red),
-                          ),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: Colors.red),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
                           ),
                         ),
                       ),

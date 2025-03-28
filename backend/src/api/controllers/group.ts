@@ -15,7 +15,7 @@ const MAX_GROUPS_PER_USER = 3;
 export const createGroup = async (req: Request, res: Response) => {
   try {
     // Check fields
-    const { userId, groupName, isPublic, beaconFrequency = 86400 } = req.body;
+    const { userId, groupName, isPublic, frequency = 86400 } = req.body;
     if (!userId || !groupName || isPublic === undefined) {
       return res.status(400).json({ error: "Missing required fields" });
     }
@@ -56,7 +56,7 @@ export const createGroup = async (req: Request, res: Response) => {
     // Insert new group (user is the leader)
     let newGroup = await sql`
             INSERT INTO groups (name, is_public, leader_id, beacon_frequency) 
-            VALUES (${groupName}, ${isPublic}, ${userId}, ${beaconFrequency})
+            VALUES (${groupName}, ${isPublic}, ${userId}, ${frequency})
             RETURNING id;
         `;
 
@@ -357,8 +357,8 @@ export const setBeaconFreq = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    // Frequency should be a reasonable number (e.g., between 10 seconds and 1 day)
-    if (typeof frequency !== "number" || frequency < 10 || frequency > 86400) {
+    // Frequency should be a number
+    if (typeof frequency !== "number") {
       return res.status(400).json({ error: "Invalid frequency value" });
     }
 

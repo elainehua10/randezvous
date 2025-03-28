@@ -6,6 +6,7 @@ class Group {
   final bool isPublic;
   final bool isUserLeader;
   final String? iconUrl;
+  int? beaconFrequency;
 
   Group({
     this.id, 
@@ -15,6 +16,7 @@ class Group {
     this.imageUrl, 
     this.isPublic = false,
     this.iconUrl,
+    this.beaconFrequency,
   });
 
   factory Group.fromJson(Map<String, dynamic> json) {
@@ -27,6 +29,7 @@ class Group {
       isUserLeader: json['isUserLeader'] ?? false, // Fix key and add fallback
       isPublic: json['is_public'] == true, // Ensure it’s always a boolean
       iconUrl: json['icon_url'] as String?, // Allow it to be null
+      beaconFrequency: json['beacon_frequency'] as int?, // Allow it to be null
     );
   }
 }

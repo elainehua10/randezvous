@@ -134,6 +134,15 @@ class _GroupsBottomSheetState extends State<GroupsBottomSheet> {
     bool isPublic = false; // Default to private
     String? errorMessage; // Store error message
 
+    int selectedFrequency = 86400; // Default: once a day
+    final Map<int, String> frequencyOptions = {
+      0: "0 times per day (disabled)",
+      86400: "Once a day",          // 1 day
+      604800: "Once a week",        // 7 days
+      1209600: "Once every 2 weeks",// 14 days
+      2592000: "Once a month",      // 30 days
+    };
+    
     showDialog(
       context: context,
       builder: (context) {
@@ -210,6 +219,44 @@ class _GroupsBottomSheetState extends State<GroupsBottomSheet> {
                       ],
                     ),
                   ),
+                  SizedBox(height: 16),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.grey[300]!),
+                    ),
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Beacon Frequency",
+                          style: TextStyle(
+                            color: Colors.grey[800],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        DropdownButton<int>(
+                          value: selectedFrequency,
+                          isExpanded: true,
+                          underline: SizedBox(),
+                          icon: Icon(Icons.arrow_drop_down),
+                          onChanged: (value) {
+                            setState(() => selectedFrequency = value!);
+                          },
+                          items:
+                              frequencyOptions.entries.map((entry) {
+                                return DropdownMenuItem<int>(
+                                  value: entry.key,
+                                  child: Text(entry.value),
+                                );
+                              }).toList(),
+                        ),
+                      ],
+                    ),
+                  ),
+
                   SizedBox(height: 10),
                   if (errorMessage != null) // Display error if it exists
                     Container(
@@ -263,7 +310,7 @@ class _GroupsBottomSheetState extends State<GroupsBottomSheet> {
                     try {
                       final response = await Auth.makeAuthenticatedPostRequest(
                         "groups/create",
-                        {"groupName": groupName, "isPublic": isPublic},
+                        {"groupName": groupName, "isPublic": isPublic, "frequency": selectedFrequency},
                       );
 
                       if (response.statusCode == 200) {
