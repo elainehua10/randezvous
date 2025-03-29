@@ -35,7 +35,7 @@ class _GroupPreviewState extends State<GroupPreview> {
       final data = jsonDecode(response.body);
       setState(() {
         groupIconUrl = data['iconUrl']; // Set the group icon URL
-        groupName = data['groupName'] ?? 'Group'; // Add group name
+        groupName = data['name'] ?? 'Group'; // Add group name
 
         members =
             (data['members'] as List)
