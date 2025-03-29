@@ -5,6 +5,7 @@ import 'package:frontend/models/group.dart';
 import 'package:frontend/models/user.dart';
 import 'package:frontend/group_preview.dart';
 import 'package:http/http.dart';
+import 'package:frontend/member_profile.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({Key? key}) : super(key: key);
@@ -57,13 +58,6 @@ class _SearchScreenState extends State<SearchScreen>
     if (query.trim().isEmpty) {
       await _fetchAllPublicGroups();
       return;
-      /*
-      setState(() {
-        _userResults = [];
-        _groupResults = [];
-      });
-      return;
-      */
     }
 
     try {
@@ -339,7 +333,12 @@ class _SearchScreenState extends State<SearchScreen>
             icon: const Icon(Icons.more_vert),
           ),
           onTap: () {
-            // TODO: Implement user profile navigation
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => MemberProfileScreen(userId: user.id),
+              ),
+            );
           },
         );
       },
