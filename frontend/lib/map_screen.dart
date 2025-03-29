@@ -7,6 +7,8 @@ import 'package:frontend/auth.dart';
 import 'dart:convert';
 
 class MapScreen extends StatefulWidget {
+  const MapScreen({super.key});
+
   @override
   _MapScreenState createState() => _MapScreenState();
 }

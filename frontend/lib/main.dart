@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/auth.dart';
 import 'package:frontend/group_screen.dart';
 import 'package:frontend/location_service.dart';
 import 'package:frontend/login.dart';

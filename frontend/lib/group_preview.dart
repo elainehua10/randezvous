@@ -7,7 +7,7 @@ import 'package:frontend/auth.dart';
 class GroupPreview extends StatefulWidget {
   final String groupId;
 
-  const GroupPreview({Key? key, required this.groupId}) : super(key: key);
+  const GroupPreview({super.key, required this.groupId});
 
   @override
   _GroupPreviewState createState() => _GroupPreviewState();

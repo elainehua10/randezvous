@@ -19,6 +19,7 @@ class MapWidgetState extends State<MapWidget> {
   LatLng userPos = LatLng(40.428246, -86.914391);
   StreamSubscription<Position>? positionStream;
 
+  @override
   void initState() {
     super.initState();
     _moveToUser();

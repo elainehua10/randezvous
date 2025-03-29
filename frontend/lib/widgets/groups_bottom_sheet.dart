@@ -10,10 +10,10 @@ class GroupsBottomSheet extends StatefulWidget {
   final Function(Group) onGroupSelected;
 
   const GroupsBottomSheet({
-    Key? key,
+    super.key,
     this.selectedGroupId,
     required this.onGroupSelected,
-  }) : super(key: key);
+  });
 
   @override
   _GroupsBottomSheetState createState() => _GroupsBottomSheetState();
@@ -326,7 +326,6 @@ class _GroupsBottomSheetState extends State<GroupsBottomSheet> {
                       setState(() => errorMessage = "Error creating group.");
                     }
                   },
-                  child: Text("Create"),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.amber[800],
                     foregroundColor: Colors.white,
@@ -335,6 +334,7 @@ class _GroupsBottomSheetState extends State<GroupsBottomSheet> {
                     ),
                     padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   ),
+                  child: Text("Create"),
                 ),
               ],
             );
@@ -560,7 +560,6 @@ class _GroupsBottomSheetState extends State<GroupsBottomSheet> {
                       subtitle: Text("You've been invited to join"),
                       trailing: ElevatedButton(
                         onPressed: () => _acceptInvite(group.id ?? ""),
-                        child: Text("Accept"),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.orange[700],
                           foregroundColor: Colors.white,
@@ -573,6 +572,7 @@ class _GroupsBottomSheetState extends State<GroupsBottomSheet> {
                             vertical: 8,
                           ),
                         ),
+                        child: Text("Accept"),
                       ),
                     ),
                   );

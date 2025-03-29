@@ -7,11 +7,11 @@ class GroupItem extends StatelessWidget {
   final VoidCallback onTap;
 
   const GroupItem({
-    Key? key,
+    super.key,
     required this.group,
     required this.isSelected,
     required this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

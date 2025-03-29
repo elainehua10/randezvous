@@ -5,6 +5,8 @@ import 'package:frontend/auth.dart';
 import 'dart:io';
 
 class EditProfileScreen extends StatefulWidget {
+  const EditProfileScreen({super.key});
+
   @override
   _EditProfileScreenState createState() => _EditProfileScreenState();
 }
@@ -90,11 +92,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _updateUsername,
-                child: Text('Update Profile'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.amber[800],
                   foregroundColor: Colors.white,
                 ),
+                child: Text('Update Profile'),
               ),
             ],
           ),

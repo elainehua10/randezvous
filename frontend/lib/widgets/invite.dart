@@ -64,7 +64,7 @@ class _InviteMembersDialogState extends State<_InviteMembersDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text('Invite Members'),
-      content: Container(
+      content: SizedBox(
         width: double.maxFinite,
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -98,9 +98,9 @@ class _InviteMembersDialogState extends State<_InviteMembersDialog> {
                   itemBuilder: (context, index) {
                     final user = _searchResults[index];
                     return ListTile(
-                      leading: CircleAvatar(child: Text(user.name![0])),
-                      title: Text(user.name!),
-                      subtitle: Text(user.username!),
+                      leading: CircleAvatar(child: Text(user.name[0])),
+                      title: Text(user.name),
+                      subtitle: Text(user.username),
                       trailing: IconButton(
                         icon: Icon(Icons.add),
                         onPressed: () async {

@@ -7,7 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+  const LoginScreen({super.key});
 
   @override
   _LoginScreenState createState() => _LoginScreenState();
@@ -48,10 +48,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
         // Handle the response
         if (response.statusCode == 200) {
-          String access_token = responseData["session"]["access_token"];
-          String refresh_token = responseData["session"]["refresh_token"];
-          int expire_time = responseData["session"]["expires_at"];
-          Auth.saveTokens(access_token, refresh_token, expire_time);
+          String accessToken = responseData["session"]["access_token"];
+          String refreshToken = responseData["session"]["refresh_token"];
+          int expireTime = responseData["session"]["expires_at"];
+          Auth.saveTokens(accessToken, refreshToken, expireTime);
 
           Navigator.pushReplacementNamed(context, '/home');
         } else {

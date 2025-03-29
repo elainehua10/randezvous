@@ -11,7 +11,7 @@ import 'package:frontend/member_profile.dart';
 class GroupScreen extends StatefulWidget {
   final String groupId;
 
-  const GroupScreen({Key? key, required this.groupId}) : super(key: key);
+  const GroupScreen({super.key, required this.groupId});
 
   @override
   _GroupScreenState createState() => _GroupScreenState();
@@ -198,8 +198,8 @@ class _GroupScreenState extends State<GroupScreen> {
                 onPressed: () {
                   _leaveGroup(); // Calls the API to leave
                 },
-                child: Text("Leave Group"),
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                child: Text("Leave Group"),
               ),
             ],
           );
@@ -401,7 +401,7 @@ class _GroupScreenState extends State<GroupScreen> {
     Group group,
     bool isUserLeader,
   ) {
-    return Container(
+    return SizedBox(
       height: 200,
       width: double.infinity,
       child: Stack(
@@ -847,13 +847,13 @@ class _GroupScreenState extends State<GroupScreen> {
                 await fetchGroupDetails();
                 Navigator.pop(context);
               },
-              child: Text('Remove', style: TextStyle(color: Colors.white)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
+              child: Text('Remove', style: TextStyle(color: Colors.white)),
             ),
           ],
         );

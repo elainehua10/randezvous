@@ -1,9 +1,6 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
 import 'package:frontend/auth.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 
 // Location Service class
 class LocationService {
