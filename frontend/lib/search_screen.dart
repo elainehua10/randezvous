@@ -234,9 +234,11 @@ class _SearchScreenState extends State<SearchScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text("Search"),
-        elevation: 0,
+        title: Text("Search", style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.amber[800],
         bottom: TabBar(
           controller: _tabController,
           tabs: const [Tab(text: "Users"), Tab(text: "Groups")],
@@ -247,7 +249,7 @@ class _SearchScreenState extends State<SearchScreen>
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(8.0),
+            padding: const EdgeInsets.all(16.0),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
@@ -264,8 +266,13 @@ class _SearchScreenState extends State<SearchScreen>
                   },
                 ),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: Colors.grey[300]!),
                 ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: Colors.amber[800]!),
+                )
               ),
               onSubmitted: _performSearch,
               onChanged: (value) {
