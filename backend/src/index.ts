@@ -1,8 +1,7 @@
-import app from "./app";
+import server from "./app";
 import http from "http";
 
 const port = process.env.PORT || 5001;
-export const server = http.createServer(app);
 
 server.listen(port, () => {
   /* eslint-disable no-console */
