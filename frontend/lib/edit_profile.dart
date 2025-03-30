@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/util.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:frontend/auth.dart';
@@ -75,11 +76,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               style: TextStyle(
                                 color: Colors.red[800],
                                 fontSize: 14,
-                              )
-                            )
-                          )
-                        ]
-                      )
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     );
                     return 'Please enter a username';
                   }
@@ -130,7 +131,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       try {
         String? accessToken = await Auth.getAccessToken();
 
-        final url = Uri.parse('http://localhost:5001/api/v1/change-username');
+        final url = Uri.parse('${Util.BACKEND_URL}/api/v1/change-username');
         final response = await http.post(
           url,
           headers: {
@@ -219,4 +220,3 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 }
-

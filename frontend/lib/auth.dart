@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:frontend/util.dart';
 import 'package:http/http.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
@@ -42,7 +43,7 @@ class Auth {
     // Check if the token is expired
     if (DateTime.now().millisecondsSinceEpoch / 1000 >= expireTime) {
       final response = await http.post(
-        Uri.parse('http://localhost:5001/api/v1/refresh-token'),
+        Uri.parse('${Util.BACKEND_URL}/api/v1/refresh-token'),
         headers: {'Content-Type': 'application/json'},
         body: {"refreshToken": token},
       );
@@ -63,7 +64,7 @@ class Auth {
     await refreshTokenIfNeeded();
     final token = await getAccessToken();
     final response = await http.get(
-      Uri.parse('http://localhost:5001/api/v1/$endpoint'),
+      Uri.parse('${Util.BACKEND_URL}/api/v1/$endpoint'),
       headers: {HttpHeaders.authorizationHeader: 'Bearer $token'},
     );
     return response;
@@ -76,7 +77,7 @@ class Auth {
     await refreshTokenIfNeeded();
     final token = await getAccessToken();
     final response = await http.post(
-      Uri.parse('http://localhost:5001/api/v1/$endpoint'),
+      Uri.parse('${Util.BACKEND_URL}/api/v1/$endpoint'),
       headers: {
         HttpHeaders.authorizationHeader: 'Bearer $token',
         HttpHeaders.contentTypeHeader: "application/json",
@@ -103,7 +104,7 @@ class Auth {
 
     var request = http.MultipartRequest(
       'POST',
-      Uri.parse('http://localhost:5001/api/v1/$endpoint'),
+      Uri.parse('${Util.BACKEND_URL}/api/v1/$endpoint'),
     );
 
     request.headers.addAll({HttpHeaders.authorizationHeader: 'Bearer $token'});
