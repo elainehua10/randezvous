@@ -1,4 +1,3 @@
-import jwt from "jsonwebtoken";
 import { WebSocket } from "ws";
 import sql from "../db";
 import PubSubBroker from "./PubSubBroker";
@@ -124,6 +123,24 @@ class ConnectedUser {
     if (this.socket.readyState === WebSocket.OPEN) {
       this.socket.send(JSON.stringify(data));
     }
+  }
+
+  disconnect() {
+    if (this.activeGroupId) {
+      this.broker.unsubscribe(this.activeGroupId, this);
+      this.activeGroupId = undefined;
+    }
+
+    if (this.socket.readyState === WebSocket.OPEN) {
+      this.socket.close();
+    }
+
+    if (this.userInfo) {
+      ConnectedUser.connectedUsers.delete(this.userInfo.userId);
+    }
+
+    this.groupIds.clear();
+    this.userInfo = undefined;
   }
 }
 

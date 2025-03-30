@@ -26,6 +26,7 @@
     "express": "^4.21.1",
     "express-fileupload": "^1.5.1",
     "helmet": "^8.0.0",
+    "http": "^0.0.1-security",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
     "postgres": "^3.4.5",
