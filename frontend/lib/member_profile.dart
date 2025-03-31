@@ -200,15 +200,8 @@ class _MemberProfileScreenState extends State<MemberProfileScreen> {
             itemCount: groups.length,
             itemBuilder: (context, index) {
               final group = groups[index];
-
-              // For now, fake rank and points from name hash
-              final points = 100 + (group['name']?.hashCode ?? 0) % 100;
-              final rank = 1 + (group['name']?.hashCode ?? 0) % 5;
-
-
-              // later if backedn implemented, replace the above two lines with these bottom two lines 
-              // final points = group['points'];
-              // final rank = group['rank'];
+              final points = group['points'];
+              final rank = group['rank'];
 
 
               return ListTile(
