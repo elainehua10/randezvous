@@ -3,7 +3,7 @@ import sql from "../db";
 import PubSubBroker from "./PubSubBroker";
 
 export interface UserLocationInfo {
-  userId: string;
+  user_id: string;
   first_name: string;
   last_name: string;
   username: string;
@@ -77,7 +77,7 @@ class ConnectedUser {
       } = result[0];
 
       return {
-        userId,
+        user_id: userId,
         first_name,
         last_name,
         username,
@@ -136,7 +136,7 @@ class ConnectedUser {
     }
 
     if (this.userInfo) {
-      ConnectedUser.connectedUsers.delete(this.userInfo.userId);
+      ConnectedUser.connectedUsers.delete(this.userInfo.user_id);
     }
 
     this.groupIds.clear();

@@ -504,9 +504,10 @@ export const getGroupLocations = async (req: Request, res: Response) => {
   try {
     // Check if user is in the group
     const userInGroup = await sql`
-            SELECT user_id FROM user_group
-            WHERE user_id = ${userId} AND group_id = ${groupId}
-        `;
+      SELECT user_id FROM user_group
+      WHERE user_id = ${userId} AND group_id = ${groupId}
+    `;
+
     if (userInGroup.length === 0) {
       return res
         .status(403)
@@ -515,11 +516,13 @@ export const getGroupLocations = async (req: Request, res: Response) => {
 
     // Get locations of other users in the group
     const locations = await sql`
-            SELECT p.longitude, p.latitude
-            FROM user_group ug
-            JOIN profile p ON ug.user_id = p.id
-            WHERE ug.group_id = ${groupId}
-        `;
+      SELECT ug.user_id, p.longitude, p.latitude, p.first_name, p.last_name, p.username, p.profile_picture
+      FROM user_group ug
+      JOIN profile p ON ug.user_id = p.id
+      WHERE ug.group_id = ${groupId}
+    `;
+
+    console.log("LOCATIONS", locations);
 
     return res.status(200).json({ locations });
   } catch (error) {
@@ -721,4 +724,3 @@ export const checkMembership = async (req: Request, res: Response) => {
     return res.status(500).json({ error: "Internal server error" });
   }
 };
-

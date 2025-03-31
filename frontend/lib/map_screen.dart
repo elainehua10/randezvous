@@ -134,7 +134,7 @@ class _MapScreenState extends State<MapScreen> {
           // Map takes the full screen
           Container(
             decoration: BoxDecoration(color: Colors.grey[200]),
-            child: MapWidget(),
+            child: MapWidget(activeGroupId: _selectedGroupId),
           ),
 
           // Custom AppBar

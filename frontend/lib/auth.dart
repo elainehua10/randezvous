@@ -21,6 +21,8 @@ class Auth {
   }
 
   static Future<String?> getAccessToken() async {
+    await refreshTokenIfNeeded();
+
     return await storage.read(key: 'access_token');
   }
 
@@ -74,7 +76,6 @@ class Auth {
     String endpoint,
     final body,
   ) async {
-    await refreshTokenIfNeeded();
     final token = await getAccessToken();
     final response = await http.post(
       Uri.parse('${Util.BACKEND_URL}/api/v1/$endpoint'),
@@ -88,8 +89,6 @@ class Auth {
   }
 
   static Future<void> removeTokens() async {
-    String token = (await getAccessToken())!;
-    print(token);
     await storage.delete(key: 'access_token');
     await storage.delete(key: 'refresh_token');
   }
@@ -99,7 +98,6 @@ class Auth {
     File file,
     Map<String, dynamic> body,
   ) async {
-    await refreshTokenIfNeeded();
     final token = await getAccessToken();
 
     var request = http.MultipartRequest(

@@ -29,6 +29,7 @@ export const setupWebsocketServer = (server: Server) => {
     let user: ConnectedUser | null = null;
 
     socket.on("message", (message) => {
+      console.log("MESSAGE", message);
       try {
         const data = JSON.parse(message.toString());
 
