@@ -6,7 +6,6 @@ import 'package:frontend/models/user.dart';
 import 'package:frontend/widgets/map_style.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:http/http.dart' as http;
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 class MapWidget extends StatefulWidget {
@@ -39,6 +38,10 @@ class MapWidgetState extends State<MapWidget> {
   void didUpdateWidget(MapWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.activeGroupId != oldWidget.activeGroupId) {
+      setState(() {
+        _markers = {}; // Reset markers
+        _userLocations = {}; // Reset user locations
+      });
       _fetchInitialLocations();
       _updateWebSocketGroup();
     }
@@ -97,9 +100,7 @@ class MapWidgetState extends State<MapWidget> {
   }
 
   void _updateWebSocketGroup() {
-    if (_channel != null && widget.activeGroupId != null) {
-      _sendLocation(userPos.latitude, userPos.longitude);
-    }
+    _sendLocation(userPos.latitude, userPos.longitude);
   }
 
   void _sendLocation(double latitude, double longitude) async {
