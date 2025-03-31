@@ -36,13 +36,10 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    _locationService = LocationService();
-    _locationService.startLocationUpdates();
   }
 
   @override
   void dispose() {
-    _locationService.stopLocationUpdates();
     super.dispose();
   }
 

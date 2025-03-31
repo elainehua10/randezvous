@@ -1,12 +1,17 @@
 import 'dart:async';
-
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:frontend/auth.dart'; // Assuming Auth class is here
+import 'package:frontend/models/user.dart';
 import 'package:frontend/widgets/map_style.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
 
 class MapWidget extends StatefulWidget {
-  const MapWidget({super.key});
+  final String? activeGroupId; // Pass the selected group ID
+
+  const MapWidget({super.key, this.activeGroupId});
 
   @override
   State<MapWidget> createState() => MapWidgetState();
@@ -15,19 +20,109 @@ class MapWidget extends StatefulWidget {
 class MapWidgetState extends State<MapWidget> {
   final Completer<GoogleMapController> _controller =
       Completer<GoogleMapController>();
-
-  LatLng userPos = LatLng(40.428246, -86.914391);
+  LatLng userPos = const LatLng(40.428246, -86.914391);
   StreamSubscription<Position>? positionStream;
+  WebSocketChannel? _channel;
+  Set<Marker> _markers = {};
+  Map<String, User> _userLocations = {}; // Track user locations
 
   @override
   void initState() {
     super.initState();
+    _connectToWebSocket();
     _moveToUser();
+    _fetchInitialLocations();
+  }
+
+  @override
+  void didUpdateWidget(MapWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.activeGroupId != oldWidget.activeGroupId) {
+      setState(() {
+        _markers = {}; // Reset markers
+        _userLocations = {}; // Reset user locations
+      });
+      _fetchInitialLocations();
+      _updateWebSocketGroup();
+    }
+  }
+
+  Future<void> _fetchInitialLocations() async {
+    if (widget.activeGroupId == null) return;
+
+    try {
+      final response = await Auth.makeAuthenticatedPostRequest(
+        "groups/locations",
+        {"groupId": widget.activeGroupId},
+      );
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+        print(data["locations"]);
+        print(data["locations"].map((e) => User.fromJson(e)));
+        setState(() {
+          _userLocations = {
+            for (var user in data["locations"].map((e) => User.fromJson(e)))
+              user.id: user,
+          };
+          _updateMarkers();
+        });
+      } else {
+        print("Failed to fetch locations: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("Error fetching initial locations: $e");
+    }
+  }
+
+  void _connectToWebSocket() async {
+    final token = await Auth.getAccessToken();
+    if (token == null) return;
+
+    _channel = WebSocketChannel.connect(
+      Uri.parse(
+        'ws://localhost:5001/locations',
+      ), // Replace with your server URL
+    );
+
+    _channel!.stream.listen(
+      (message) {
+        print("RECEIVE MESSAGE");
+        final data = jsonDecode(message) as Map<String, dynamic>;
+        final location = User.fromJson(data);
+        setState(() {
+          _userLocations[location.id] = location;
+          _updateMarkers();
+        });
+      },
+      onError: (error) => print("WebSocket error: $error"),
+      onDone: () => print("WebSocket closed"),
+    );
+  }
+
+  void _updateWebSocketGroup() {
+    _sendLocation(userPos.latitude, userPos.longitude);
+  }
+
+  void _sendLocation(double latitude, double longitude) async {
+    if (_channel == null) return;
+    final token = await Auth.getAccessToken();
+    if (token == null) return;
+
+    final message = {
+      "authToken": token,
+      "longitude": longitude,
+      "latitude": latitude,
+      "activeGroupId": widget.activeGroupId ?? -1,
+    };
+
+    print("sending");
+    _channel!.sink.add(jsonEncode(message));
   }
 
   void _moveToUser() async {
     final GoogleMapController controller = await _controller.future;
-    userPos = await _getUserLocation() ?? LatLng(40.428246, -86.914391);
+    final pos = await _getUserLocation() ?? const LatLng(40.428246, -86.914391);
+    setState(() => userPos = pos);
     await controller.animateCamera(
       CameraUpdate.newCameraPosition(CameraPosition(target: userPos, zoom: 15)),
     );
@@ -35,33 +130,56 @@ class MapWidgetState extends State<MapWidget> {
     positionStream = Geolocator.getPositionStream().listen((
       Position? position,
     ) {
-      if (position == null) {
-        return;
-      }
-      // print(
-      //   '${position.latitude.toString()}, ${position.longitude.toString()}',
-      // );
+      if (position == null || !mounted) return;
       setState(() {
         userPos = LatLng(position.latitude, position.longitude);
+        _sendLocation(position.latitude, position.longitude);
       });
+      _updateMarkers();
     });
   }
 
   Future<LatLng?> _getUserLocation() async {
-    LocationPermission permission;
-    permission = await Geolocator.checkPermission();
-
+    LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
-
       if (permission == LocationPermission.denied ||
           permission == LocationPermission.deniedForever) {
         return null;
       }
     }
-
     Position position = await Geolocator.getCurrentPosition();
     return LatLng(position.latitude, position.longitude);
+  }
+
+  void _updateMarkers() async {
+    final markers =
+        _userLocations.values.map((user) async {
+          final bitmap = await _createMarkerIcon(user.avatarUrl, user.username);
+          return Marker(
+            markerId: MarkerId(user.id),
+            position:
+                user.latitude != null && user.longitude != null
+                    ? LatLng(user.latitude!, user.longitude!)
+                    : LatLng(0, 0),
+            icon: bitmap,
+            infoWindow: InfoWindow(title: user.username),
+          );
+        }).toList();
+
+    final resolvedMarkers = await Future.wait(markers);
+    if (mounted) {
+      setState(() => _markers = resolvedMarkers.toSet());
+    }
+  }
+
+  Future<BitmapDescriptor> _createMarkerIcon(
+    String? profilePicture,
+    String username,
+  ) async {
+    // For simplicity, use a default icon; implement profile picture rendering if needed
+    return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange);
+    // To use profile pictures, you'd need to download the image and convert it to BitmapDescriptor
   }
 
   static const CameraPosition _kGooglePlex = CameraPosition(
@@ -69,36 +187,27 @@ class MapWidgetState extends State<MapWidget> {
     zoom: 14.4746,
   );
 
-  static const CameraPosition _kLake = CameraPosition(
-    bearing: 192.8334901395799,
-    target: LatLng(37.43296265331129, -122.08832357078792),
-    tilt: 59.440717697143555,
-    zoom: 19.151926040649414,
-  );
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: GoogleMap(
-        mapType: MapType.normal,
-        initialCameraPosition: _kGooglePlex,
-        onMapCreated: (GoogleMapController controller) {
-          _controller.complete(controller);
-        },
-        // style: MyMapStyle.mapStyles,
-        myLocationEnabled: true,
-        myLocationButtonEnabled: true,
-      ),
-      // floatingActionButton: FloatingActionButton.extended(
-      //   onPressed: _goToTheLake,
-      //   label: const Text('To the lake!'),
-      //   icon: const Icon(Icons.directions_boat),
-      // ),
+    return GoogleMap(
+      mapType: MapType.normal,
+      initialCameraPosition: _kGooglePlex,
+      onMapCreated: (GoogleMapController controller) {
+        _controller.complete(controller);
+      },
+      markers: _markers,
+      myLocationEnabled: true,
+      myLocationButtonEnabled: true,
     );
   }
 
-  Future<void> _goToTheLake() async {
-    final GoogleMapController controller = await _controller.future;
-    await controller.animateCamera(CameraUpdate.newCameraPosition(_kLake));
+  @override
+  void dispose() {
+    _controller.future.then((controller) {
+      controller.dispose();
+    });
+    positionStream?.cancel();
+    _channel?.sink.close();
+    super.dispose();
   }
 }

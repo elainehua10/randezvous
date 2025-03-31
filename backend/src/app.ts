@@ -10,6 +10,8 @@ dotenv.config();
 import * as middlewares from "./middlewares";
 import api from "./api";
 import MessageResponse from "./interfaces/MessageResponse";
+import { setupWebsocketServer } from "./web-socket-server/ws";
+import http from "http";
 
 const app = express();
 
@@ -17,9 +19,11 @@ app.use(morgan("dev"));
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
-app.use(fileUpload({
-  limits: { fileSize: 50 * 1024 * 1024 },
-}));
+app.use(
+  fileUpload({
+    limits: { fileSize: 50 * 1024 * 1024 },
+  })
+);
 
 // Initialize Supabase
 
@@ -35,4 +39,8 @@ app.use("/api/v1", api);
 app.use(middlewares.notFound);
 app.use(middlewares.errorHandler);
 
-export default app;
+const server = http.createServer(app);
+
+setupWebsocketServer(server);
+
+export default server;

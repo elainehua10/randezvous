@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/auth.dart';
 import 'package:frontend/map_screen.dart';
+import 'package:frontend/util.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -34,7 +35,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       try {
         // Make a POST request to the server
-        final url = Uri.parse('http://localhost:5001/api/v1/login');
+        final url = Uri.parse('${Util.BACKEND_URL}/api/v1/login');
         final response = await http.post(
           url,
           headers: {'Content-Type': 'application/json'},

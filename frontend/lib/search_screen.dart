@@ -5,6 +5,7 @@ import 'package:frontend/models/group.dart';
 import 'package:frontend/models/user.dart';
 import 'package:frontend/group_preview.dart';
 import 'package:http/http.dart';
+import 'package:frontend/member_profile.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -57,13 +58,6 @@ class _SearchScreenState extends State<SearchScreen>
     if (query.trim().isEmpty) {
       await _fetchAllPublicGroups();
       return;
-      /*
-      setState(() {
-        _userResults = [];
-        _groupResults = [];
-      });
-      return;
-      */
     }
 
     try {
@@ -240,9 +234,11 @@ class _SearchScreenState extends State<SearchScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text("Search"),
-        elevation: 0,
+        title: Text("Search", style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.amber[800],
         bottom: TabBar(
           controller: _tabController,
           tabs: const [Tab(text: "Users"), Tab(text: "Groups")],
@@ -253,7 +249,7 @@ class _SearchScreenState extends State<SearchScreen>
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(8.0),
+            padding: const EdgeInsets.all(16.0),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
@@ -270,8 +266,13 @@ class _SearchScreenState extends State<SearchScreen>
                   },
                 ),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: Colors.grey[300]!),
                 ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: Colors.amber[800]!),
+                )
               ),
               onSubmitted: _performSearch,
               onChanged: (value) {
@@ -339,7 +340,12 @@ class _SearchScreenState extends State<SearchScreen>
             icon: const Icon(Icons.more_vert),
           ),
           onTap: () {
-            // TODO: Implement user profile navigation
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => MemberProfileScreen(userId: user.id),
+              ),
+            );
           },
         );
       },

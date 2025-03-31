@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/auth.dart';
 import 'package:frontend/map_screen.dart';
+import 'package:frontend/util.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -42,7 +43,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 Center(child: CircularProgressIndicator(color: Colors.amber)),
       );
 
-      final url = Uri.parse('http://localhost:5001/api/v1/register');
+      final url = Uri.parse('${Util.BACKEND_URL}/api/v1/register');
 
       try {
         final body = jsonEncode({
