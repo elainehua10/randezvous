@@ -121,6 +121,7 @@ class ConnectedUser {
 
   receiveUpdate(data: any) {
     if (this.socket.readyState === WebSocket.OPEN) {
+      console.log("SENDING");
       this.socket.send(JSON.stringify(data));
     }
   }

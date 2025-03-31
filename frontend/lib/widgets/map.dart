@@ -30,9 +30,9 @@ class MapWidgetState extends State<MapWidget> {
   @override
   void initState() {
     super.initState();
+    _connectToWebSocket();
     _moveToUser();
     _fetchInitialLocations();
-    _connectToWebSocket();
   }
 
   @override
@@ -73,7 +73,7 @@ class MapWidgetState extends State<MapWidget> {
 
   void _connectToWebSocket() async {
     final token = await Auth.getAccessToken();
-    if (token == null || widget.activeGroupId == null) return;
+    if (token == null) return;
 
     _channel = WebSocketChannel.connect(
       Uri.parse(
@@ -83,6 +83,7 @@ class MapWidgetState extends State<MapWidget> {
 
     _channel!.stream.listen(
       (message) {
+        print("RECEIVE MESSAGE");
         final data = jsonDecode(message) as Map<String, dynamic>;
         final location = User.fromJson(data);
         setState(() {
@@ -93,8 +94,6 @@ class MapWidgetState extends State<MapWidget> {
       onError: (error) => print("WebSocket error: $error"),
       onDone: () => print("WebSocket closed"),
     );
-
-    _sendLocation(userPos.latitude, userPos.longitude);
   }
 
   void _updateWebSocketGroup() {
@@ -104,7 +103,7 @@ class MapWidgetState extends State<MapWidget> {
   }
 
   void _sendLocation(double latitude, double longitude) async {
-    if (_channel == null || widget.activeGroupId == null) return;
+    if (_channel == null) return;
     final token = await Auth.getAccessToken();
     if (token == null) return;
 
@@ -112,10 +111,10 @@ class MapWidgetState extends State<MapWidget> {
       "authToken": token,
       "longitude": longitude,
       "latitude": latitude,
-      "activeGroupId": widget.activeGroupId!,
+      "activeGroupId": widget.activeGroupId ?? -1,
     };
 
-    print(message);
+    print("sending");
     _channel!.sink.add(jsonEncode(message));
   }
 
@@ -203,6 +202,9 @@ class MapWidgetState extends State<MapWidget> {
 
   @override
   void dispose() {
+    _controller.future.then((controller) {
+      controller.dispose();
+    });
     positionStream?.cancel();
     _channel?.sink.close();
     super.dispose();
