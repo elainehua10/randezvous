@@ -4,6 +4,13 @@ import sql from "../../db";
 import sharp from "sharp";
 import { UploadedFile } from "express-fileupload";
 
+
+function calculatePointsAndRank(group: any, index: number): { points: number; rank: number } {
+  const points = 100 + (group.name?.length ?? 0) * 10;
+  const rank = (index % 5) + 1;
+  return { points, rank };
+}
+
 // Register
 export const register = async (req: Request, res: Response) => {
   const { email, password, username, firstname, lastname } = req.body;
@@ -391,12 +398,29 @@ export const getMemberProfile = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "User not found"});
     }
 
-    const groups = await sql`
+    // const groups = await sql`
+    //   SELECT groups.id, groups.name, groups.icon_url, user_group.points, user_group.rank
+    //   FROM groups
+    //   JOIN user_group ON groups.id = user_group.group_id
+    //   WHERE user_group.user_id = ${userId};
+    // `;
+    
+    const rawGroups = await sql`
       SELECT groups.id, groups.name, groups.icon_url
       FROM groups
       JOIN user_group ON groups.id = user_group.group_id
       WHERE user_group.user_id = ${userId};
     `;
+
+    const groups = rawGroups.map((group: any, index: number) => {
+      const { points, rank } = calculatePointsAndRank(group, index);
+      return {
+        ...group,
+        points,
+        rank,
+      };
+    });
+
 
     console.log(`getMemberProfile: Found ${groups.length} groups for user ${userId}`);
     if (groups.length > 0) {

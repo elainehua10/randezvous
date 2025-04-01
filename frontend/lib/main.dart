@@ -15,10 +15,15 @@ import 'package:frontend/report_issue_page.dart';
 // import 'package:supabase_flutter/supabase_flutter.dart';
 // import 'package:flutter_dotenv/flutter_dotenv.dart';
 
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+
 void main() async {
   // Ensure widgets are initialized before using Supabase
   WidgetsFlutterBinding.ensureInitialized();
   // await dotenv.load();
+
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   runApp(const MyApp());
 }
