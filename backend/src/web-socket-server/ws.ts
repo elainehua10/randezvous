@@ -27,6 +27,7 @@ export const setupWebsocketServer = (server: Server) => {
 
   wsServer.on("connection", (socket) => {
     let user: ConnectedUser | null = null;
+    console.log("CONNECT");
 
     socket.on("message", (message) => {
       console.log("MESSAGE", message);
