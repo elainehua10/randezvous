@@ -31,46 +31,19 @@ class MapWidgetState extends State<MapWidget> {
     super.initState();
     _connectToWebSocket();
     _moveToUser();
-    _fetchInitialLocations();
   }
 
   @override
   void didUpdateWidget(MapWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.activeGroupId != oldWidget.activeGroupId) {
+      print("RESET GROUP ID");
+      print(widget.activeGroupId);
       setState(() {
         _markers = {}; // Reset markers
         _userLocations = {}; // Reset user locations
       });
-      _fetchInitialLocations();
       _updateWebSocketGroup();
-    }
-  }
-
-  Future<void> _fetchInitialLocations() async {
-    if (widget.activeGroupId == null) return;
-
-    try {
-      final response = await Auth.makeAuthenticatedPostRequest(
-        "groups/locations",
-        {"groupId": widget.activeGroupId},
-      );
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> data = jsonDecode(response.body);
-        print(data["locations"]);
-        print(data["locations"].map((e) => User.fromJson(e)));
-        setState(() {
-          _userLocations = {
-            for (var user in data["locations"].map((e) => User.fromJson(e)))
-              user.id: user,
-          };
-          _updateMarkers();
-        });
-      } else {
-        print("Failed to fetch locations: ${response.statusCode}");
-      }
-    } catch (e) {
-      print("Error fetching initial locations: $e");
     }
   }
 
@@ -86,9 +59,9 @@ class MapWidgetState extends State<MapWidget> {
 
     _channel!.stream.listen(
       (message) {
-        print("RECEIVE MESSAGE");
         final data = jsonDecode(message) as Map<String, dynamic>;
         final location = User.fromJson(data);
+
         setState(() {
           _userLocations[location.id] = location;
           _updateMarkers();
@@ -115,7 +88,6 @@ class MapWidgetState extends State<MapWidget> {
       "activeGroupId": widget.activeGroupId ?? -1,
     };
 
-    print("sending");
     _channel!.sink.add(jsonEncode(message));
   }
 
