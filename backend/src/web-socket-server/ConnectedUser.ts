@@ -117,6 +117,11 @@ class ConnectedUser {
     this.userInfo.latitude = lat;
 
     this.broker.publish(this.activeGroupId, this.userInfo);
+    sql`
+      UPDATE profile 
+      SET longitude = ${long}, latitude = ${lat} 
+      WHERE id = ${this.userInfo.user_id};
+    `;
   }
 
   receiveUpdate(data: any) {
