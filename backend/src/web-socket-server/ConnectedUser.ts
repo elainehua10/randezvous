@@ -110,13 +110,20 @@ class ConnectedUser {
   }
 
   publish(long: number, lat: number) {
-    if (!this.userInfo || !this.activeGroupId) {
+    if (!this.userInfo) {
       return;
     }
     this.userInfo.longitude = long;
     this.userInfo.latitude = lat;
 
-    this.broker.publish(this.activeGroupId, this.userInfo);
+    this.groupIds.forEach((groupId) =>
+      this.broker.publish(groupId, this.userInfo)
+    );
+    sql`
+      UPDATE profile 
+      SET longitude = ${long}, latitude = ${lat} 
+      WHERE id = ${this.userInfo.user_id};
+    `;
   }
 
   receiveUpdate(data: any) {
