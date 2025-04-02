@@ -46,6 +46,7 @@ class ConnectedUser {
 
     this.getUserInfo(userId)
       .then((info) => {
+        console.log(info);
         this.userInfo = info;
       })
       .catch((err) => console.error("Error initializing user info:", err));
@@ -98,13 +99,10 @@ class ConnectedUser {
   }
 
   async setActiveGroup(newGroupId: string) {
-    console.log(this.groupIds.has(newGroupId));
     if (!this.groupIds.has(newGroupId) && newGroupId != "-1") {
       console.error(`User is not a member of group ${newGroupId}`);
       return;
     }
-
-    this.activeGroupId = newGroupId;
 
     try {
       const locations = await sql`
@@ -141,15 +139,15 @@ class ConnectedUser {
     this.userInfo.longitude = long;
     this.userInfo.latitude = lat;
 
+    this.groupIds.forEach((groupId) =>
+      this.broker.publish(groupId, this.userInfo)
+    );
+
     sql`
       UPDATE profile 
       SET longitude = ${long}, latitude = ${lat} 
       WHERE id = ${this.userInfo.user_id};
-    `.catch((e) => console.log("ERRORED ON UPDATE"));
-
-    this.groupIds.forEach((groupId) =>
-      this.broker.publish(groupId, this.userInfo)
-    );
+    `.catch((e) => console.error("ERRORED ON UPDATE"));
   }
 
   receiveUpdate(data: UserLocationInfo) {
@@ -157,7 +155,6 @@ class ConnectedUser {
       this.socket.readyState === WebSocket.OPEN &&
       data.user_id != this.userInfo?.user_id
     ) {
-      console.log("SENDING");
       this.socket.send(JSON.stringify(data));
     }
   }

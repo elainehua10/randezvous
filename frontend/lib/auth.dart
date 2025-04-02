@@ -27,7 +27,11 @@ class Auth {
   }
 
   static Future<int?> getExpireTime() async {
-    return int.parse((await storage.read(key: 'exp'))!);
+    String? expireString = await storage.read(key: 'exp');
+    if (expireString == null) {
+      return null;
+    }
+    return int.parse(expireString);
   }
 
   static Future<String?> getRefreshToken() async {
@@ -44,10 +48,11 @@ class Auth {
 
     // Check if the token is expired
     if (DateTime.now().millisecondsSinceEpoch / 1000 >= expireTime) {
+      final body = jsonEncode({"refreshToken": token});
       final response = await http.post(
         Uri.parse('${Util.BACKEND_URL}/api/v1/refresh-token'),
-        headers: {'Content-Type': 'application/json'},
-        body: {"refreshToken": token},
+        headers: {HttpHeaders.contentTypeHeader: "application/json"},
+        body: body,
       );
 
       if (response.statusCode == 200) {

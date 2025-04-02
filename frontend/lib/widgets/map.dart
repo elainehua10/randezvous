@@ -3,7 +3,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:frontend/auth.dart'; // Assuming Auth class is here
 import 'package:frontend/models/user.dart';
+import 'package:frontend/util.dart';
 import 'package:frontend/widgets/map_style.dart';
+import 'package:frontend/widgets/user_marker.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -37,8 +39,6 @@ class MapWidgetState extends State<MapWidget> {
   void didUpdateWidget(MapWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.activeGroupId != oldWidget.activeGroupId) {
-      print("RESET GROUP ID");
-      print(widget.activeGroupId);
       setState(() {
         _markers = {}; // Reset markers
         _userLocations = {}; // Reset user locations
@@ -150,7 +150,10 @@ class MapWidgetState extends State<MapWidget> {
     String username,
   ) async {
     // For simplicity, use a default icon; implement profile picture rendering if needed
-    return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange);
+    return CustomMapMarker(
+      avatarUrl: profilePicture,
+      username: username,
+    ).toBitmapDescriptor();
     // To use profile pictures, you'd need to download the image and convert it to BitmapDescriptor
   }
 

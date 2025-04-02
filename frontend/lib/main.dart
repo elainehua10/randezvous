@@ -46,33 +46,20 @@ void printFCMToken() async {
   print("FCM Token: $token"); // Send this to your backend
 }
 
-class MyApp extends StatefulWidget {
-  const MyApp({super.key});
-
-  @override
-  State<MyApp> createState() => _MyAppState();
+  runApp(MyApp(initialRoute: accessToken != null ? '/home' : '/login'));
 }
 
-class _MyAppState extends State<MyApp> {
-  late LocationService _locationService;
+class MyApp extends StatelessWidget {
+  final String initialRoute;
 
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-  }
+  const MyApp({super.key, required this.initialRoute});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'RandezVous',
       theme: ThemeData(primarySwatch: Colors.yellow),
-      initialRoute: '/login',
-      home: LoginScreen(),
+      initialRoute: initialRoute, // Set the initial route dynamically
       routes: {
         '/search': (context) => SearchScreen(),
         '/login': (context) => LoginScreen(),

@@ -61,18 +61,11 @@ export function requireAuth(
       return;
     }
 
-    console.log("hi");
-
-    console.log(Date.now() / 1000);
-    console.log(decoded.exp || 0 < Date.now() / 1000);
-
     if ((decoded.exp || 0) < Date.now() / 1000) {
       const error = new Error("Unauthorized: Token Expired");
       next(error);
       return;
     }
-
-    console.log(decoded);
 
     req.body.userId = decoded.user_metadata.sub;
 
@@ -92,8 +85,6 @@ export async function requireGroupLeader(
   next: NextFunction
 ) {
   const { userId, groupId } = req.body;
-
-  console.log(groupId, userId);
 
   if (!userId || !groupId) {
     const error = new Error("Missing required fields");
