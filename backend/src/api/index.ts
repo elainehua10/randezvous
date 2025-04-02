@@ -24,7 +24,6 @@ router.use("/change-username", requireAuth, user.changeUsername);
 router.use("/logout", requireAuth, user.logout);
 router.use("/set-profile-picture", requireAuth, user.setProfilePicture);
 router.use("/delete-account", requireAuth, user.deleteAccount);
-router.use("/update-location", requireAuth, user.updateLocation);
 router.use("/refresh-token", user.refreshToken);
 router.use("/get-user-profile-info", requireAuth, user.getUserProfileInfo);
 
