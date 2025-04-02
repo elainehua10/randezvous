@@ -1,3 +1,4 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:frontend/auth.dart';
 import 'package:frontend/group_screen.dart';
@@ -18,15 +19,31 @@ import 'package:frontend/report_issue_page.dart';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import '/services/notification_service.dart';
+
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  print("Handling a background message: ${message.messageId}");
+}
 
 void main() async {
-  // Ensure widgets are initialized before using Supabase
   WidgetsFlutterBinding.ensureInitialized();
-  // await dotenv.load();
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await NotificationService.instance.initNotifications();
+
+  // Register the background message handler
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+  printFCMToken();
 
   runApp(const MyApp());
+}
+
+void printFCMToken() async {
+  // for debugging/testing
+  String? token = await NotificationService.instance.getToken();
+  print("FCM Token: $token"); // Send this to your backend
 }
 
 class MyApp extends StatefulWidget {
