@@ -20,42 +20,25 @@ import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 
 void main() async {
-  // Ensure widgets are initialized before using Supabase
   WidgetsFlutterBinding.ensureInitialized();
-  // await dotenv.load();
-
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  runApp(const MyApp());
+  String? accessToken = await Auth.getAccessToken();
+
+  runApp(MyApp(initialRoute: accessToken != null ? '/home' : '/login'));
 }
 
-class MyApp extends StatefulWidget {
-  const MyApp({super.key});
+class MyApp extends StatelessWidget {
+  final String initialRoute;
 
-  @override
-  State<MyApp> createState() => _MyAppState();
-}
-
-class _MyAppState extends State<MyApp> {
-  late LocationService _locationService;
-
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-  }
+  const MyApp({super.key, required this.initialRoute});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'RandezVous',
       theme: ThemeData(primarySwatch: Colors.yellow),
-      initialRoute: '/login',
-      home: LoginScreen(),
+      initialRoute: initialRoute, // Set the initial route dynamically
       routes: {
         '/search': (context) => SearchScreen(),
         '/login': (context) => LoginScreen(),
