@@ -28,6 +28,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // await dotenv.load();
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await NotificationService.instance.initNotifications();
@@ -37,16 +38,14 @@ void main() async {
 
   printFCMToken();
 
-  runApp(const MyApp());
+  String? accessToken = await Auth.getAccessToken();
+  runApp(MyApp(initialRoute: accessToken != null ? '/home' : '/login'));
 }
 
 void printFCMToken() async {
   // for debugging/testing
   String? token = await NotificationService.instance.getToken();
   print("FCM Token: $token"); // Send this to your backend
-}
-
-  runApp(MyApp(initialRoute: accessToken != null ? '/home' : '/login'));
 }
 
 class MyApp extends StatelessWidget {
