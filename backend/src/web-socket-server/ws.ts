@@ -5,6 +5,8 @@ import PubSubBroker from "./PubSubBroker";
 import { Server } from "http";
 import sql from "../db"; // Assuming you have a database connection setup
 
+export const locationBroker = new PubSubBroker();
+
 export const setupWebsocketServer = (server: Server) => {
   const wsServer = new WebSocketServer({ server: server, path: "/locations" });
 
@@ -23,8 +25,6 @@ export const setupWebsocketServer = (server: Server) => {
       return null;
     }
   }
-
-  const broker = new PubSubBroker();
 
   wsServer.on("connection", async (socket) => {
     let user: ConnectedUser | null = null;
@@ -50,7 +50,12 @@ export const setupWebsocketServer = (server: Server) => {
         }
 
         if (!user) {
-          user = new ConnectedUser(userId, activeGroupId, socket, broker);
+          user = new ConnectedUser(
+            userId,
+            activeGroupId,
+            socket,
+            locationBroker
+          );
         }
 
         user.publish(longitude, latitude);

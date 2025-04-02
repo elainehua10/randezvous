@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:frontend/auth.dart'; // Assuming Auth class is here
 import 'package:frontend/models/user.dart';
 import 'package:frontend/util.dart';
+import 'package:frontend/widgets/beacon_marker.dart';
 import 'package:frontend/widgets/map_style.dart';
 import 'package:frontend/widgets/user_marker.dart';
 import 'package:geolocator/geolocator.dart';
@@ -127,7 +128,11 @@ class MapWidgetState extends State<MapWidget> {
   void _updateMarkers() async {
     final markers =
         _userLocations.values.map((user) async {
-          final bitmap = await _createMarkerIcon(user.avatarUrl, user.username);
+          final bitmap = await _createMarkerIcon(
+            user.avatarUrl,
+            user.username,
+            user.id,
+          );
           return Marker(
             markerId: MarkerId(user.id),
             position:
@@ -148,7 +153,11 @@ class MapWidgetState extends State<MapWidget> {
   Future<BitmapDescriptor> _createMarkerIcon(
     String? profilePicture,
     String username,
+    String userId,
   ) async {
+    if (userId == "BEACON") {
+      return BeaconMapMarker(title: "BEACON").toBitmapDescriptor();
+    }
     // For simplicity, use a default icon; implement profile picture rendering if needed
     return CustomMapMarker(
       avatarUrl: profilePicture,
