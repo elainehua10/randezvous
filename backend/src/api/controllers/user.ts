@@ -4,8 +4,10 @@ import sql from "../../db";
 import sharp from "sharp";
 import { UploadedFile } from "express-fileupload";
 
-
-function calculatePointsAndRank(group: any, index: number): { points: number; rank: number } {
+function calculatePointsAndRank(
+  group: any,
+  index: number
+): { points: number; rank: number } {
   const points = 100 + (group.name?.length ?? 0) * 10;
   const rank = (index % 5) + 1;
   return { points, rank };
@@ -145,7 +147,6 @@ export const setProfilePicture = async (req: Request, res: Response) => {
       // Validate file type
       const allowedExtensions = ["png", "jpg", "jpeg", "gif"];
       const fileExtension = iconFile.name.split(".").at(-1);
-      console.log(fileExtension);
       if (!allowedExtensions.includes(fileExtension || "")) {
         return res.status(400).json({
           error: "Invalid file type. Only PNG, JPG, JPEG, and GIF are allowed.",
@@ -367,10 +368,6 @@ export const getUserProfileInfo = async (req: Request, res: Response) => {
 
     const { first_name, last_name, username, profile_picture } = result[0];
 
-    console.log("First Name:", first_name);
-    console.log("Last Name:", last_name);
-    console.log("Username:", username);
-
     res.status(200).json({
       first_name,
       last_name,
@@ -386,7 +383,6 @@ export const getUserProfileInfo = async (req: Request, res: Response) => {
 // retrieve other user profile information
 export const getMemberProfile = async (req: Request, res: Response) => {
   try {
-    console.log('Received userId:', req.body.userId);
     const userId = req.body.userId;
     const result = await sql`
       SELECT first_name, last_name, username, profile_picture, num_groups
@@ -395,16 +391,9 @@ export const getMemberProfile = async (req: Request, res: Response) => {
     `;
 
     if (result.length == 0) {
-      return res.status(404).json({ error: "User not found"});
+      return res.status(404).json({ error: "User not found" });
     }
 
-    // const groups = await sql`
-    //   SELECT groups.id, groups.name, groups.icon_url, user_group.points, user_group.rank
-    //   FROM groups
-    //   JOIN user_group ON groups.id = user_group.group_id
-    //   WHERE user_group.user_id = ${userId};
-    // `;
-    
     const rawGroups = await sql`
       SELECT groups.id, groups.name, groups.icon_url
       FROM groups
@@ -421,30 +410,20 @@ export const getMemberProfile = async (req: Request, res: Response) => {
       };
     });
 
-
-    console.log(`getMemberProfile: Found ${groups.length} groups for user ${userId}`);
-    if (groups.length > 0) {
-      console.log("Group details:");
-      groups.forEach((group: any, index: number) => {
-        console.log(`  [${index}] id: ${group.id}, name: ${group.name}, icon_url: ${group.icon_url}`);
-      });
-    }
-
     res.status(200).json({
       profile: {
         first_name: result[0].first_name,
         last_name: result[0].last_name,
         username: result[0].username,
-        profile_picture: result[0].profile_picture
+        profile_picture: result[0].profile_picture,
       },
       groups: groups,
     });
-
   } catch (error) {
     console.error("Error fetching user profile:", error);
-    res.status(500).json({error: "Internal server error"});
+    res.status(500).json({ error: "Internal server error" });
   }
-}
+};
 
 export const updateLocation = async (req: Request, res: Response) => {
   const { userId, longitude, latitude } = req.body;
