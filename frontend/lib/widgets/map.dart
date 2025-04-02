@@ -39,8 +39,6 @@ class MapWidgetState extends State<MapWidget> {
   void didUpdateWidget(MapWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.activeGroupId != oldWidget.activeGroupId) {
-      print("RESET GROUP ID");
-      print(widget.activeGroupId);
       setState(() {
         _markers = {}; // Reset markers
         _userLocations = {}; // Reset user locations
@@ -62,8 +60,6 @@ class MapWidgetState extends State<MapWidget> {
     _channel!.stream.listen(
       (message) {
         final data = jsonDecode(message) as Map<String, dynamic>;
-
-        print(data);
         final location = User.fromJson(data);
 
         setState(() {
