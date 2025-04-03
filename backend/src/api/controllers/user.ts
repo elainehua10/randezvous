@@ -449,8 +449,6 @@ export const setDeviceId = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    sendNotification(userId, "test", "test notification");
-
     res.status(200).json({
       message: "Device ID updated successfully",
       user: {
