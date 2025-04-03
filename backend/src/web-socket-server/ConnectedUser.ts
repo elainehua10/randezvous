@@ -19,8 +19,6 @@ class ConnectedUser {
   socket: WebSocket;
   private broker: PubSubBroker;
 
-  static connectedUsers: Map<string, ConnectedUser> = new Map();
-
   constructor(
     userId: string,
     activeGroupId: string,
@@ -31,17 +29,9 @@ class ConnectedUser {
     this.broker = broker;
     this.groupIds = new Set();
 
-    ConnectedUser.connectedUsers.set(userId, this);
-
     this.fetchUserGroups(userId).then((groupIds) => {
       this.groupIds = new Set(groupIds);
       this.setActiveGroup(activeGroupId);
-
-      // ConnectedUser.connectedUsers.values().forEach(user => {
-      //   if (this.groupIds.has(user.activeGroupId ?? "-2")) {
-
-      //   }
-      // })
     });
 
     this.getUserInfo(userId)
@@ -167,10 +157,6 @@ class ConnectedUser {
 
     if (this.socket.readyState === WebSocket.OPEN) {
       this.socket.close();
-    }
-
-    if (this.userInfo) {
-      ConnectedUser.connectedUsers.delete(this.userInfo.user_id);
     }
 
     this.groupIds.clear();
