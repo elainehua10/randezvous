@@ -93,7 +93,8 @@ export async function spawnBeacon(groupId: string) {
 
 // === Helper to schedule a beacon job ===
 function scheduleGroupBeacon(groupId: string, frequency: number): schedule.Job | null {
-    spawnBeacon(groupId); // Spawn immediately
+
+  // spawnBeacon(groupId); // Spawn immediately
 
   let cronExpr: string;
   let maxDelay: number;
