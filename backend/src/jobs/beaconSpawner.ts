@@ -13,15 +13,56 @@ function logScheduledJobs() {
 }
 
 // === Beacon Spawning Logic ===
-function getRandomCoordinates() {
-  const lat = 32.7 + Math.random() * 0.1;
-  const lng = -117.2 + Math.random() * 0.1;
-  return { latitude: lat, longitude: lng };
-}
+async function getRandomCoordinates(groupId: string) {
+    try {
+      // Get lat/lng of all group members
+      const members = await sql`
+        SELECT p.latitude, p.longitude
+        FROM user_group ug
+        JOIN profile p ON ug.user_id = p.id
+        WHERE ug.group_id = ${groupId}
+        AND p.latitude IS NOT NULL
+        AND p.longitude IS NOT NULL;
+      `;
+  
+      if (members.length === 0) {
+        // Fallback to default area if no members have location
+        const lat = 32.7 + Math.random() * 0.1;
+        const lng = -117.2 + Math.random() * 0.1;
+        return { latitude: lat, longitude: lng };
+      }
+  
+      // Compute average coordinates
+      const total = members.reduce(
+        (acc, m) => {
+          acc.lat += m.latitude;
+          acc.lng += m.longitude;
+          return acc;
+        },
+        { lat: 0, lng: 0 }
+      );
+  
+      const avgLat = total.lat / members.length;
+      const avgLng = total.lng / members.length;
+  
+      // Add small random jitter (within ~100 meters)
+      const jitter = () => (Math.random() - 0.5) * 0.002; // ~0.002 deg = ~222m
+      return {
+        latitude: avgLat + jitter(),
+        longitude: avgLng + jitter(),
+      };
+    } catch (err) {
+      console.error("❌ Error getting average location:", err);
+      // fallback if something breaks
+      const lat = 32.7 + Math.random() * 0.1;
+      const lng = -117.2 + Math.random() * 0.1;
+      return { latitude: lat, longitude: lng };
+    }
+  }  
 
 export async function spawnBeacon(groupId: string) {
   const now = new Date();
-  const { latitude, longitude } = getRandomCoordinates();
+  const { latitude, longitude } = await getRandomCoordinates(groupId);
 
   try {
     // delete existing beacons for the group
@@ -31,14 +72,12 @@ export async function spawnBeacon(groupId: string) {
     // insert new beacon
     await sql`
       INSERT INTO beacon (
-        id,
         group_id,
         created_at,
         started_at,
         longitude,
         latitude
       ) VALUES (
-        ${randomUUID()},
         ${groupId},
         ${now.toISOString()},
         ${now.toISOString()},
@@ -54,6 +93,8 @@ export async function spawnBeacon(groupId: string) {
 
 // === Helper to schedule a beacon job ===
 function scheduleGroupBeacon(groupId: string, frequency: number): schedule.Job | null {
+    spawnBeacon(groupId); // Spawn immediately
+
   let cronExpr: string;
   let maxDelay: number;
 
