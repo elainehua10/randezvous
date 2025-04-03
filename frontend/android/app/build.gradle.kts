@@ -1,3 +1,4 @@
+import java.util.Properties
 plugins {
     id("com.android.application")
     // START: FlutterFire Configuration
@@ -8,16 +9,24 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+val properties = Properties().apply {
+    load(rootProject.file("local.properties").inputStream())
+}
+val apikey: String? = properties.getProperty("MAPS_API_KEY")
+
+
 android {
     namespace = "com.example.frontend"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    // ndkVersion = flutter.ndkVersion
+    ndkVersion = "29.0.13113456"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+        isCoreLibraryDesugaringEnabled = true
     }
-
+    // For Kotlin projects
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_11.toString()
     }
@@ -31,6 +40,9 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        multiDexEnabled = true
+
+        manifestPlaceholders["apikey"] = apikey ?: ""
     }
 
     buildTypes {
@@ -44,4 +56,9 @@ android {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // Add these dependencies
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }

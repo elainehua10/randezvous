@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:frontend/auth.dart'; // Assuming Auth class is here
 import 'package:frontend/models/user.dart';
@@ -54,7 +55,10 @@ class MapWidgetState extends State<MapWidget> {
 
     _channel = WebSocketChannel.connect(
       Uri.parse(
-        'ws://localhost:5001/locations',
+        // 'ws://localhost:5001/locations',
+        Platform.isAndroid
+            ? "ws://10.0.2.2:5001/locations"
+            : 'ws://100.69.73.91:5001/locations',
       ), // Replace with your server URL
     );
 
@@ -187,6 +191,7 @@ class MapWidgetState extends State<MapWidget> {
 
   @override
   void dispose() {
+    print("DISPOSE");
     _controller.future.then((controller) {
       controller.dispose();
     });

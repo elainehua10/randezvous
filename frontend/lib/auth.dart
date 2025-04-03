@@ -28,7 +28,7 @@ class Auth {
 
   static Future<int?> getExpireTime() async {
     String? expireString = await storage.read(key: 'exp');
-    if (expireString == null) {
+    if (expireString == null || expireString == "null") {
       return null;
     }
     return int.parse(expireString);

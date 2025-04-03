@@ -8,7 +8,8 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class Util {
   static final String BACKEND_URL =
-      Platform.isAndroid ? "http://10.0.2.2:5001" : "http://localhost:5001";
+      Platform.isAndroid ? "http://10.0.2.2:5001" : "http://100.69.73.91:5001";
+  // Platform.isAndroid ? "http://10.0.2.2:5001" : "http://localhost:5001";
 }
 
 extension ToBitDescription on Widget {
@@ -18,10 +19,15 @@ extension ToBitDescription on Widget {
     Duration waitToRender = const Duration(milliseconds: 300),
     TextDirection textDirection = TextDirection.ltr,
   }) async {
+    // It's generally better practice to wrap with Directionality
+    // at a higher level if possible, but wrapping here is fine too.
+    // Ensure the Directionality inside createImageFromWidget also matches
+    // or remove it if this top-level one suffices.
     final widget = RepaintBoundary(
       child: MediaQuery(
-        data: const MediaQueryData(),
-        child: Directionality(textDirection: TextDirection.ltr, child: this),
+        data:
+            const MediaQueryData(), // Consider using MediaQuery.of(context) if available for theming etc.
+        child: Directionality(textDirection: textDirection, child: this),
       ),
     );
     final pngBytes = await createImageFromWidget(
@@ -29,7 +35,13 @@ extension ToBitDescription on Widget {
       waitToRender: waitToRender,
       logicalSize: logicalSize,
       imageSize: imageSize,
+      // Pass textDirection if needed inside createImageFromWidget's setup
+      // textDirection: textDirection,
     );
+    // It's crucial that BitmapDescriptor is imported from the correct package
+    // e.g., 'package:google_maps_flutter/google_maps_flutter.dart'
+    // Assuming you are using google_maps_flutter:
+    // import 'package:google_maps_flutter/google_maps_flutter.dart';
     return BitmapDescriptor.fromBytes(pngBytes);
   }
 }
@@ -45,12 +57,20 @@ Future<Uint8List> createImageFromWidget(
   Size? logicalSize,
   required Duration waitToRender,
   Size? imageSize,
+  // Optional: Pass textDirection if your manual setup needs it explicitly
+  // TextDirection textDirection = TextDirection.ltr,
 }) async {
   final RenderRepaintBoundary repaintBoundary = RenderRepaintBoundary();
+
+  // Use View.of(context) in a build context if possible for more accuracy,
+  // otherwise using the first view is a reasonable fallback.
   final view = ui.PlatformDispatcher.instance.views.first;
   logicalSize ??= view.physicalSize / view.devicePixelRatio;
   imageSize ??= view.physicalSize;
 
+  // The assertion might be too strict. Widgets might render correctly
+  // even if aspect ratios don't match perfectly, depending on alignment
+  // and widget constraints. Consider removing or adjusting if it causes issues.
   // assert(logicalSize.aspectRatio == imageSize.aspectRatio);
 
   final RenderView renderView = RenderView(
@@ -60,8 +80,15 @@ Future<Uint8List> createImageFromWidget(
       child: repaintBoundary,
     ),
     configuration: ViewConfiguration(
-      logicalConstraints: BoxConstraints.loose(logicalSize),
-      devicePixelRatio: 1.0,
+      // Use BoxConstraints instead of loose for more predictable sizing
+      // logicalConstraints: BoxConstraints.loose(logicalSize),
+      logicalConstraints: BoxConstraints(
+        minWidth: logicalSize.width,
+        maxWidth: logicalSize.width,
+        minHeight: logicalSize.height,
+        maxHeight: logicalSize.height,
+      ),
+      devicePixelRatio: 1.0, // Use 1.0 for logical size calculations
     ),
   );
 
@@ -71,16 +98,25 @@ Future<Uint8List> createImageFromWidget(
   pipelineOwner.rootNode = renderView;
   renderView.prepareInitialFrame();
 
-  final RenderObjectToWidgetElement<RenderBox> rootElement =
-      RenderObjectToWidgetAdapter<RenderBox>(
-        container: repaintBoundary,
-        child: widget,
-      ).attachToRenderTree(buildOwner);
+  final RenderObjectToWidgetElement<RenderBox>
+  rootElement = RenderObjectToWidgetAdapter<RenderBox>(
+    container: repaintBoundary,
+    // Consider adding Directionality here if not handled by the caller's wrapper
+    // child: Directionality(
+    //   textDirection: textDirection,
+    //   child: widget,
+    // ),
+    child: widget,
+  ).attachToRenderTree(buildOwner);
 
   buildOwner.buildScope(rootElement);
 
-  await Future.delayed(waitToRender);
+  // Wait for async operations like images
+  if (waitToRender > Duration.zero) {
+    await Future.delayed(waitToRender);
+  }
 
+  // Rebuild and finalize layout after waiting
   buildOwner.buildScope(rootElement);
   buildOwner.finalizeTree();
 
@@ -88,12 +124,40 @@ Future<Uint8List> createImageFromWidget(
   pipelineOwner.flushCompositingBits();
   pipelineOwner.flushPaint();
 
-  final ui.Image image = await repaintBoundary.toImage(
-    pixelRatio: imageSize.width / logicalSize.width,
-  );
+  // Calculate pixelRatio based on desired image size vs logical size
+  final double pixelRatio = imageSize.width / logicalSize.width;
+
+  ui.Image image = await repaintBoundary.toImage(pixelRatio: pixelRatio);
+
+  // <<< --- START ANDROID FLIP FIX --- >>>
+  if (Platform.isAndroid) {
+    final ui.PictureRecorder recorder = ui.PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+    // Translate and scale canvas to flip vertically
+    canvas.translate(0.0, image.height.toDouble());
+    canvas.scale(1.0, -1.0);
+    // Draw the original image onto the transformed canvas
+    canvas.drawImage(image, Offset.zero, Paint());
+
+    final ui.Picture picture = recorder.endRecording();
+    // Ensure the flipped image has the same dimensions
+    image = await picture.toImage(image.width, image.height);
+    // Dispose the original image and picture if necessary (usually handled by GC)
+    // image.dispose(); // Original image might still be needed if you cache it
+    picture.dispose();
+  }
+  // <<< --- END ANDROID FLIP FIX --- >>>
+
   final ByteData? byteData = await image.toByteData(
     format: ui.ImageByteFormat.png,
   );
 
-  return byteData!.buffer.asUint8List();
+  // Dispose the final image object to free up memory
+  image.dispose();
+
+  if (byteData == null) {
+    throw Exception('Could not convert widget to image.');
+  }
+
+  return byteData.buffer.asUint8List();
 }

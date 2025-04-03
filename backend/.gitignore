@@ -74,3 +74,4 @@ typings/
 
 dist
 .env.sample
+service-account.json

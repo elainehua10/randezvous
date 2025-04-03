@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/services/notification_service.dart';
 import 'package:frontend/widgets/map.dart';
 import 'package:frontend/widgets/groups_bottom_sheet.dart';
 import 'package:frontend/models/group.dart';
@@ -27,6 +28,12 @@ class _MapScreenState extends State<MapScreen> {
     Auth.getAccessToken().then(
       (value) => {
         if (value == null) {Navigator.pushReplacementNamed(context, "/login")},
+      },
+    );
+
+    NotificationService.instance.getToken().then(
+      (token) => {
+        Auth.makeAuthenticatedPostRequest("set-device-id", {"deviceId": token}),
       },
     );
   }

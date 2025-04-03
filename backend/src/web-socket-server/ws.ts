@@ -58,6 +58,20 @@ export const setupWebsocketServer = (server: Server) => {
           );
         }
 
+        if (user.socket !== socket) {
+          user.disconnect();
+          user = new ConnectedUser(
+            userId,
+            activeGroupId,
+            socket,
+            locationBroker
+          );
+        }
+        if (user.userInfo && user.userInfo.user_id !== userId) {
+          user.disconnect();
+          return;
+        }
+
         user.publish(longitude, latitude);
 
         if (activeGroupId !== user.activeGroupId) {

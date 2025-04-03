@@ -3,6 +3,7 @@ import { Request, Response } from "express";
 import sql from "../../db";
 import sharp from "sharp";
 import { UploadedFile } from "express-fileupload";
+import { sendNotification } from "../../notifications";
 
 function calculatePointsAndRank(
   group: any,
@@ -421,6 +422,45 @@ export const getMemberProfile = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Error fetching user profile:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const setDeviceId = async (req: Request, res: Response) => {
+  try {
+    const { userId, deviceId } = req.body;
+
+    // Validate required fields
+    if (!userId || !deviceId) {
+      return res
+        .status(400)
+        .json({ error: "userId and deviceId are required" });
+    }
+
+    // Update the device_id in the profile table
+    const result = await sql`
+      UPDATE profile
+      SET device_id = ${deviceId}
+      WHERE id = ${userId}
+      RETURNING id, username, device_id;
+    `;
+
+    if (result.length === 0) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    sendNotification(userId, "test", "test notification");
+
+    res.status(200).json({
+      message: "Device ID updated successfully",
+      user: {
+        id: result[0].id,
+        username: result[0].username,
+        device_id: result[0].device_id,
+      },
+    });
+  } catch (error) {
+    console.error("Error setting device ID:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };

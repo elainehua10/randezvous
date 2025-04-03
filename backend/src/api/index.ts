@@ -17,6 +17,7 @@ router.get<{}, MessageResponse>("/", (req, res) => {
 router.use("/emojis", emojis);
 router.use("/register", user.register);
 router.use("/login", user.login);
+router.use("/set-device-id", requireAuth, user.setDeviceId);
 router.use("/user/search", requireAuth, user.search);
 router.use("/user/block", requireAuth, user.block);
 router.use("/user/view-profile", user.getMemberProfile);
