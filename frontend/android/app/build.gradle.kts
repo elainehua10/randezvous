@@ -61,4 +61,7 @@ flutter {
 dependencies {
     // Add these dependencies
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+    classpath 'com.google.gms:google-services:4.3.15'
 }
+
+apply plugin: 'com.google.gms.google-services'
