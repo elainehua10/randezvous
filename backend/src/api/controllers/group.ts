@@ -5,6 +5,7 @@ import { Request, Response } from "express";
 import { UploadedFile } from "express-fileupload";
 import sql from "../../db";
 import sharp from "sharp";
+import { sendNotification } from "../../notifications";
 
 // Set limit to how many groups a user can create
 const MAX_GROUPS_PER_USER = 3;
@@ -278,12 +279,12 @@ export const inviteToGroup = async (req: Request, res: Response) => {
 
     // Check if invite already exists
     const existingInvite = await sql`
-            SELECT id FROM invite
-            WHERE from_user_id = ${userId} 
-            AND to_user_id = ${toUserId} 
-            AND group_id = ${groupId} 
-            AND status = 'pending';
-        `;
+      SELECT id FROM invite
+      WHERE from_user_id = ${userId} 
+      AND to_user_id = ${toUserId} 
+      AND group_id = ${groupId} 
+      AND status = 'pending';
+    `;
 
     if (existingInvite.length > 0) {
       return res
@@ -291,14 +292,35 @@ export const inviteToGroup = async (req: Request, res: Response) => {
         .json({ error: "Invite already sent to this user." });
     }
 
-    // Add user to invite table
+    // Fetch group name and sender's username
+    const groupAndUser = await sql`
+      SELECT groups.name AS group_name, profile.username AS sender_username 
+      FROM groups 
+      JOIN profile ON profile.id = ${userId} 
+      WHERE groups.id = ${groupId};
+    `;
+
+    if (groupAndUser.length === 0) {
+      return res.status(404).json({ error: "Group or user not found" });
+    }
+
+    const { group_name, sender_username } = groupAndUser[0];
+
+    // Insert the invite
     let result = await sql`
-            INSERT INTO invite (from_user_id, to_user_id, group_id) 
-            VALUES (${userId}, ${toUserId}, ${groupId})
-            RETURNING id;
-        `;
+      INSERT INTO invite (from_user_id, to_user_id, group_id) 
+      VALUES (${userId}, ${toUserId}, ${groupId})
+      RETURNING id;
+    `;
 
     const inviteId = result[0].id;
+
+    // Send notification to the invited user
+    await sendNotification(
+      toUserId,
+      "Group Invitation",
+      `${sender_username} invited you to join ${group_name}.`
+    );
 
     return res.status(200).json({ message: "Invite Created", inviteId });
   } catch (error) {
