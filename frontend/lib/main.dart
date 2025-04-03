@@ -36,8 +36,13 @@ void main() async {
   // Register the background message handler
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
-  String? accessToken = await Auth.getAccessToken();
-  runApp(MyApp(initialRoute: accessToken != null ? '/home' : '/login'));
+  try {
+    String? accessToken = await Auth.getAccessToken();
+    runApp(MyApp(initialRoute: accessToken != null ? '/home' : '/login'));
+  } catch (e) {
+    runApp(MyApp(initialRoute: '/login'));
+  }
+
   initBackgroundFetch();
 }
 

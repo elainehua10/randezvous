@@ -14,7 +14,12 @@ export interface UserLocationInfo {
 }
 
 // Helper: Calculate distance using Haversine formula
-function getDistanceInMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
+function getDistanceInMeters(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+): number {
   const toRad = (x: number) => (x * Math.PI) / 180;
   const R = 6371000; // Radius of Earth in meters
   const dLat = toRad(lat2 - lat1);
@@ -33,7 +38,6 @@ class ConnectedUser {
   socket: WebSocket;
   private broker: PubSubBroker;
   private lastBeaconCheckTime: number = 0;
-
 
   constructor(
     userId: string,
@@ -130,8 +134,17 @@ class ConnectedUser {
           this.socket.send(JSON.stringify(location), (e) => console.log(e));
       });
       if (beaconlLocation.length > 0) {
-      // beaconlLocation[0]['user_id'] = "BEACON";
-      this.socket.send(JSON.stringify({user_id: "BEACON", first_name: "", last_name: "", username: "", profile_picture: "",  ...beaconlLocation[0]}));
+        // beaconlLocation[0]['user_id'] = "BEACON";
+        this.socket.send(
+          JSON.stringify({
+            user_id: "BEACON",
+            first_name: "",
+            last_name: "",
+            username: "",
+            profile_picture: "",
+            ...beaconlLocation[0],
+          })
+        );
       }
     } catch (err) {
       console.error("Error fetching initial locations:", err);
@@ -153,21 +166,21 @@ class ConnectedUser {
     if (!this.userInfo) {
       return;
     }
-  
+
     this.userInfo.longitude = long;
     this.userInfo.latitude = lat;
-  
+
     this.groupIds.forEach((groupId) =>
       this.broker.publish(groupId, this.userInfo!)
     );
-  
+
     sql`
       UPDATE profile 
       SET longitude = ${long}, latitude = ${lat} 
       WHERE id = ${this.userInfo.user_id};
     `.catch((e) => console.error("ERRORED ON UPDATE"));
 
-    // rate limiting 
+    // rate limiting
     const now = Date.now();
     if (now - this.lastBeaconCheckTime < 10000) return; // wait at least 10 seconds
     this.lastBeaconCheckTime = now;
@@ -175,7 +188,7 @@ class ConnectedUser {
     // Beacon proximity check & auto-confirmation
     (async () => {
       if (!this.activeGroupId || !this.userInfo) return;
-  
+
       try {
         const [beacon] = await sql`
           SELECT id, latitude, longitude
@@ -184,16 +197,16 @@ class ConnectedUser {
           ORDER BY started_at DESC
           LIMIT 1;
         `;
-  
+
         if (!beacon) return;
-  
+
         const distance = getDistanceInMeters(
           lat,
           long,
           beacon.latitude,
           beacon.longitude
         );
-  
+
         if (distance <= 50) {
           // Check if already confirmed
           const [alreadyConfirmed] = await sql`
@@ -201,16 +214,15 @@ class ConnectedUser {
             WHERE user_id = ${this.userInfo.user_id}
             AND beacon_id = ${beacon.id};
           `;
-  
+
           if (!alreadyConfirmed) {
             console.log("Within range! Confirming arrival...");
-  
+
             await sql`
               INSERT INTO user_beacons (beacon_id, user_id, reached, time_reached, latitude, longitude)
-              VALUES (${beacon.id}, ${this.userInfo.user_id}, true, NOW(), ${lat}, ${long})
-              ON CONFLICT (beacon_id, user_id) DO NOTHING;
+              VALUES (${beacon.id}, ${this.userInfo.user_id}, true, NOW(), ${lat}, ${long});
             `;
-  
+
             // Reassign points and ranks
             await assignPointsInternal(this.activeGroupId);
           }
@@ -220,7 +232,6 @@ class ConnectedUser {
       }
     })();
   }
-  
 
   receiveUpdate(data: UserLocationInfo) {
     if (
