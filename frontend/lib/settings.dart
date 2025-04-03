@@ -16,7 +16,7 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  bool _notificationsEnabled = true;
+  bool? _notificationsEnabled;
 
   @override
   void initState() {
@@ -84,7 +84,7 @@ class _SettingsPageState extends State<SettingsPage> {
               title: "Notifications",
               subtitle: "Receive alerts and updates",
               icon: Icons.notifications_outlined,
-              value: _notificationsEnabled,
+              value: _notificationsEnabled ?? false,
               onChanged: (bool value) {
                 setState(() {
                   _notificationsEnabled = value;

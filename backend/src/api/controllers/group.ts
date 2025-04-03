@@ -294,10 +294,10 @@ export const inviteToGroup = async (req: Request, res: Response) => {
 
     // Fetch group name and sender's username
     const groupAndUser = await sql`
-      SELECT groups.name AS group_name, profile.username AS sender_username, profile.notifications_enabled
-      FROM groups 
-      JOIN profile ON profile.id = ${userId} 
-      WHERE groups.id = ${groupId};
+      SELECT g.name AS group_name, p.username AS sender_username, p.notifications_enabled
+      FROM groups g
+      JOIN profile p ON p.id = ${toUserId}  -- Ensure you're selecting the invited user's notification setting
+      WHERE g.id = ${groupId};
     `;
 
     if (groupAndUser.length === 0) {
