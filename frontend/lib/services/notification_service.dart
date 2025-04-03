@@ -98,6 +98,11 @@ class NotificationService {
   }
 
   Future<String?> getToken() async {
-    return await _messaging.getToken();
+    try {
+      return await _messaging.getToken();
+    } catch (e) {
+      print("notifications not working");
+      return null;
+    }
   }
 }

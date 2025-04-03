@@ -71,6 +71,8 @@ export const login = async (req: Request, res: Response) => {
 
     if (error) throw error;
 
+    console.log(data);
+
     res.status(200).json({
       message: "Login successful",
       session: data.session,
@@ -258,6 +260,7 @@ export const refreshToken = async (req: Request, res: Response) => {
     });
 
     if (error) {
+      console.log(refreshToken);
       throw error;
     }
 
