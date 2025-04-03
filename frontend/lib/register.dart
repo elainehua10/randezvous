@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/auth.dart';
-import 'package:frontend/map_screen.dart';
 import 'package:frontend/util.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({super.key});
+
   @override
   _RegisterScreenState createState() => _RegisterScreenState();
 }
@@ -64,10 +64,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
         final responseData = jsonDecode(response.body);
         if (response.statusCode == 200 || response.statusCode == 201) {
           // Save access token from backend
-          String access_token = responseData["session"]["access_token"];
-          String refresh_token = responseData["session"]["refresh_token"];
-          int expire_time = responseData["session"]["expires_at"];
-          Auth.saveTokens(access_token, refresh_token, expire_time);
+          String accessToken = responseData["session"]["access_token"];
+          String refreshToken = responseData["session"]["refresh_token"];
+          int expireTime = responseData["session"]["expires_at"];
+          Auth.saveTokens(accessToken, refreshToken, expireTime);
 
           Navigator.pushReplacementNamed(context, '/home');
         } else {

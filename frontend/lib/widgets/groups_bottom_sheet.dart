@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:frontend/auth.dart';
 import 'package:frontend/models/group.dart';
-import 'package:frontend/models/user.dart';
 import 'package:frontend/widgets/group_item.dart';
 
 class GroupsBottomSheet extends StatefulWidget {
@@ -10,10 +9,10 @@ class GroupsBottomSheet extends StatefulWidget {
   final Function(Group) onGroupSelected;
 
   const GroupsBottomSheet({
-    Key? key,
+    super.key,
     this.selectedGroupId,
     required this.onGroupSelected,
-  }) : super(key: key);
+  });
 
   @override
   _GroupsBottomSheetState createState() => _GroupsBottomSheetState();
@@ -134,6 +133,15 @@ class _GroupsBottomSheetState extends State<GroupsBottomSheet> {
     bool isPublic = false; // Default to private
     String? errorMessage; // Store error message
 
+    int selectedFrequency = 86400; // Default: once a day
+    final Map<int, String> frequencyOptions = {
+      0: "0 times per day",
+      86400: "Once a day",          // 1 day
+      604800: "Once a week",        // 7 days
+      1209600: "Once every 2 weeks",// 14 days
+      2592000: "Once a month",      // 30 days
+    };
+    
     showDialog(
       context: context,
       builder: (context) {
@@ -210,6 +218,44 @@ class _GroupsBottomSheetState extends State<GroupsBottomSheet> {
                       ],
                     ),
                   ),
+                  SizedBox(height: 16),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.grey[300]!),
+                    ),
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Beacon Frequency",
+                          style: TextStyle(
+                            color: Colors.grey[800],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        DropdownButton<int>(
+                          value: selectedFrequency,
+                          isExpanded: true,
+                          underline: SizedBox(),
+                          icon: Icon(Icons.arrow_drop_down),
+                          onChanged: (value) {
+                            setState(() => selectedFrequency = value!);
+                          },
+                          items:
+                              frequencyOptions.entries.map((entry) {
+                                return DropdownMenuItem<int>(
+                                  value: entry.key,
+                                  child: Text(entry.value),
+                                );
+                              }).toList(),
+                        ),
+                      ],
+                    ),
+                  ),
+
                   SizedBox(height: 10),
                   if (errorMessage != null) // Display error if it exists
                     Container(
@@ -263,7 +309,7 @@ class _GroupsBottomSheetState extends State<GroupsBottomSheet> {
                     try {
                       final response = await Auth.makeAuthenticatedPostRequest(
                         "groups/create",
-                        {"groupName": groupName, "isPublic": isPublic},
+                        {"groupName": groupName, "isPublic": isPublic, "frequency": selectedFrequency},
                       );
 
                       if (response.statusCode == 200) {
@@ -279,7 +325,6 @@ class _GroupsBottomSheetState extends State<GroupsBottomSheet> {
                       setState(() => errorMessage = "Error creating group.");
                     }
                   },
-                  child: Text("Create"),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.amber[800],
                     foregroundColor: Colors.white,
@@ -288,6 +333,7 @@ class _GroupsBottomSheetState extends State<GroupsBottomSheet> {
                     ),
                     padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   ),
+                  child: Text("Create"),
                 ),
               ],
             );
@@ -513,7 +559,6 @@ class _GroupsBottomSheetState extends State<GroupsBottomSheet> {
                       subtitle: Text("You've been invited to join"),
                       trailing: ElevatedButton(
                         onPressed: () => _acceptInvite(group.id ?? ""),
-                        child: Text("Accept"),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.orange[700],
                           foregroundColor: Colors.white,
@@ -526,6 +571,7 @@ class _GroupsBottomSheetState extends State<GroupsBottomSheet> {
                             vertical: 8,
                           ),
                         ),
+                        child: Text("Accept"),
                       ),
                     ),
                   );

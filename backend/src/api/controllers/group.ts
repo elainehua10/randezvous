@@ -16,7 +16,7 @@ const MAX_GROUPS_PER_USER = 3;
 export const createGroup = async (req: Request, res: Response) => {
   try {
     // Check fields
-    const { userId, groupName, isPublic } = req.body;
+    const { userId, groupName, isPublic, frequency = 86400 } = req.body;
     if (!userId || !groupName || isPublic === undefined) {
       return res.status(400).json({ error: "Missing required fields" });
     }
@@ -56,8 +56,8 @@ export const createGroup = async (req: Request, res: Response) => {
 
     // Insert new group (user is the leader)
     let newGroup = await sql`
-            INSERT INTO groups (name, is_public, leader_id) 
-            VALUES (${groupName}, ${isPublic}, ${userId})
+            INSERT INTO groups (name, is_public, leader_id, beacon_frequency) 
+            VALUES (${groupName}, ${isPublic}, ${userId}, ${frequency})
             RETURNING id;
         `;
 
@@ -369,6 +369,56 @@ export const removeFromGroup = async (req: Request, res: Response) => {
   }
 };
 
+// Set beacon frequency
+export const setBeaconFreq = async (req: Request, res: Response) => {
+  try {
+    const { userId, groupId, frequency } = req.body;
+
+    // Validate input
+    if (!userId || !groupId || frequency === undefined) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    // Frequency should be a number
+    if (typeof frequency !== "number") {
+      return res.status(400).json({ error: "Invalid frequency value" });
+    }
+
+    // Check if user is the leader of the group
+    const group = await sql`
+      SELECT leader_id FROM groups WHERE id = ${groupId};
+    `;
+
+    if (group.length === 0) {
+      return res.status(404).json({ error: "Group not found" });
+    }
+
+    if (group[0].leader_id !== userId) {
+      return res.status(403).json({
+        error: "Only the group leader can set the beacon frequency",
+      });
+    }
+
+    // Update the beacon frequency
+    const updatedGroup = await sql`
+      UPDATE groups 
+      SET beacon_frequency = ${frequency}
+      WHERE id = ${groupId}
+      RETURNING *;
+    `;
+
+    return res.status(200).json({
+      success: true,
+      message: "Beacon frequency updated successfully",
+      group: updatedGroup[0],
+    });
+  } catch (error) {
+    console.error("Error setting beacon frequency:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+
 // ============= Member of group functions ===================
 
 // Accept invite
@@ -479,7 +529,7 @@ export const getGroupMembers = async (req: Request, res: Response) => {
 
     // Check if the group exists and fetch the leader's ID and group name
     const group = await sql`
-      SELECT leader_id, name, icon_url, is_public FROM groups WHERE id = ${groupId};
+      SELECT leader_id, name, icon_url, is_public, beacon_frequency FROM groups WHERE id = ${groupId};
     `;
 
     if (group.length === 0) {
@@ -491,6 +541,7 @@ export const getGroupMembers = async (req: Request, res: Response) => {
     const iconUrl = group[0].icon_url;
     const isPublic = group[0].is_public;
     const isUserLeader = userId === leader_id;
+    const beaconFrequency = group[0].beacon_frequency;
 
     // Fetch all members of the group
     const members = await sql`
@@ -508,6 +559,7 @@ export const getGroupMembers = async (req: Request, res: Response) => {
       members,
       iconUrl,
       isPublic,
+      beaconFrequency,
     });
   } catch (error) {
     console.error("Error fetching group members:", error);

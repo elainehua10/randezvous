@@ -8,7 +8,7 @@ import 'package:http/http.dart';
 import 'package:frontend/member_profile.dart';
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({Key? key}) : super(key: key);
+  const SearchScreen({super.key});
 
   @override
   _SearchScreenState createState() => _SearchScreenState();
@@ -21,7 +21,7 @@ class _SearchScreenState extends State<SearchScreen>
   List<User> _userResults = [];
   List<Group> _groupResults = [];
   bool _isLoading = false;
-  Set<String> _joiningGroups = {}; // Track groups being joined
+  final Set<String> _joiningGroups = {}; // Track groups being joined
 
   @override
   void initState() {
@@ -313,7 +313,7 @@ class _SearchScreenState extends State<SearchScreen>
                     : null,
             child:
                 user.avatarUrl == null || user.avatarUrl!.isEmpty
-                    ? Text(user.name?.isNotEmpty == true ? user.name![0] : 'U')
+                    ? Text(user.name.isNotEmpty == true ? user.name[0] : 'U')
                     : null,
           ),
           title: Text(user.name ?? 'Unnamed User'),
@@ -410,6 +410,10 @@ class _SearchScreenState extends State<SearchScreen>
           title: Text(group.name ?? "Unnamed group"),
           trailing: ElevatedButton(
             onPressed: isJoining ? null : () => _joinGroup(group.id ?? "no"),
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              minimumSize: const Size(0, 36),
+            ),
             child:
                 isJoining
                     ? const SizedBox(
@@ -418,10 +422,6 @@ class _SearchScreenState extends State<SearchScreen>
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                     : const Text('Join'),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              minimumSize: const Size(0, 36),
-            ),
           ),
           onTap: () {
             Navigator.push(

@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:frontend/auth.dart';
 
 class MemberProfileScreen extends StatefulWidget {
   final String userId;
 
-  MemberProfileScreen({Key? key, required this.userId}) : super(key: key);
+  const MemberProfileScreen({super.key, required this.userId});
 
   @override
   _MemberProfileScreenState createState() => _MemberProfileScreenState();
@@ -211,8 +210,8 @@ class _MemberProfileScreenState extends State<MemberProfileScreen> {
                         backgroundImage: NetworkImage(group['icon_url']),
                       )
                     : CircleAvatar(
-                        child: Icon(Icons.group, color: Colors.white),
                         backgroundColor: Colors.amber[800],
+                        child: Icon(Icons.group, color: Colors.white),
                       ),
                 title: Text(group['name']),
                 subtitle: Text('Points: $points | Rank: $rank'),
