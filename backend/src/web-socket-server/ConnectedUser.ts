@@ -111,11 +111,22 @@ class ConnectedUser {
         JOIN profile p ON ug.user_id = p.id
         WHERE ug.group_id = ${newGroupId ?? "-1"}
       `;
+      let beaconlLocation = await sql`
+        SELECT latitude, longitude
+        FROM beacon
+        WHERE group_id = ${newGroupId}
+        ORDER BY started_at DESC
+        LIMIT 1;
+      `;
 
       locations.forEach((location) => {
         if (location.user_id !== this.userInfo?.user_id)
           this.socket.send(JSON.stringify(location), (e) => console.log(e));
       });
+      if (beaconlLocation.length > 0) {
+      // beaconlLocation[0]['user_id'] = "BEACON";
+      this.socket.send(JSON.stringify({user_id: "BEACON", first_name: "", last_name: "", username: "", profile_picture: "",  ...beaconlLocation[0]}));
+      }
     } catch (err) {
       console.error("Error fetching initial locations:", err);
     }
