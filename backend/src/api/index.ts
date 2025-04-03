@@ -4,6 +4,7 @@ import MessageResponse from "../interfaces/MessageResponse";
 import emojis from "./emojis";
 import { requireAuth, requireGroupLeader } from "../middlewares";
 import * as group from "./controllers/group";
+import * as beacon from "./controllers/beacon";
 
 const router = express.Router();
 
@@ -27,6 +28,8 @@ router.use("/set-profile-picture", requireAuth, user.setProfilePicture);
 router.use("/delete-account", requireAuth, user.deleteAccount);
 router.use("/refresh-token", user.refreshToken);
 router.use("/get-user-profile-info", requireAuth, user.getUserProfileInfo);
+router.use("/toggle-notifications", requireAuth, user.toggleNotifications);
+
 
 // Group routes
 router.use("/groups/members", requireAuth, group.getGroupMembers);
@@ -73,5 +76,8 @@ router.use("/groups/search", requireAuth, group.searchPublicGroups);
 router.use("/groups/all-public", requireAuth, group.getAllPublicGroups);
 router.use("/groups/join", requireAuth, group.joinGroup);
 router.use("/groups/setbfreq", requireAuth, group.setBeaconFreq);
+
+// Beacon routes
+router.use("/getbeacon", requireAuth, beacon.getLatestBeacon);
 
 export default router;
