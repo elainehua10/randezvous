@@ -120,6 +120,25 @@ export const assignPoints = async (req: Request, res: Response) => {
       `;
     }
 
+    // After updating points, recalculate ranks
+    const rankedUsers = await sql`
+      SELECT user_id
+      FROM user_group
+      WHERE group_id = ${groupId}
+      ORDER BY points DESC;
+    `;
+
+    for (let i = 0; i < rankedUsers.length; i++) {
+      const userId = rankedUsers[i].user_id;
+      const rank = i + 1;
+
+      await sql`
+        UPDATE user_group
+        SET rank = ${rank}
+        WHERE group_id = ${groupId} AND user_id = ${userId};
+      `;
+    }
+
     return res.status(200).json({ message: "Points assigned!" });
   } catch (error) {
     console.error("Error assigning points:", error);
