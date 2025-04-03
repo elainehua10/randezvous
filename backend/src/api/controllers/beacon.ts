@@ -61,6 +61,26 @@ export const confirmArrival = async (req: Request, res: Response) => {
   }
 };
 
+// Get the beacon for a group
+export const getLatestBeacon = async (req: Request, res: Response) => {
+  const { groupId } = req.params;
+  try {
+    const [beacon] = await sql`
+      SELECT id, latitude, longitude, started_at
+      FROM beacon
+      WHERE group_id = ${groupId}
+      ORDER BY started_at DESC
+      LIMIT 1;
+    `;
+    if (!beacon) {
+      return res.status(404).json({ error: "No active beacon for this group" });
+    }
+    res.status(200).json(beacon);
+  } catch (err) {
+    res.status(500).json({ error: "Error fetching latest beacon" });
+  }
+};
+
 // Assign points based on arrival order
 export const assignPoints = async (req: Request, res: Response) => {
   const { groupId } = req.body;

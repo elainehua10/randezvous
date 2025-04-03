@@ -6,6 +6,7 @@ import { UploadedFile } from "express-fileupload";
 import sql from "../../db";
 import sharp from "sharp";
 import { sendNotification } from "../../notifications";
+import { rescheduleBeaconJob } from "../../jobs/beaconSpawner";
 
 // Set limit to how many groups a user can create
 const MAX_GROUPS_PER_USER = 3;
@@ -408,6 +409,8 @@ export const setBeaconFreq = async (req: Request, res: Response) => {
       WHERE id = ${groupId}
       RETURNING *;
     `;
+
+    await rescheduleBeaconJob(groupId, frequency);
 
     return res.status(200).json({
       success: true,
