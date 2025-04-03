@@ -9,12 +9,19 @@ import 'package:path/path.dart';
 
 class Auth {
   static final storage = FlutterSecureStorage();
+  static String? _accessToken;
+  static String? _refreshToken;
+  static int? _exp;
 
   static Future<void> saveTokens(
     String accessToken,
     String refreshToken,
     int expireTime,
   ) async {
+    _accessToken = accessToken;
+    _refreshToken = refreshToken;
+    _exp = expireTime;
+
     await storage.write(key: 'access_token', value: accessToken);
     await storage.write(key: 'refresh_token', value: refreshToken);
     await storage.write(key: 'exp', value: "$expireTime");
@@ -23,23 +30,39 @@ class Auth {
   static Future<String?> getAccessToken() async {
     await refreshTokenIfNeeded();
 
-    return await storage.read(key: 'access_token');
+    if (_accessToken != null) {
+      return _accessToken;
+    }
+
+    _accessToken = await storage.read(key: 'access_token');
+    return _accessToken;
   }
 
   static Future<int?> getExpireTime() async {
+    if (_exp != null) {
+      return _exp;
+    }
+
     String? expireString = await storage.read(key: 'exp');
     if (expireString == null || expireString == "null") {
       return null;
     }
-    return int.parse(expireString);
+    _exp = int.tryParse(expireString);
+    return _exp;
   }
 
   static Future<String?> getRefreshToken() async {
-    return await storage.read(key: 'refresh_token');
+    if (_refreshToken != null) {
+      return _refreshToken;
+    }
+    _refreshToken = await storage.read(key: 'refresh_token');
+    return _refreshToken;
   }
 
   static Future<void> refreshTokenIfNeeded() async {
-    final token = await getRefreshToken();
+    String? token = _accessToken;
+    token ??= await storage.read(key: 'access_token');
+
     final expireTime = await getExpireTime();
 
     if (token == null || expireTime == null) {
@@ -58,11 +81,12 @@ class Auth {
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body)["session"];
         final accessToken = responseData['access_token'];
-        final newExpireTime =
-            responseData['exp']; // Ensure this is returned from the API
+        final refreshToken = responseData['refresh_token'];
+        final newExpireTime = responseData['exp'];
 
-        await storage.write(key: 'access_token', value: accessToken);
-        await storage.write(key: 'exp', value: newExpireTime.toString());
+        saveTokens(accessToken, refreshToken, newExpireTime);
+      } else {
+        await removeTokens();
       }
     }
   }
@@ -94,8 +118,7 @@ class Auth {
   }
 
   static Future<void> removeTokens() async {
-    await storage.delete(key: 'access_token');
-    await storage.delete(key: 'refresh_token');
+    await storage.deleteAll();
   }
 
   static Future<http.Response> uploadFileWithAuth(

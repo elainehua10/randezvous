@@ -58,7 +58,7 @@ class MapWidgetState extends State<MapWidget> {
         // 'ws://localhost:5001/locations',
         Platform.isAndroid
             ? "ws://10.0.2.2:5001/locations"
-            : 'ws://100.69.73.91:5001/locations',
+            : 'ws://localhost:5001/locations',
       ), // Replace with your server URL
     );
 

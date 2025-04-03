@@ -2,14 +2,47 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:background_fetch/background_fetch.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:frontend/auth.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class Util {
   static final String BACKEND_URL =
-      Platform.isAndroid ? "http://10.0.2.2:5001" : "http://100.69.73.91:5001";
-  // Platform.isAndroid ? "http://10.0.2.2:5001" : "http://localhost:5001";
+      // Platform.isAndroid ? "http://10.0.2.2:5001" : "http://100.69.73.91:5001";
+      Platform.isAndroid ? "http://10.0.2.2:5001" : "http://localhost:5001";
+}
+
+void initBackgroundFetch() async {
+  BackgroundFetch.configure(
+    BackgroundFetchConfig(
+      minimumFetchInterval: 15, // Run every 15 minutes
+      stopOnTerminate: false, // Continue running after app termination
+      enableHeadless: true, // Run even if the app is not in memory
+      requiresBatteryNotLow: false,
+      requiresCharging: false,
+      requiresDeviceIdle: false,
+      requiresStorageNotLow: false,
+    ),
+    (String taskId) async {
+      print("[BackgroundFetch] Task received: $taskId");
+
+      // Call refresh logic
+      await Auth.refreshTokenIfNeeded();
+
+      // Finish the background task
+      BackgroundFetch.finish(taskId);
+    },
+    (String taskId) async {
+      print("[BackgroundFetch] Task timeout: $taskId");
+      BackgroundFetch.finish(taskId);
+    },
+  );
+
+  // Start the background fetch process
+  BackgroundFetch.start();
+  print("[BackgroundFetch] Background fetch started.");
 }
 
 extension ToBitDescription on Widget {

@@ -1,5 +1,6 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:frontend/auth.dart';
 import 'package:frontend/group_screen.dart';
 import 'package:frontend/login.dart';
 import 'package:frontend/register.dart';
@@ -16,6 +17,7 @@ import 'package:frontend/report_issue_page.dart';
 // import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'package:firebase_core/firebase_core.dart';
+import 'package:frontend/util.dart';
 import 'firebase_options.dart';
 import '/services/notification_service.dart';
 
@@ -34,16 +36,9 @@ void main() async {
   // Register the background message handler
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
-  printFCMToken();
-
   String? accessToken = await Auth.getAccessToken();
   runApp(MyApp(initialRoute: accessToken != null ? '/home' : '/login'));
-}
-
-void printFCMToken() async {
-  // for debugging/testing
-  String? token = await NotificationService.instance.getToken();
-  print("FCM Token: $token"); // Send this to your backend
+  initBackgroundFetch();
 }
 
 class MyApp extends StatelessWidget {
