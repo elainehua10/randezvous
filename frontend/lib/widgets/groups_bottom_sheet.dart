@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:frontend/auth.dart';
 import 'package:frontend/models/group.dart';
-import 'package:frontend/models/user.dart';
 import 'package:frontend/widgets/group_item.dart';
 
 class GroupsBottomSheet extends StatefulWidget {

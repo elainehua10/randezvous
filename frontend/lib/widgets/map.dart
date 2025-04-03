@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:frontend/auth.dart'; // Assuming Auth class is here
 import 'package:frontend/models/user.dart';
-import 'package:frontend/widgets/map_style.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';

@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/auth.dart';
-import 'package:frontend/map_screen.dart';
 import 'package:frontend/util.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});

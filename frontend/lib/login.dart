@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/auth.dart';
-import 'package:frontend/map_screen.dart';
 import 'package:frontend/util.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
