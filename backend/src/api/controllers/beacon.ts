@@ -101,22 +101,41 @@ export const assignPoints = async (req: Request, res: Response) => {
     `;
     if (!beacon) return res.status(404).json({ error: "No beacon found" });
 
-    // Get arrivals for this beacon
+    // Get arrivals for this beacon in order of arrival
     const arrivals = await sql`
       SELECT user_id FROM user_beacons
       WHERE beacon_id = ${beacon.id} AND reached = true
       ORDER BY time_reached ASC;
     `;
 
-    const pointValues = [100, 75, 50];
+    const basePoints = [10, 5, 3, 2, 1];
     for (let i = 0; i < arrivals.length; i++) {
       const userId = arrivals[i].user_id;
-      const points = pointValues[i] ?? 25;
+      const points = basePoints[i] ?? 1; // 1 point for 6th+ arrivals
 
       await sql`
-        UPDATE profile
-        SET group_score = COALESCE(group_score, 0) + ${points}
-        WHERE id = ${userId};
+        UPDATE user_group
+        SET points = COALESCE(points, 0) + ${points}
+        WHERE user_id = ${userId} AND group_id = ${groupId};
+      `;
+    }
+
+    // After updating points, recalculate ranks
+    const rankedUsers = await sql`
+      SELECT user_id
+      FROM user_group
+      WHERE group_id = ${groupId}
+      ORDER BY points DESC;
+    `;
+
+    for (let i = 0; i < rankedUsers.length; i++) {
+      const userId = rankedUsers[i].user_id;
+      const rank = i + 1;
+
+      await sql`
+        UPDATE user_group
+        SET rank = ${rank}
+        WHERE group_id = ${groupId} AND user_id = ${userId};
       `;
     }
 
