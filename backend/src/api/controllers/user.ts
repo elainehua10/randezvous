@@ -361,7 +361,7 @@ export const getUserProfileInfo = async (req: Request, res: Response) => {
   try {
     const userId = req.body.userId;
     const result = await sql`
-      SELECT first_name, last_name, username, profile_picture
+      SELECT first_name, last_name, username, profile_picture, notifications_enabled
       FROM profile 
       WHERE id = ${userId};
     `;
@@ -370,13 +370,14 @@ export const getUserProfileInfo = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    const { first_name, last_name, username, profile_picture } = result[0];
+    const { first_name, last_name, username, profile_picture, notifications_enabled } = result[0];
 
     res.status(200).json({
       first_name,
       last_name,
       username,
       profile_picture,
+      notifications_enabled,
     });
   } catch (error) {
     console.error(error);

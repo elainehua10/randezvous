@@ -19,6 +19,42 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _notificationsEnabled = true;
 
   @override
+  void initState() {
+    super.initState();
+    _fetchNotificationSetting(); // Fetch the current setting when the page loads
+  }
+
+  Future<void> _fetchNotificationSetting() async {
+    try {
+      String? accessToken =
+          await Auth.getAccessToken(); // Get the access token of the logged-in user
+
+      final url = Uri.parse('${Util.BACKEND_URL}/api/v1/get-user-profile-info');
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          HttpHeaders.authorizationHeader: 'Bearer $accessToken',
+        },
+        body: jsonEncode({
+          'userId': 'user_id_here',
+        }), // Replace with actual user ID
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        setState(() {
+          _notificationsEnabled = data['notifications_enabled'] ?? true;
+        });
+      } else {
+        print('Failed to load notification setting: ${response.body}');
+      }
+    } catch (error) {
+      print('Error fetching notification setting: $error');
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
