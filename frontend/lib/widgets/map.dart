@@ -3,6 +3,10 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:frontend/auth.dart'; // Assuming Auth class is here
 import 'package:frontend/models/user.dart';
+import 'package:frontend/util.dart';
+import 'package:frontend/widgets/beacon_marker.dart';
+import 'package:frontend/widgets/map_style.dart';
+import 'package:frontend/widgets/user_marker.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -30,7 +34,6 @@ class MapWidgetState extends State<MapWidget> {
     super.initState();
     _connectToWebSocket();
     _moveToUser();
-    _fetchInitialLocations();
   }
 
   @override
@@ -41,35 +44,7 @@ class MapWidgetState extends State<MapWidget> {
         _markers = {}; // Reset markers
         _userLocations = {}; // Reset user locations
       });
-      _fetchInitialLocations();
       _updateWebSocketGroup();
-    }
-  }
-
-  Future<void> _fetchInitialLocations() async {
-    if (widget.activeGroupId == null) return;
-
-    try {
-      final response = await Auth.makeAuthenticatedPostRequest(
-        "groups/locations",
-        {"groupId": widget.activeGroupId},
-      );
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> data = jsonDecode(response.body);
-        print(data["locations"]);
-        print(data["locations"].map((e) => User.fromJson(e)));
-        setState(() {
-          _userLocations = {
-            for (var user in data["locations"].map((e) => User.fromJson(e)))
-              user.id: user,
-          };
-          _updateMarkers();
-        });
-      } else {
-        print("Failed to fetch locations: ${response.statusCode}");
-      }
-    } catch (e) {
-      print("Error fetching initial locations: $e");
     }
   }
 
@@ -85,9 +60,9 @@ class MapWidgetState extends State<MapWidget> {
 
     _channel!.stream.listen(
       (message) {
-        print("RECEIVE MESSAGE");
         final data = jsonDecode(message) as Map<String, dynamic>;
         final location = User.fromJson(data);
+
         setState(() {
           _userLocations[location.id] = location;
           _updateMarkers();
@@ -114,7 +89,6 @@ class MapWidgetState extends State<MapWidget> {
       "activeGroupId": widget.activeGroupId ?? -1,
     };
 
-    print("sending");
     _channel!.sink.add(jsonEncode(message));
   }
 
@@ -154,7 +128,11 @@ class MapWidgetState extends State<MapWidget> {
   void _updateMarkers() async {
     final markers =
         _userLocations.values.map((user) async {
-          final bitmap = await _createMarkerIcon(user.avatarUrl, user.username);
+          final bitmap = await _createMarkerIcon(
+            user.avatarUrl,
+            user.username,
+            user.id,
+          );
           return Marker(
             markerId: MarkerId(user.id),
             position:
@@ -175,9 +153,16 @@ class MapWidgetState extends State<MapWidget> {
   Future<BitmapDescriptor> _createMarkerIcon(
     String? profilePicture,
     String username,
+    String userId,
   ) async {
+    if (userId == "BEACON") {
+      return BeaconMapMarker(title: "BEACON").toBitmapDescriptor();
+    }
     // For simplicity, use a default icon; implement profile picture rendering if needed
-    return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange);
+    return CustomMapMarker(
+      avatarUrl: profilePicture,
+      username: username,
+    ).toBitmapDescriptor();
     // To use profile pictures, you'd need to download the image and convert it to BitmapDescriptor
   }
 

@@ -1,6 +1,6 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:frontend/group_screen.dart';
-import 'package:frontend/location_service.dart';
 import 'package:frontend/login.dart';
 import 'package:frontend/register.dart';
 import 'package:frontend/map_screen.dart';
@@ -17,44 +17,46 @@ import 'package:frontend/report_issue_page.dart';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import '/services/notification_service.dart';
+
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  print("Handling a background message: ${message.messageId}");
+}
 
 void main() async {
-  // Ensure widgets are initialized before using Supabase
   WidgetsFlutterBinding.ensureInitialized();
   // await dotenv.load();
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await NotificationService.instance.initNotifications();
 
-  runApp(const MyApp());
+  // Register the background message handler
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+  printFCMToken();
+
+  String? accessToken = await Auth.getAccessToken();
+  runApp(MyApp(initialRoute: accessToken != null ? '/home' : '/login'));
 }
 
-class MyApp extends StatefulWidget {
-  const MyApp({super.key});
-
-  @override
-  State<MyApp> createState() => _MyAppState();
+void printFCMToken() async {
+  // for debugging/testing
+  String? token = await NotificationService.instance.getToken();
+  print("FCM Token: $token"); // Send this to your backend
 }
 
-class _MyAppState extends State<MyApp> {
-  late LocationService _locationService;
+class MyApp extends StatelessWidget {
+  final String initialRoute;
 
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-  }
+  const MyApp({super.key, required this.initialRoute});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'RandezVous',
       theme: ThemeData(primarySwatch: Colors.yellow),
-      initialRoute: '/login',
-      home: LoginScreen(),
+      initialRoute: initialRoute, // Set the initial route dynamically
       routes: {
         '/search': (context) => SearchScreen(),
         '/login': (context) => LoginScreen(),

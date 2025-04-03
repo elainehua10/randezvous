@@ -36,10 +36,17 @@ class ConnectedUser {
     this.fetchUserGroups(userId).then((groupIds) => {
       this.groupIds = new Set(groupIds);
       this.setActiveGroup(activeGroupId);
+
+      // ConnectedUser.connectedUsers.values().forEach(user => {
+      //   if (this.groupIds.has(user.activeGroupId ?? "-2")) {
+
+      //   }
+      // })
     });
 
     this.getUserInfo(userId)
       .then((info) => {
+        console.log(info);
         this.userInfo = info;
       })
       .catch((err) => console.error("Error initializing user info:", err));
@@ -91,10 +98,26 @@ class ConnectedUser {
     }
   }
 
-  setActiveGroup(newGroupId: string) {
-    if (!this.groupIds.has(newGroupId)) {
+  async setActiveGroup(newGroupId: string) {
+    if (!this.groupIds.has(newGroupId) && newGroupId != "-1") {
       console.error(`User is not a member of group ${newGroupId}`);
       return;
+    }
+
+    try {
+      const locations = await sql`
+        SELECT ug.user_id, p.longitude, p.latitude, p.first_name, p.last_name, p.username, p.profile_picture
+        FROM user_group ug
+        JOIN profile p ON ug.user_id = p.id
+        WHERE ug.group_id = ${newGroupId ?? "-1"}
+      `;
+
+      locations.forEach((location) => {
+        if (location.user_id !== this.userInfo?.user_id)
+          this.socket.send(JSON.stringify(location), (e) => console.log(e));
+      });
+    } catch (err) {
+      console.error("Error fetching initial locations:", err);
     }
 
     if (this.activeGroupId === newGroupId) {
@@ -119,16 +142,19 @@ class ConnectedUser {
     this.groupIds.forEach((groupId) =>
       this.broker.publish(groupId, this.userInfo)
     );
+
     sql`
       UPDATE profile 
       SET longitude = ${long}, latitude = ${lat} 
       WHERE id = ${this.userInfo.user_id};
-    `;
+    `.catch((e) => console.error("ERRORED ON UPDATE"));
   }
 
-  receiveUpdate(data: any) {
-    if (this.socket.readyState === WebSocket.OPEN) {
-      console.log("SENDING");
+  receiveUpdate(data: UserLocationInfo) {
+    if (
+      this.socket.readyState === WebSocket.OPEN &&
+      data.user_id != this.userInfo?.user_id
+    ) {
       this.socket.send(JSON.stringify(data));
     }
   }

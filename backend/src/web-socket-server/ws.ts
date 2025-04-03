@@ -3,6 +3,9 @@ import ConnectedUser from "./ConnectedUser";
 import jwt from "jsonwebtoken";
 import PubSubBroker from "./PubSubBroker";
 import { Server } from "http";
+import sql from "../db"; // Assuming you have a database connection setup
+
+export const locationBroker = new PubSubBroker();
 
 export const setupWebsocketServer = (server: Server) => {
   const wsServer = new WebSocketServer({ server: server, path: "/locations" });
@@ -23,19 +26,13 @@ export const setupWebsocketServer = (server: Server) => {
     }
   }
 
-  const broker = new PubSubBroker();
-
-  wsServer.on("connection", (socket) => {
+  wsServer.on("connection", async (socket) => {
     let user: ConnectedUser | null = null;
-    console.log("CONNECT");
 
-    socket.on("message", (message) => {
-      console.log("MESSAGE", message);
+    socket.on("message", async (message) => {
       try {
         const data = JSON.parse(message.toString());
-
         const { authToken, longitude, latitude, activeGroupId } = data;
-
         const userId = authenticateUser(authToken);
 
         if (!userId) {
@@ -53,7 +50,12 @@ export const setupWebsocketServer = (server: Server) => {
         }
 
         if (!user) {
-          user = new ConnectedUser(userId, activeGroupId, socket, broker);
+          user = new ConnectedUser(
+            userId,
+            activeGroupId,
+            socket,
+            locationBroker
+          );
         }
 
         user.publish(longitude, latitude);
@@ -62,7 +64,7 @@ export const setupWebsocketServer = (server: Server) => {
           user.setActiveGroup(activeGroupId);
         }
       } catch (error) {
-        return;
+        console.error("Error processing message:", error);
       }
     });
 
@@ -72,5 +74,6 @@ export const setupWebsocketServer = (server: Server) => {
       }
     });
   });
+
   return wsServer;
 };

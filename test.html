@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Location Sharing WebSocket Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .container {
+        display: flex;
+        gap: 20px;
+      }
+      .panel {
+        flex: 1;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        padding: 15px;
+      }
+      .form-group {
+        margin-bottom: 15px;
+      }
+      label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+      }
+      input,
+      button {
+        width: 100%;
+        padding: 8px;
+        margin-bottom: 10px;
+      }
+      button {
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        cursor: pointer;
+      }
+      button:hover {
+        background-color: #45a049;
+      }
+      #status {
+        padding: 10px;
+        margin-bottom: 15px;
+        border-radius: 5px;
+      }
+      .connected {
+        background-color: #dff0d8;
+        color: #3c763d;
+      }
+      .disconnected {
+        background-color: #f2dede;
+        color: #a94442;
+      }
+      .connecting {
+        background-color: #fcf8e3;
+        color: #8a6d3b;
+      }
+      pre {
+        background-color: #f5f5f5;
+        padding: 10px;
+        border-radius: 5px;
+        overflow-x: auto;
+      }
+      #receivedMessages {
+        height: 300px;
+        overflow-y: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Location Sharing WebSocket Test</h1>
+
+    <div id="status" class="disconnected">Disconnected</div>
+
+    <div class="container">
+      <div class="panel">
+        <h2>Connection Settings</h2>
+        <div class="form-group">
+          <label for="authToken">JWT Auth Token:</label>
+          <input
+            type="text"
+            id="authToken"
+            placeholder="Paste your JWT token here"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="activeGroupId">Active Group ID:</label>
+          <input type="text" id="activeGroupId" placeholder="Enter group ID" />
+        </div>
+
+        <button id="connectBtn">Connect</button>
+        <button id="disconnectBtn" disabled>Disconnect</button>
+
+        <h2>Location Updates</h2>
+        <div class="form-group">
+          <label for="longitude">Longitude:</label>
+          <input
+            type="number"
+            id="longitude"
+            step="0.000001"
+            value="-122.419416"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="latitude">Latitude:</label>
+          <input
+            type="number"
+            id="latitude"
+            step="0.000001"
+            value="37.774929"
+          />
+        </div>
+
+        <button id="sendLocationBtn" disabled>Send Location</button>
+
+        <div class="form-group">
+          <label for="updateFrequency">Auto-update frequency (ms):</label>
+          <input type="number" id="updateFrequency" value="5000" min="1000" />
+        </div>
+
+        <button id="toggleAutoUpdateBtn" disabled>Start Auto-Update</button>
+      </div>
+
+      <div class="panel">
+        <h2>Received Updates</h2>
+        <div id="receivedMessages">
+          <pre>No messages received yet.</pre>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let socket = null;
+      let autoUpdateInterval = null;
+      let isAutoUpdating = false;
+
+      // DOM Elements
+      const statusEl = document.getElementById("status");
+      const connectBtn = document.getElementById("connectBtn");
+      const disconnectBtn = document.getElementById("disconnectBtn");
+      const sendLocationBtn = document.getElementById("sendLocationBtn");
+      const toggleAutoUpdateBtn = document.getElementById(
+        "toggleAutoUpdateBtn"
+      );
+      const receivedMessagesEl = document.getElementById("receivedMessages");
+
+      // Connect to WebSocket
+      connectBtn.addEventListener("click", () => {
+        const authToken = document.getElementById("authToken").value.trim();
+        const activeGroupId = document
+          .getElementById("activeGroupId")
+          .value.trim();
+
+        if (!authToken || !activeGroupId) {
+          alert("Please enter both auth token and group ID");
+          return;
+        }
+
+        // Close existing connection if any
+        if (socket) {
+          socket.close();
+        }
+
+        // Update status
+        statusEl.textContent = "Connecting...";
+        statusEl.className = "connecting";
+
+        // Create new connection
+        socket = new WebSocket("ws://localhost:5001/locations");
+
+        socket.onopen = () => {
+          statusEl.textContent = "Connected";
+          statusEl.className = "connected";
+
+          // Enable buttons
+          connectBtn.disabled = true;
+          disconnectBtn.disabled = false;
+          sendLocationBtn.disabled = false;
+          toggleAutoUpdateBtn.disabled = false;
+
+          // Send initial location
+          sendLocation();
+        };
+
+        socket.onclose = () => {
+          statusEl.textContent = "Disconnected";
+          statusEl.className = "disconnected";
+
+          // Disable buttons
+          connectBtn.disabled = false;
+          disconnectBtn.disabled = true;
+          sendLocationBtn.disabled = true;
+          toggleAutoUpdateBtn.disabled = true;
+
+          // Stop auto-update if running
+          if (autoUpdateInterval) {
+            clearInterval(autoUpdateInterval);
+            autoUpdateInterval = null;
+            isAutoUpdating = false;
+            toggleAutoUpdateBtn.textContent = "Start Auto-Update";
+          }
+        };
+
+        socket.onerror = (error) => {
+          console.error("WebSocket error:", error);
+        };
+
+        socket.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            const message = document.createElement("pre");
+            message.textContent = JSON.stringify(data, null, 2);
+
+            if (
+              receivedMessagesEl.firstChild.textContent ===
+              "No messages received yet."
+            ) {
+              receivedMessagesEl.innerHTML = "";
+            }
+
+            receivedMessagesEl.insertBefore(
+              message,
+              receivedMessagesEl.firstChild
+            );
+          } catch (e) {
+            console.error("Error parsing message:", e);
+          }
+        };
+      });
+
+      // Disconnect from WebSocket
+      disconnectBtn.addEventListener("click", () => {
+        if (socket) {
+          socket.close();
+        }
+      });
+
+      // Send location update
+      function sendLocation() {
+        if (!socket || socket.readyState !== WebSocket.OPEN) {
+          return;
+        }
+
+        const authToken = document.getElementById("authToken").value.trim();
+        const activeGroupId = document
+          .getElementById("activeGroupId")
+          .value.trim();
+        const longitude = parseFloat(
+          document.getElementById("longitude").value
+        );
+        const latitude = parseFloat(document.getElementById("latitude").value);
+
+        const message = {
+          authToken,
+          activeGroupId,
+          longitude,
+          latitude,
+        };
+
+        socket.send(JSON.stringify(message));
+
+        // Add small random variation to coordinates for next update
+        // to simulate movement (only when auto-updating)
+        if (isAutoUpdating) {
+          document.getElementById("longitude").value = (
+            longitude +
+            (Math.random() * 0.002 - 0.001)
+          ).toFixed(6);
+          document.getElementById("latitude").value = (
+            latitude +
+            (Math.random() * 0.002 - 0.001)
+          ).toFixed(6);
+        }
+      }
+
+      sendLocationBtn.addEventListener("click", sendLocation);
+
+      // Toggle auto-update
+      toggleAutoUpdateBtn.addEventListener("click", () => {
+        if (isAutoUpdating) {
+          // Stop auto-update
+          clearInterval(autoUpdateInterval);
+          autoUpdateInterval = null;
+          isAutoUpdating = false;
+          toggleAutoUpdateBtn.textContent = "Start Auto-Update";
+        } else {
+          // Start auto-update
+          const frequency = parseInt(
+            document.getElementById("updateFrequency").value
+          );
+          if (frequency < 1000) {
+            alert("Please use a frequency of at least 1000ms");
+            return;
+          }
+
+          sendLocation(); // Send immediately
+          autoUpdateInterval = setInterval(sendLocation, frequency);
+          isAutoUpdating = true;
+          toggleAutoUpdateBtn.textContent = "Stop Auto-Update";
+        }
+      });
+    </script>
+  </body>
+</html>
