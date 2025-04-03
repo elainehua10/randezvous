@@ -1,18 +1,7 @@
 import { Request, Response } from "express";
 import sql from "../../db";
 
-// Helper: Calculate distance using Haversine formula
-function getDistanceInMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const toRad = (x: number) => (x * Math.PI) / 180;
-  const R = 6371000; // Radius of Earth in meters
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-}
+
 
 // Confirm a user has reached the beacon
 export const confirmArrival = async (req: Request, res: Response) => {
@@ -33,19 +22,13 @@ export const confirmArrival = async (req: Request, res: Response) => {
     const [beacon] = await sql`
       SELECT id, latitude, longitude
       FROM beacon
-      WHERE id = (
-        SELECT MAX(id) FROM beacon
-        WHERE id IN (
-          SELECT beacon_id FROM user_group WHERE group_id = ${groupId}
-        )
-      );
+      WHERE group_id = ${groupId}
+      ORDER BY started_at DESC
+      LIMIT 1;
     `;
+
     if (!beacon) return res.status(404).json({ error: "No active beacon found" });
 
-    const distance = getDistanceInMeters(user.latitude, user.longitude, beacon.latitude, beacon.longitude);
-    if (distance > 50) {
-      return res.status(400).json({ error: "You are too far from the beacon to confirm arrival" });
-    }
 
     // Insert arrival
     await sql`
@@ -54,7 +37,11 @@ export const confirmArrival = async (req: Request, res: Response) => {
       ON CONFLICT (beacon_id, user_id) DO NOTHING;
     `;
 
-    return res.status(200).json({ message: "Arrival confirmed!" });
+    // Automatically assign points and ranks
+    await assignPointsInternal(groupId);
+
+    return res.status(200).json({ message: "Arrival confirmed and points assigned!" });
+
   } catch (error) {
     console.error("Error confirming arrival:", error);
     return res.status(500).json({ error: "Internal server error" });
@@ -81,6 +68,58 @@ export const getLatestBeacon = async (req: Request, res: Response) => {
   }
 };
 
+// Internal helper to assign points and rank
+const assignPointsInternal = async (groupId: string) => {
+  // Get latest beacon for group
+  const [beacon] = await sql`
+    SELECT id FROM beacon
+    WHERE group_id = ${groupId}
+    ORDER BY created_at DESC
+    LIMIT 1;
+  `;
+  if (!beacon) return;
+
+  // Get arrivals ordered by time
+  const arrivals = await sql`
+    SELECT user_id FROM user_beacons
+    WHERE beacon_id = ${beacon.id} AND reached = true
+    ORDER BY time_reached ASC;
+  `;
+
+  // Assign points: 10, 5, 3, 2, 1, 1, 1...
+  const basePoints = [10, 5, 3, 2, 1];
+  for (let i = 0; i < arrivals.length; i++) {
+    const userId = arrivals[i].user_id;
+    const points = basePoints[i] ?? 1;
+
+    await sql`
+      UPDATE user_group
+      SET points = COALESCE(points, 0) + ${points}
+      WHERE user_id = ${userId} AND group_id = ${groupId};
+    `;
+  }
+
+  // Recalculate rank for all group members
+  const ranked = await sql`
+    SELECT user_id
+    FROM user_group
+    WHERE group_id = ${groupId}
+    ORDER BY points DESC;
+  `;
+
+  for (let i = 0; i < ranked.length; i++) {
+    const userId = ranked[i].user_id;
+    const rank = i + 1;
+
+    await sql`
+      UPDATE user_group
+      SET rank = ${rank}
+      WHERE user_id = ${userId} AND group_id = ${groupId};
+    `;
+  }
+};
+
+
 // Assign points based on arrival order
 export const assignPoints = async (req: Request, res: Response) => {
   const { groupId } = req.body;
@@ -90,58 +129,12 @@ export const assignPoints = async (req: Request, res: Response) => {
   }
 
   try {
-    // Get latest beacon for group
-    const [beacon] = await sql`
-      SELECT id FROM beacon
-      WHERE id IN (
-        SELECT beacon_id FROM user_group WHERE group_id = ${groupId}
-      )
-      ORDER BY created_at DESC
-      LIMIT 1;
-    `;
-    if (!beacon) return res.status(404).json({ error: "No beacon found" });
-
-    // Get arrivals for this beacon in order of arrival
-    const arrivals = await sql`
-      SELECT user_id FROM user_beacons
-      WHERE beacon_id = ${beacon.id} AND reached = true
-      ORDER BY time_reached ASC;
-    `;
-
-    const basePoints = [10, 5, 3, 2, 1];
-    for (let i = 0; i < arrivals.length; i++) {
-      const userId = arrivals[i].user_id;
-      const points = basePoints[i] ?? 1; // 1 point for 6th+ arrivals
-
-      await sql`
-        UPDATE user_group
-        SET points = COALESCE(points, 0) + ${points}
-        WHERE user_id = ${userId} AND group_id = ${groupId};
-      `;
-    }
-
-    // After updating points, recalculate ranks
-    const rankedUsers = await sql`
-      SELECT user_id
-      FROM user_group
-      WHERE group_id = ${groupId}
-      ORDER BY points DESC;
-    `;
-
-    for (let i = 0; i < rankedUsers.length; i++) {
-      const userId = rankedUsers[i].user_id;
-      const rank = i + 1;
-
-      await sql`
-        UPDATE user_group
-        SET rank = ${rank}
-        WHERE group_id = ${groupId} AND user_id = ${userId};
-      `;
-    }
-
-    return res.status(200).json({ message: "Points assigned!" });
+    await assignPointsInternal(groupId);
+    res.status(200).json({ message: "Points and ranks updated!" });
   } catch (error) {
     console.error("Error assigning points:", error);
-    return res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: "Internal server error" });
   }
 };
+
+export { assignPointsInternal };
