@@ -1,7 +1,12 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:frontend/auth.dart';
 import 'privacy_security_page.dart';
 import 'faq_page.dart';
 import 'report_issue_page.dart';
+import 'package:http/http.dart' as http;
+import 'package:frontend/util.dart';
+import 'dart:io';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -48,6 +53,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 setState(() {
                   _notificationsEnabled = value;
                 });
+                _updateNotificationSetting(value);
               },
             ),
             _buildSectionTitle("Support & Information"),
@@ -94,6 +100,75 @@ class _SettingsPageState extends State<SettingsPage> {
           ],
         ),
       ),
+    );
+  }
+
+  Future<void> _updateNotificationSetting(bool enableNotifications) async {
+    try {
+      String? accessToken =
+          await Auth.getAccessToken(); // Get the access token of the logged-in user
+
+      final url = Uri.parse('${Util.BACKEND_URL}/api/v1/toggle-notifications');
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          HttpHeaders.authorizationHeader: 'Bearer $accessToken',
+        },
+        body: jsonEncode({
+          'enableNotifications':
+              enableNotifications, // Send the new notification preference
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        print('Notification preference updated successfully');
+        showDialog(
+          context: context,
+          builder:
+              (context) => AlertDialog(
+                title: Text('Success!'),
+                content: Text(
+                  'Notifications ${enableNotifications ? 'enabled' : 'disabled'} successfully',
+                ),
+                actions: <Widget>[
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    child: Text('OK'),
+                  ),
+                ],
+              ),
+        );
+      } else {
+        print('Failed to update notifications: ${response.body}');
+        _showErrorDialog('Failed to update notification preferences');
+      }
+    } catch (error) {
+      print('Error: $error');
+      _showErrorDialog(
+        'An error occurred while updating the notification preferences',
+      );
+    }
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Text('Error'),
+            content: Text(message),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text('OK'),
+              ),
+            ],
+          ),
     );
   }
 

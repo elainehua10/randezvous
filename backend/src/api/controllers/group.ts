@@ -304,7 +304,7 @@ export const inviteToGroup = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Group or user not found" });
     }
 
-    const { group_name, sender_username } = groupAndUser[0];
+    const { group_name, sender_username, notifications_enabled } = groupAndUser[0];
 
     // Insert the invite
     let result = await sql`
@@ -316,11 +316,13 @@ export const inviteToGroup = async (req: Request, res: Response) => {
     const inviteId = result[0].id;
 
     // Send notification to the invited user
-    await sendNotification(
-      toUserId,
-      "Group Invitation",
-      `${sender_username} invited you to join ${group_name}.`
-    );
+    if (notifications_enabled) {
+      await sendNotification(
+        toUserId,
+        "Group Invitation",
+        `${sender_username} invited you to join ${group_name}.`
+      );
+    }
 
     return res.status(200).json({ message: "Invite Created", inviteId });
   } catch (error) {

@@ -27,6 +27,8 @@ router.use("/set-profile-picture", requireAuth, user.setProfilePicture);
 router.use("/delete-account", requireAuth, user.deleteAccount);
 router.use("/refresh-token", user.refreshToken);
 router.use("/get-user-profile-info", requireAuth, user.getUserProfileInfo);
+router.use("/toggle-notifications", requireAuth, user.toggleNotifications);
+
 
 // Group routes
 router.use("/groups/members", requireAuth, group.getGroupMembers);
