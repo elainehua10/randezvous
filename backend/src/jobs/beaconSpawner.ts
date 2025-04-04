@@ -128,7 +128,7 @@ export async function spawnBeacon(groupId: string) {
     // set up notification for unreached users
     setTimeout(() => {
         notifyUnreachedUsers(groupId);
-      }, 60 * 60 * 1000); // 1 hour in ms
+      }, 5 * 1000); // time in ms
       
   } catch (err) {
     console.error(`❌ Failed to spawn beacon for ${groupId}:`, err);
@@ -147,13 +147,15 @@ async function notifyUnreachedUsers(groupId: string) {
       `;
       if (!beacon) return;
   
-      // Get all group members
+      // Get all group members who have notifications enabled
       const members = await sql`
-        SELECT user_id FROM user_group
-        WHERE group_id = ${groupId};
+        SELECT p.id AS user_id
+        FROM user_group ug
+        JOIN profile p ON ug.user_id = p.id
+        WHERE ug.group_id = ${groupId} AND p.notifications_enabled = true;
       `;
   
-      // Get those who reached
+      // Get users who have already reached the beacon
       const reached = await sql`
         SELECT user_id FROM user_beacons
         WHERE beacon_id = ${beacon.id} AND reached = true;
@@ -161,15 +163,24 @@ async function notifyUnreachedUsers(groupId: string) {
   
       const reachedIds = new Set(reached.map((r: any) => r.user_id));
   
-      // Filter unreached
+      // Filter members to only those who have not reached the beacon
       const unreached = members.filter((m: any) => !reachedIds.has(m.user_id));
   
-      // Send notification
-      for (const user of unreached) {
-        console.log(`🔔 Reminder: User ${user.user_id} hasn't reached beacon ${beacon.id}`);
-        // TODO: Replace with real push/websocket/email notification
-
+      // Send notifications
+      if (unreached.length > 0) {
+        const notificationPromises = unreached.map((user) =>
+          sendNotification(
+            user.user_id,
+            "Reminder: You haven't reached the beacon!",
+            "A beacon was placed. Head to the location before it's too late!"
+          )
+        );
+        await Promise.all(notificationPromises);
+        console.log(`🔔 Sent reminder notifications to ${unreached.length} users.`);
+      } else {
+        console.log("✅ All users have reached the beacon or notifications are disabled.");
       }
+  
     } catch (err) {
       console.error("❌ Failed to notify unreached users:", err);
     }
@@ -219,7 +230,7 @@ export async function setupBeaconSchedulers() {
   for (const group of groups) {
     const { id: groupId, beacon_frequency } = group;
     
-    if (scheduledJobs.has(groupId)) continue;
+    // if (scheduledJobs.has(groupId)) continue;
 
     const job = scheduleGroupBeacon(groupId, beacon_frequency);
     if (job) {
@@ -236,6 +247,13 @@ export function rescheduleBeaconJob(groupId: string, newFrequency: number) {
   const existingJob = scheduledJobs.get(groupId);
   if (existingJob) {
     existingJob.cancel();
+    scheduledJobs.delete(groupId);
+    console.log(`🗑️ Cancelled existing job for group ${groupId}`);
+  }
+
+  if (newFrequency == 0) {
+    console.log(`❌ No frequency set for group ${groupId}, not scheduling.`);
+    return;
   }
 
   const job = scheduleGroupBeacon(groupId, newFrequency);

@@ -411,6 +411,7 @@ export const setBeaconFreq = async (req: Request, res: Response) => {
       RETURNING *;
     `;
 
+    // console.log("📡 Calling rescheduleBeaconJob with frequency:", frequency);
     await rescheduleBeaconJob(groupId, frequency);
 
     return res.status(200).json({
