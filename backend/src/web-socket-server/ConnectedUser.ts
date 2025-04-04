@@ -280,8 +280,36 @@ class ConnectedUser {
 
             // Reassign points and ranks
             await assignPointsInternal(groupId);
-          } else {
-            console.log("ALREAYD CONFIRMED!");
+
+            // Check if all members have reached the beacon
+            const [unconfirmedCount] = await sql`
+            SELECT COUNT(*) 
+            FROM user_group ug
+            LEFT JOIN user_beacons ub ON ug.user_id = ub.user_id AND ub.beacon_id = ${beacon.id}
+            WHERE ug.group_id = ${groupId} AND (ub.reached IS DISTINCT FROM true);
+            `;
+
+            if (parseInt(unconfirmedCount.count) === 0) {
+              // Everyone has reached — notify all members with notifications enabled
+              const groupMembersToNotify = await sql`
+              SELECT p.id
+              FROM user_group ug
+              JOIN profile p ON ug.user_id = p.id
+              WHERE ug.group_id = ${groupId} AND p.notifications_enabled = true;
+            `;
+
+              if (groupMembersToNotify.length > 0) {
+                const congratsTitle = "🎉 Congrats!";
+                const congratsBody =
+                  "Everyone in your group has reached the beacon!";
+
+                const congratsPromises = groupMembersToNotify.map((member) =>
+                  sendNotification(member.id, congratsTitle, congratsBody)
+                );
+
+                await Promise.all(congratsPromises);
+              }
+            }
           }
         }
       } catch (err) {
