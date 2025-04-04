@@ -15,6 +15,8 @@ router.get<{}, MessageResponse>("/", (req, res) => {
 });
 
 // User routes
+router.use("/manual-spawn", beacon.manualSpawn);
+
 router.use("/emojis", emojis);
 router.use("/register", user.register);
 router.use("/login", user.login);
@@ -29,7 +31,6 @@ router.use("/delete-account", requireAuth, user.deleteAccount);
 router.use("/refresh-token", user.refreshToken);
 router.use("/get-user-profile-info", requireAuth, user.getUserProfileInfo);
 router.use("/toggle-notifications", requireAuth, user.toggleNotifications);
-
 
 // Group routes
 router.use("/groups/members", requireAuth, group.getGroupMembers);
