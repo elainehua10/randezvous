@@ -29,12 +29,10 @@ export const confirmArrival = async (req: Request, res: Response) => {
 
     if (!beacon) return res.status(404).json({ error: "No active beacon found" });
 
-
     // Insert arrival
     await sql`
       INSERT INTO user_beacons (beacon_id, user_id, reached, time_reached, latitude, longitude)
       VALUES (${beacon.id}, ${userId}, true, NOW(), ${user.latitude}, ${user.longitude})
-      ON CONFLICT (beacon_id, user_id) DO NOTHING;
     `;
 
     // Automatically assign points and ranks

@@ -30,35 +30,14 @@ router.use("/refresh-token", user.refreshToken);
 router.use("/get-user-profile-info", requireAuth, user.getUserProfileInfo);
 router.use("/toggle-notifications", requireAuth, user.toggleNotifications);
 
-
 // Group routes
 router.use("/groups/members", requireAuth, group.getGroupMembers);
 router.use("/groups/create", requireAuth, group.createGroup);
-router.use(
-  "/groups/rename",
-  requireAuth,
-  requireGroupLeader,
-  group.renameGroup
-);
-router.use(
-  "/groups/setpub",
-  requireAuth,
-  requireGroupLeader,
-  group.setPublicity
-);
-router.use(
-  "/groups/invite",
-  requireAuth,
-  requireGroupLeader,
-  group.inviteToGroup
-);
+router.use("/groups/rename", requireAuth, requireGroupLeader, group.renameGroup);
+router.use("/groups/setpub", requireAuth, requireGroupLeader, group.setPublicity);
+router.use("/groups/invite", requireAuth, requireGroupLeader, group.inviteToGroup);
 router.use("/groups/icon", requireAuth, requireGroupLeader, group.uploadIcon);
-router.use(
-  "/groups/remove",
-  requireAuth,
-  requireGroupLeader,
-  group.removeFromGroup
-);
+router.use("/groups/remove", requireAuth, requireGroupLeader, group.removeFromGroup);
 router.use("/groups/accept", requireAuth, group.acceptInvite);
 router.use("/groups/leave", requireAuth, group.leaveGroup);
 router.use("/groups/locations", requireAuth, group.getGroupLocations);
@@ -66,12 +45,7 @@ router.use("/groups/getgroups", requireAuth, group.getUserGroups);
 router.use("/groups/getinvites", requireAuth, group.getUserInvites);
 router.use("/groups/members", requireAuth, group.getGroupMembers);
 router.use("/groups/check-membership", requireAuth, group.checkMembership);
-router.use(
-  "/groups/assign-leader",
-  requireAuth,
-  requireGroupLeader,
-  group.reassignLeader
-);
+router.use("/groups/assign-leader", requireAuth, requireGroupLeader, group.reassignLeader);
 router.use("/groups/search", requireAuth, group.searchPublicGroups);
 router.use("/groups/all-public", requireAuth, group.getAllPublicGroups);
 router.use("/groups/join", requireAuth, group.joinGroup);
