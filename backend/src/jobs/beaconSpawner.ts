@@ -66,9 +66,7 @@ async function getRandomCoordinates(groupId: string) {
 export async function spawnBeacon(groupId: string) {
   const now = new Date();
   const { latitude, longitude } = await getRandomCoordinates(groupId);
-
   console.log(longitude, latitude);
-
   // const { latitude, longitude } = { latitude: 37.3346, longitude: -122.0090 };  // apple headquarters
 
   try {
