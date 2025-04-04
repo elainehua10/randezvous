@@ -31,12 +31,61 @@ class MapWidgetState extends State<MapWidget> {
   Map<String, User> _userLocations = {}; // Track user locations
   bool _showBeaconReachedModal = false;
   String _beaconMessage = "";
+  bool _showConfirmationMessage = false; // Confirmation message state
 
   @override
   void initState() {
     super.initState();
     _connectToWebSocket();
     _moveToUser();
+  }
+
+  void _closeBeaconModal() {
+    setState(() {
+      _showBeaconReachedModal = false;
+      _beaconMessage = "";
+      _showConfirmationMessage = true; // Show confirmation message
+    });
+
+    // Hide confirmation message after a few seconds
+    Future.delayed(Duration(seconds: 2), () {
+      if (mounted) {
+        setState(() {
+          _showConfirmationMessage = false; // Hide it after 2 seconds
+        });
+      }
+    });
+  }
+
+  Widget _buildConfirmationMessage() {
+    return AnimatedPositioned(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      bottom: _showConfirmationMessage ? 40 : -100,
+      left: 16,
+      right: 16,
+      child: Material(
+        elevation: 8,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.green[50],
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.green[300]!),
+          ),
+          child: Text(
+            'Congrats! Points have been rewarded!',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.green[800],
+              fontSize: 16,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -180,13 +229,6 @@ class MapWidgetState extends State<MapWidget> {
     // To use profile pictures, you'd need to download the image and convert it to BitmapDescriptor
   }
 
-  void _closeBeaconModal() {
-    setState(() {
-      _showBeaconReachedModal = false;
-      _beaconMessage = "";
-    });
-  }
-
   Widget _buildBeaconReachedModal() {
     return AnimatedPositioned(
       duration: const Duration(milliseconds: 300),
@@ -254,7 +296,7 @@ class MapWidgetState extends State<MapWidget> {
                   ),
                 ),
                 onPressed: _closeBeaconModal,
-                child: const Text('Awesome!'),
+                child: const Text("I'm Here!"),
               ),
             ],
           ),
@@ -283,6 +325,7 @@ class MapWidgetState extends State<MapWidget> {
           myLocationButtonEnabled: true,
         ),
         _buildBeaconReachedModal(),
+        _buildConfirmationMessage(),
       ],
     );
   }
