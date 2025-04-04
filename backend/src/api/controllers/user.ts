@@ -5,15 +5,6 @@ import sharp from "sharp";
 import { UploadedFile } from "express-fileupload";
 import { sendNotification } from "../../notifications";
 
-function calculatePointsAndRank(
-  group: any,
-  index: number
-): { points: number; rank: number } {
-  const points = 100 + (group.name?.length ?? 0) * 10;
-  const rank = (index % 5) + 1;
-  return { points, rank };
-}
-
 // Register
 export const register = async (req: Request, res: Response) => {
   const { email, password, username, firstname, lastname } = req.body;
@@ -400,20 +391,20 @@ export const getMemberProfile = async (req: Request, res: Response) => {
     }
 
     const rawGroups = await sql`
-      SELECT groups.id, groups.name, groups.icon_url
-      FROM groups
-      JOIN user_group ON groups.id = user_group.group_id
-      WHERE user_group.user_id = ${userId};
+      SELECT g.id, g.name, g.icon_url, ug.points, ug.rank
+      FROM user_group ug
+      JOIN groups g ON ug.group_id = g.id
+      WHERE ug.user_id = ${userId};
     `;
 
-    const groups = rawGroups.map((group: any, index: number) => {
-      const { points, rank } = calculatePointsAndRank(group, index);
-      return {
-        ...group,
-        points,
-        rank,
-      };
-    });
+    const groups = rawGroups.map((group: any) => ({
+      id: group.id,
+      name: group.name,
+      icon_url: group.icon_url,
+      points: group.points,
+      rank: group.rank,
+    }));
+
 
     res.status(200).json({
       profile: {
