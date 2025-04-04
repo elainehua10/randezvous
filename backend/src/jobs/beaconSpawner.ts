@@ -64,8 +64,8 @@ async function getRandomCoordinates(groupId: string) {
 
 export async function spawnBeacon(groupId: string) {
   const now = new Date();
-  //const { latitude, longitude } = await getRandomCoordinates(groupId);
-  const { latitude, longitude } = { latitude: 37.3346, longitude: -122.0090 };  // apple headquarters
+  const { latitude, longitude } = await getRandomCoordinates(groupId);
+  //const { latitude, longitude } = { latitude: 37.3346, longitude: -122.0090 };  // apple headquarters
 
   try {
     // Get the existing beacon ID for the group
@@ -131,7 +131,7 @@ export async function spawnBeacon(groupId: string) {
     // set up notification for unreached users
     setTimeout(() => {
         notifyUnreachedUsers(groupId);
-      }, 5 * 1000); // time in ms
+      }, 60 * 60 * 1000); // time in ms
       
   } catch (err) {
     console.error(`❌ Failed to spawn beacon for ${groupId}:`, err);

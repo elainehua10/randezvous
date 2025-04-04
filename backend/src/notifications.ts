@@ -14,7 +14,7 @@ export const sendNotification = async (
   body: string
 ) => {
   try {
-    console.log("HELLO????");
+    //console.log("HELLO????");
     const deviceResult = await sql`
       SELECT device_id
       FROM profile
@@ -28,7 +28,7 @@ export const sendNotification = async (
 
     const deviceId = deviceResult[0].device_id;
 
-    console.log("SENDING NOTIF TO", deviceId);
+    //console.log("SENDING NOTIF TO", deviceId);
 
     // Construct the FCM message
     const message = {
@@ -42,7 +42,7 @@ export const sendNotification = async (
     // Send the notification
     const response = await firebaseAdmin.messaging().send(message);
 
-    console.log("message response", response);
+    //console.log("message response", response);
 
     return 0;
   } catch (error) {

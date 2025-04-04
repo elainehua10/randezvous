@@ -733,6 +733,12 @@ export const joinGroup = async (req: Request, res: Response) => {
       VALUES (${groupId}, ${userId});
     `;
 
+    await sql`
+      UPDATE profile 
+      SET num_groups = num_groups + 1 
+      WHERE id = ${userId};
+    `;
+
     res.status(200).json({ message: "Successfully joined the group" });
   } catch (error) {
     console.error("Error joining group:", error);
