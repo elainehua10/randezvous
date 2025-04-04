@@ -64,13 +64,26 @@ async function getRandomCoordinates(groupId: string) {
 
 export async function spawnBeacon(groupId: string) {
   const now = new Date();
-  const { latitude, longitude } = await getRandomCoordinates(groupId);
+  //const { latitude, longitude } = await getRandomCoordinates(groupId);
+  const { latitude, longitude } = { latitude: 37.3346, longitude: -122.0090 };  // apple headquarters
 
   try {
-    // delete existing beacons for the group
-    // await sql`
-    //   DELETE FROM beacon WHERE group_id = ${groupId};
-    // `;
+    // Get the existing beacon ID for the group
+    const [oldBeacon] = await sql`
+        SELECT id FROM beacon WHERE group_id = ${groupId};
+    `;
+
+    // Delete user_beacons entries tied to the old beacon
+    if (oldBeacon) {
+        await sql`
+            DELETE FROM user_beacons WHERE beacon_id = ${oldBeacon.id};
+        `;
+        // Now delete the old beacon itself
+        await sql`
+            DELETE FROM beacon WHERE id = ${oldBeacon.id};
+        `;
+    }
+
     // insert new beacon
     await sql`
       INSERT INTO beacon (
@@ -114,11 +127,68 @@ export async function spawnBeacon(groupId: string) {
     } else {
       console.log("No members have notifications enabled.");
     }
+
+    // set up notification for unreached users
+    setTimeout(() => {
+        notifyUnreachedUsers(groupId);
+      }, 5 * 1000); // time in ms
+      
   } catch (err) {
     console.error(`❌ Failed to spawn beacon for ${groupId}:`, err);
   }
 }
 
+// === Notify unreached users ===
+async function notifyUnreachedUsers(groupId: string) {
+    try {
+      // Get latest beacon
+      const [beacon] = await sql`
+        SELECT id FROM beacon
+        WHERE group_id = ${groupId}
+        ORDER BY started_at DESC
+        LIMIT 1;
+      `;
+      if (!beacon) return;
+  
+      // Get all group members who have notifications enabled
+      const members = await sql`
+        SELECT p.id AS user_id
+        FROM user_group ug
+        JOIN profile p ON ug.user_id = p.id
+        WHERE ug.group_id = ${groupId} AND p.notifications_enabled = true;
+      `;
+  
+      // Get users who have already reached the beacon
+      const reached = await sql`
+        SELECT user_id FROM user_beacons
+        WHERE beacon_id = ${beacon.id} AND reached = true;
+      `;
+  
+      const reachedIds = new Set(reached.map((r: any) => r.user_id));
+  
+      // Filter members to only those who have not reached the beacon
+      const unreached = members.filter((m: any) => !reachedIds.has(m.user_id));
+  
+      // Send notifications
+      if (unreached.length > 0) {
+        const notificationPromises = unreached.map((user) =>
+          sendNotification(
+            user.user_id,
+            "Reminder: You haven't reached the beacon!",
+            "A beacon was placed. Head to the location before it's too late!"
+          )
+        );
+        await Promise.all(notificationPromises);
+        console.log(`🔔 Sent reminder notifications to ${unreached.length} users.`);
+      } else {
+        console.log("✅ All users have reached the beacon or notifications are disabled.");
+      }
+  
+    } catch (err) {
+      console.error("❌ Failed to notify unreached users:", err);
+    }
+  }
+  
 // === Helper to schedule a beacon job ===
 function scheduleGroupBeacon(
   groupId: string,
@@ -164,6 +234,8 @@ export async function setupBeaconSchedulers() {
 
   for (const group of groups) {
     const { id: groupId, beacon_frequency } = group;
+    
+    // if (scheduledJobs.has(groupId)) continue;
 
     const job = scheduleGroupBeacon(groupId, beacon_frequency);
     if (job) {
@@ -171,7 +243,7 @@ export async function setupBeaconSchedulers() {
     }
   }
   logScheduledJobs();
-  console.log("📆 Beacon schedulers set up.");
+  // console.log("📆 Beacon schedulers set up.");
 }
 
 // === Rescheduling Logic ===
@@ -179,6 +251,13 @@ export function rescheduleBeaconJob(groupId: string, newFrequency: number) {
   const existingJob = scheduledJobs.get(groupId);
   if (existingJob) {
     existingJob.cancel();
+    scheduledJobs.delete(groupId);
+    console.log(`🗑️ Cancelled existing job for group ${groupId}`);
+  }
+
+  if (newFrequency == 0) {
+    console.log(`❌ No frequency set for group ${groupId}, not scheduling.`);
+    return;
   }
 
   const job = scheduleGroupBeacon(groupId, newFrequency);
