@@ -162,7 +162,7 @@ class ConnectedUser {
     this.broker.subscribe(newGroupId, this);
   }
 
-  publish(long: number, lat: number) {
+  async publish(long: number, lat: number) {
     if (!this.userInfo) {
       return;
     }
@@ -186,14 +186,14 @@ class ConnectedUser {
     this.lastBeaconCheckTime = now;
 
     // Beacon proximity check & auto-confirmation
-    (async () => {
-      if (!this.activeGroupId || !this.userInfo) return;
+    this.groupIds.forEach(async (groupId) => {
+      if (!groupId || !this.userInfo) return;
 
       try {
         const [beacon] = await sql`
           SELECT id, latitude, longitude
           FROM beacon
-          WHERE group_id = ${this.activeGroupId}
+          WHERE group_id = ${groupId}
           ORDER BY started_at DESC
           LIMIT 1;
         `;
@@ -207,7 +207,7 @@ class ConnectedUser {
           beacon.longitude
         );
 
-        if (distance <= 50) {
+        if (distance <= 200) {
           // Check if already confirmed
           const [alreadyConfirmed] = await sql`
             SELECT 1 FROM user_beacons
@@ -217,6 +217,7 @@ class ConnectedUser {
 
           if (!alreadyConfirmed) {
             console.log("Within range! Confirming arrival...");
+            this.socket.send("You've reached the beacon!");
 
             await sql`
               INSERT INTO user_beacons (beacon_id, user_id, reached, time_reached, latitude, longitude)
@@ -224,13 +225,13 @@ class ConnectedUser {
             `;
 
             // Reassign points and ranks
-            await assignPointsInternal(this.activeGroupId);
+            await assignPointsInternal(groupId);
           }
         }
       } catch (err) {
         console.error("Beacon auto-check error:", err);
       }
-    })();
+    });
   }
 
   receiveUpdate(data: UserLocationInfo) {

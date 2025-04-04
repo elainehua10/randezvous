@@ -29,6 +29,8 @@ class MapWidgetState extends State<MapWidget> {
   WebSocketChannel? _channel;
   Set<Marker> _markers = {};
   Map<String, User> _userLocations = {}; // Track user locations
+  bool _showBeaconReachedModal = false;
+  String _beaconMessage = "";
 
   @override
   void initState() {
@@ -64,9 +66,17 @@ class MapWidgetState extends State<MapWidget> {
 
     _channel!.stream.listen(
       (message) {
+        if (message == "You've reached the beacon!") {
+          setState(() {
+            _beaconMessage = "You've reached the beacon!";
+            _showBeaconReachedModal = true;
+          });
+          return;
+        }
         final data = jsonDecode(message) as Map<String, dynamic>;
-        final location = User.fromJson(data);
 
+        // Otherwise process as a location update
+        final location = User.fromJson(data);
         setState(() {
           _userLocations[location.id] = location;
           _updateMarkers();
@@ -170,6 +180,89 @@ class MapWidgetState extends State<MapWidget> {
     // To use profile pictures, you'd need to download the image and convert it to BitmapDescriptor
   }
 
+  void _closeBeaconModal() {
+    setState(() {
+      _showBeaconReachedModal = false;
+      _beaconMessage = "";
+    });
+  }
+
+  Widget _buildBeaconReachedModal() {
+    return AnimatedPositioned(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      bottom: _showBeaconReachedModal ? 40 : -200,
+      left: 16,
+      right: 16,
+      child: Material(
+        elevation: 8,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.amber[800]!),
+          ),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header Row
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Icon(Icons.celebration, color: Colors.amber[800], size: 28),
+                  Text(
+                    'Beacon Reached!',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.amber[800],
+                      fontSize: 20,
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.close, color: Colors.amber[800]),
+                    onPressed: _closeBeaconModal,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              // Message Container
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.amber[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.amber[200]!),
+                ),
+                child: Text(
+                  _beaconMessage,
+                  style: const TextStyle(fontSize: 16, color: Colors.black87),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Action Button
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.amber[800],
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(double.infinity, 48),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                onPressed: _closeBeaconModal,
+                child: const Text('Awesome!'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   static const CameraPosition _kGooglePlex = CameraPosition(
     target: LatLng(37.42796133580664, -122.085749655962),
     zoom: 14.4746,
@@ -177,15 +270,20 @@ class MapWidgetState extends State<MapWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return GoogleMap(
-      mapType: MapType.normal,
-      initialCameraPosition: _kGooglePlex,
-      onMapCreated: (GoogleMapController controller) {
-        _controller.complete(controller);
-      },
-      markers: _markers,
-      myLocationEnabled: true,
-      myLocationButtonEnabled: true,
+    return Stack(
+      children: [
+        GoogleMap(
+          mapType: MapType.normal,
+          initialCameraPosition: _kGooglePlex,
+          onMapCreated: (GoogleMapController controller) {
+            _controller.complete(controller);
+          },
+          markers: _markers,
+          myLocationEnabled: true,
+          myLocationButtonEnabled: true,
+        ),
+        _buildBeaconReachedModal(),
+      ],
     );
   }
 
