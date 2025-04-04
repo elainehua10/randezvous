@@ -1,5 +1,8 @@
 import schedule from "node-schedule";
 import sql from "../db";
+import { sendNotification } from "../notifications";
+import { randomUUID } from "crypto";
+
 const scheduledJobs = new Map<string, schedule.Job>();
 
 // Log all active scheduled jobs
@@ -99,6 +102,29 @@ export async function spawnBeacon(groupId: string) {
     `;
     console.log(`✅ Beacon spawned for group ${groupId} at (${latitude}, ${longitude})`);
 
+    // Send notifs
+    const members = await sql`
+      SELECT p.id, p.notifications_enabled
+      FROM user_group ug
+      JOIN profile p ON ug.user_id = p.id
+      WHERE ug.group_id = ${groupId} AND p.notifications_enabled = true;
+    `;
+
+    if (members.length > 0) {
+      const notificationPromises = members.map((member) =>
+        sendNotification(
+          member.id,
+          "New Beacon Spawned!",
+          "A new beacon has been placed. Check the map for its location."
+        )
+      );
+
+      await Promise.all(notificationPromises);
+      console.log(`Sent notifications to ${members.length} members.`);
+    } else {
+      console.log("No members have notifications enabled.");
+    }
+
     // set up notification for unreached users
     setTimeout(() => {
         notifyUnreachedUsers(groupId);
@@ -152,7 +178,7 @@ async function notifyUnreachedUsers(groupId: string) {
 // === Helper to schedule a beacon job ===
 function scheduleGroupBeacon(groupId: string, frequency: number): schedule.Job | null {
 
-  // spawnBeacon(groupId); // Spawn immediately
+   spawnBeacon(groupId); // Spawn immediately
 
   let cronExpr: string;
   let maxDelay: number;
