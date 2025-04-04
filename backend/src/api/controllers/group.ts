@@ -318,6 +318,7 @@ export const inviteToGroup = async (req: Request, res: Response) => {
     console.log("NOTIF: ", notifications_enabled);
     // Send notification to the invited user
     if (notifications_enabled) {
+      console.log("Sending notification to user:", toUserId);
       await sendNotification(
         toUserId,
         "Group Invitation",
