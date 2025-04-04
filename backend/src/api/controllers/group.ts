@@ -536,8 +536,8 @@ export const getGroupMembers = async (req: Request, res: Response) => {
 
     // Check if the group exists and fetch the leader's ID and group name
     const group = await sql`
-      SELECT leader_id, name, icon_url, is_public, beacon_frequency FROM groups WHERE id = ${groupId};
-    `;
+    SELECT leader_id, name, icon_url, is_public, beacon_frequency FROM groups WHERE id = ${groupId};
+  `;
 
     if (group.length === 0) {
       return res.status(404).json({ error: "Group not found." });
@@ -550,13 +550,18 @@ export const getGroupMembers = async (req: Request, res: Response) => {
     const isUserLeader = userId === leader_id;
     const beaconFrequency = group[0].beacon_frequency;
 
-    // Fetch all members of the group
+    // Fetch all members of the group, filtering out those in a blocked relationship with the current user
     const members = await sql`
-      SELECT u.id, u.first_name, u.last_name, u.profile_picture, u.username
-      FROM user_group ug
-      JOIN profile u ON ug.user_id = u.id
-      WHERE ug.group_id = ${groupId};
-    `;
+    SELECT u.id, u.first_name, u.last_name, u.profile_picture, u.username
+    FROM user_group ug
+    JOIN profile u ON ug.user_id = u.id
+    WHERE ug.group_id = ${groupId}
+      AND NOT EXISTS (
+        SELECT 1 FROM blocked b
+        WHERE (b.user_id = ${userId} AND b.blocked_id = u.id)
+           OR (b.user_id = u.id AND b.blocked_id = ${userId})
+      )
+  `;
 
     return res.status(200).json({
       groupId,

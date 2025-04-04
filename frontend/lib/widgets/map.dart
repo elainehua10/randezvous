@@ -254,7 +254,7 @@ class MapWidgetState extends State<MapWidget> {
                   ),
                 ),
                 onPressed: _closeBeaconModal,
-                child: const Text('Awesome!'),
+                child: const Text("I'm Here!"),
               ),
             ],
           ),

@@ -216,6 +216,7 @@ export const deleteAccount = async (req: Request, res: Response) => {
     await Promise.all([
       sql`DELETE FROM profile WHERE id = ${userId};`,
       sql`DELETE FROM user_group WHERE user_id = ${userId};`,
+      sql`DELETE FROM user_beacons WHERE user_id = ${userId};`,
       sql`DELETE FROM blocked WHERE user_id = ${userId} OR blocked_id = ${userId};`,
       sql`DELETE FROM invite WHERE from_user_id = ${userId} OR to_user_id = ${userId};`,
       sql`DELETE FROM groups WHERE leader_id = ${userId};`,
@@ -361,7 +362,13 @@ export const getUserProfileInfo = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    const { first_name, last_name, username, profile_picture, notifications_enabled } = result[0];
+    const {
+      first_name,
+      last_name,
+      username,
+      profile_picture,
+      notifications_enabled,
+    } = result[0];
 
     res.status(200).json({
       first_name,
@@ -404,7 +411,6 @@ export const getMemberProfile = async (req: Request, res: Response) => {
       points: group.points,
       rank: group.rank,
     }));
-
 
     res.status(200).json({
       profile: {

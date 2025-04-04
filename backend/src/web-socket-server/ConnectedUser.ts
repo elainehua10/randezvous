@@ -111,7 +111,9 @@ class ConnectedUser {
 
   async setActiveGroup(newGroupId: string) {
     if (!this.groupIds.has(newGroupId) && newGroupId != "-1") {
-      console.error(`User ${this.userInfo?.user_id} is not a member of group ${newGroupId}`);
+      console.error(
+        `User ${this.userInfo?.user_id} is not a member of group ${newGroupId}`
+      );
       return;
     }
 
@@ -266,19 +268,20 @@ class ConnectedUser {
               `;
 
             if (otherMembers.length > 0) {
-            const notifTitle = `${this.userInfo.first_name} reached the beacon!`;
-            const notifBody = `${this.userInfo.first_name} just arrived at the beacon for group ${groupId}.`;
+              const notifTitle = `${this.userInfo.first_name} reached the beacon!`;
+              const notifBody = `${this.userInfo.first_name} just arrived at the beacon for group ${groupId}.`;
 
-            const notifPromises = otherMembers.map((member) =>
-              sendNotification(member.id, notifTitle, notifBody)
-            );
+              const notifPromises = otherMembers.map((member) =>
+                sendNotification(member.id, notifTitle, notifBody)
+              );
 
-            await Promise.all(notifPromises);
+              await Promise.all(notifPromises);
             }
-                        
 
             // Reassign points and ranks
             await assignPointsInternal(groupId);
+          } else {
+            console.log("ALREAYD CONFIRMED!");
           }
         }
       } catch (err) {
