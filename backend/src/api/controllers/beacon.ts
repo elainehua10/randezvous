@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 import sql from "../../db";
-
-
+import { spawnBeacon } from "../../jobs/beaconSpawner";
 
 // Confirm a user has reached the beacon
 export const confirmArrival = async (req: Request, res: Response) => {
@@ -27,8 +26,8 @@ export const confirmArrival = async (req: Request, res: Response) => {
       LIMIT 1;
     `;
 
-    if (!beacon) return res.status(404).json({ error: "No active beacon found" });
-
+    if (!beacon)
+      return res.status(404).json({ error: "No active beacon found" });
 
     // Insert arrival
     await sql`
@@ -40,8 +39,9 @@ export const confirmArrival = async (req: Request, res: Response) => {
     // Automatically assign points and ranks
     await assignPointsInternal(groupId);
 
-    return res.status(200).json({ message: "Arrival confirmed and points assigned!" });
-
+    return res
+      .status(200)
+      .json({ message: "Arrival confirmed and points assigned!" });
   } catch (error) {
     console.error("Error confirming arrival:", error);
     return res.status(500).json({ error: "Internal server error" });
@@ -119,6 +119,21 @@ const assignPointsInternal = async (groupId: string) => {
   }
 };
 
+export const manualSpawn = async (req: Request, res: Response) => {
+  const { groupId } = req.body;
+  if (!groupId) {
+    return res.status(400).json({ error: "groupId is required" });
+  }
+  try {
+    await spawnBeacon(groupId);
+    return res
+      .status(200)
+      .json({ message: `Beacon spawned for group ${groupId}` });
+  } catch (err) {
+    console.error("Error in spawnBeacon:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
 
 // Assign points based on arrival order
 export const assignPoints = async (req: Request, res: Response) => {

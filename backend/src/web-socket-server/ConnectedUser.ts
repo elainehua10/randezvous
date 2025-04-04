@@ -2,6 +2,7 @@ import { WebSocket } from "ws";
 import sql from "../db";
 import PubSubBroker from "./PubSubBroker";
 import { assignPointsInternal } from "../api/controllers/beacon";
+import { sendNotification } from "../notifications";
 
 export interface UserLocationInfo {
   user_id: string;
@@ -110,7 +111,7 @@ class ConnectedUser {
 
   async setActiveGroup(newGroupId: string) {
     if (!this.groupIds.has(newGroupId) && newGroupId != "-1") {
-      console.error(`User is not a member of group ${newGroupId}`);
+      console.error(`User ${this.userInfo?.user_id} is not a member of group ${newGroupId}`);
       return;
     }
 
@@ -223,6 +224,28 @@ class ConnectedUser {
               INSERT INTO user_beacons (beacon_id, user_id, reached, time_reached, latitude, longitude)
               VALUES (${beacon.id}, ${this.userInfo.user_id}, true, NOW(), ${lat}, ${long});
             `;
+
+            // Notify other members in the group when this user reaches the beacon
+            const otherMembers = await sql`
+              SELECT p.id, p.notifications_enabled
+              FROM user_group ug
+              JOIN profile p ON ug.user_id = p.id
+              WHERE ug.group_id = ${groupId}
+                AND p.id != ${this.userInfo.user_id}
+                AND p.notifications_enabled = true
+              `;
+
+            if (otherMembers.length > 0) {
+            const notifTitle = `${this.userInfo.first_name} reached the beacon!`;
+            const notifBody = `${this.userInfo.first_name} just arrived at the beacon for group ${groupId}.`;
+
+            const notifPromises = otherMembers.map((member) =>
+              sendNotification(member.id, notifTitle, notifBody)
+            );
+
+            await Promise.all(notifPromises);
+            }
+                        
 
             // Reassign points and ranks
             await assignPointsInternal(groupId);
