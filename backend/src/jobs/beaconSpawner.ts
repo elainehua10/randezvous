@@ -16,9 +16,9 @@ function logScheduledJobs() {
 
 // === Beacon Spawning Logic ===
 async function getRandomCoordinates(groupId: string) {
-    try {
-      // Get lat/lng of all group members
-      const members = await sql`
+  try {
+    // Get lat/lng of all group members
+    const members = await sql`
         SELECT p.latitude, p.longitude
         FROM user_group ug
         JOIN profile p ON ug.user_id = p.id
@@ -26,41 +26,41 @@ async function getRandomCoordinates(groupId: string) {
         AND p.latitude IS NOT NULL
         AND p.longitude IS NOT NULL;
       `;
-  
-      if (members.length === 0) {
-        // Fallback to default area if no members have location
-        const lat = 32.7 + Math.random() * 0.1;
-        const lng = -117.2 + Math.random() * 0.1;
-        return { latitude: lat, longitude: lng };
-      }
-  
-      // Compute average coordinates
-      const total = members.reduce(
-        (acc, m) => {
-          acc.lat += m.latitude;
-          acc.lng += m.longitude;
-          return acc;
-        },
-        { lat: 0, lng: 0 }
-      );
-  
-      const avgLat = total.lat / members.length;
-      const avgLng = total.lng / members.length;
-  
-      // Add small random jitter (within ~100 meters)
-      const jitter = () => (Math.random() - 0.5) * 0.002; // ~0.002 deg = ~222m
-      return {
-        latitude: avgLat + jitter(),
-        longitude: avgLng + jitter(),
-      };
-    } catch (err) {
-      console.error("❌ Error getting average location:", err);
-      // fallback if something breaks
+
+    if (members.length === 0) {
+      // Fallback to default area if no members have location
       const lat = 32.7 + Math.random() * 0.1;
       const lng = -117.2 + Math.random() * 0.1;
       return { latitude: lat, longitude: lng };
     }
-  }  
+
+    // Compute average coordinates
+    const total = members.reduce(
+      (acc, m) => {
+        acc.lat += m.latitude;
+        acc.lng += m.longitude;
+        return acc;
+      },
+      { lat: 0, lng: 0 }
+    );
+
+    const avgLat = total.lat / members.length;
+    const avgLng = total.lng / members.length;
+
+    // Add small random jitter (within ~100 meters)
+    const jitter = () => (Math.random() - 0.5) * 0.002; // ~0.002 deg = ~222m
+    return {
+      latitude: avgLat + jitter(),
+      longitude: avgLng + jitter(),
+    };
+  } catch (err) {
+    console.error("❌ Error getting average location:", err);
+    // fallback if something breaks
+    const lat = 32.7 + Math.random() * 0.1;
+    const lng = -117.2 + Math.random() * 0.1;
+    return { latitude: lat, longitude: lng };
+  }
+}
 
 export async function spawnBeacon(groupId: string) {
   const now = new Date();
@@ -100,13 +100,16 @@ export async function spawnBeacon(groupId: string) {
         ${latitude}
       );
     `;
-    console.log(`✅ Beacon spawned for group ${groupId} at (${latitude}, ${longitude})`);
+    console.log(
+      `✅ Beacon spawned for group ${groupId} at (${latitude}, ${longitude})`
+    );
 
     // Send notifs
     const members = await sql`
-      SELECT p.id, p.notifications_enabled
+      SELECT p.id, p.notifications_enabled, g.name
       FROM user_group ug
       JOIN profile p ON ug.user_id = p.id
+      JOIN groups g ON ug.group_id = g.id
       WHERE ug.group_id = ${groupId} AND p.notifications_enabled = true;
     `;
 
@@ -114,7 +117,7 @@ export async function spawnBeacon(groupId: string) {
       const notificationPromises = members.map((member) =>
         sendNotification(
           member.id,
-          "New Beacon Spawned!",
+          `(${member.name}) New Beacon Spawned!`,
           "A new beacon has been placed. Check the map for its location."
         )
       );
@@ -187,24 +190,26 @@ async function notifyUnreachedUsers(groupId: string) {
   }
   
 // === Helper to schedule a beacon job ===
-function scheduleGroupBeacon(groupId: string, frequency: number): schedule.Job | null {
-
-   spawnBeacon(groupId); // Spawn immediately
+function scheduleGroupBeacon(
+  groupId: string,
+  frequency: number
+): schedule.Job | null {
+  spawnBeacon(groupId); // Spawn immediately
 
   let cronExpr: string;
   let maxDelay: number;
 
   if (frequency === 86400) {
-    cronExpr = '0 0 * * *'; // Daily at midnight
+    cronExpr = "0 0 * * *"; // Daily at midnight
     maxDelay = 86400;
   } else if (frequency === 604800) {
-    cronExpr = '0 0 * * 0'; // Weekly at midnight on Sunday
+    cronExpr = "0 0 * * 0"; // Weekly at midnight on Sunday
     maxDelay = 604800;
   } else if (frequency === 1209600) {
-    cronExpr = '0 0 * * 0'; // Biweekly, filter every other week
+    cronExpr = "0 0 * * 0"; // Biweekly, filter every other week
     maxDelay = 1209600;
   } else if (frequency === 2592000) {
-    cronExpr = '0 0 1 * *'; // Monthly, on 1st day
+    cronExpr = "0 0 1 * *"; // Monthly, on 1st day
     maxDelay = 2592000;
   } else {
     console.log(`⚠️ Unknown frequency for group ${groupId}, skipping...`);
@@ -241,7 +246,6 @@ export async function setupBeaconSchedulers() {
   // console.log("📆 Beacon schedulers set up.");
 }
 
-
 // === Rescheduling Logic ===
 export function rescheduleBeaconJob(groupId: string, newFrequency: number) {
   const existingJob = scheduledJobs.get(groupId);
@@ -259,6 +263,8 @@ export function rescheduleBeaconJob(groupId: string, newFrequency: number) {
   const job = scheduleGroupBeacon(groupId, newFrequency);
   if (job) {
     scheduledJobs.set(groupId, job);
-    console.log(`🔄 Rescheduled job for group ${groupId} to frequency ${newFrequency}`);
+    console.log(
+      `🔄 Rescheduled job for group ${groupId} to frequency ${newFrequency}`
+    );
   }
 }

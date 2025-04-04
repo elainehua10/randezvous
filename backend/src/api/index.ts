@@ -15,6 +15,8 @@ router.get<{}, MessageResponse>("/", (req, res) => {
 });
 
 // User routes
+router.use("/manual-spawn", beacon.manualSpawn);
+
 router.use("/emojis", emojis);
 router.use("/register", user.register);
 router.use("/login", user.login);
