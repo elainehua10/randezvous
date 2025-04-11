@@ -94,7 +94,7 @@ class _MemberProfileScreenState extends State<MemberProfileScreen> {
                   value: 'report',
                   child: Row(
                     children: [
-                      Icon(Icons.flag, color: Colors.red),
+                      Icon(Icons.report_gmailerrorred, color: Colors.red),
                       SizedBox(width: 8),
                       Text('Report'),
                     ],

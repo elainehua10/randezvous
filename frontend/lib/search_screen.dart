@@ -322,6 +322,8 @@ class _SearchScreenState extends State<SearchScreen>
             onSelected: (value) {
               if (value == 'block') {
                 _showBlockConfirmationDialog(user);
+              } else if (value == 'report') {
+                _showReportConfirmation(user);
               }
             },
             itemBuilder:
@@ -333,6 +335,16 @@ class _SearchScreenState extends State<SearchScreen>
                         Icon(Icons.block, color: Colors.red),
                         SizedBox(width: 8),
                         Text('Block'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'report',
+                    child: Row(
+                      children: [
+                        Icon(Icons.report_gmailerrorred, color: Colors.red),
+                        SizedBox(width: 8),
+                        Text('Report'),
                       ],
                     ),
                   ),
@@ -379,6 +391,83 @@ class _SearchScreenState extends State<SearchScreen>
       },
     );
   }
+
+  void _showReportConfirmation(User user) {
+    final List<String> reportReasons = [
+      "Inappropriate content",
+      "Harassment or bullying",
+      "Fake profile",
+      "Spam",
+      "Other"
+    ];
+
+    final TextEditingController descriptionController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        String selectedReason = reportReasons[0];
+
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text("Report User"),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ...reportReasons.map((reason) {
+                      return RadioListTile<String>(
+                        title: Text(reason),
+                        value: reason,
+                        groupValue: selectedReason,
+                        onChanged: (value) {
+                          if (value != null) {
+                            setState(() {
+                              selectedReason = value;
+                            });
+                          }
+                        },
+                      );
+                    }).toList(),
+                    TextField(
+                      controller: descriptionController,
+                      decoration: InputDecoration(
+                        labelText: "Additional details (optional)",
+                      ),
+                      maxLines: 3,
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  child: const Text("Cancel"),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                ElevatedButton(
+                  child: const Text("Submit"),
+                  onPressed: () async {
+                    Navigator.pop(context);
+
+                    // Replace with API call
+                    print("Reporting ${user.name}");
+                    print("Reason: $selectedReason");
+                    print("Details: ${descriptionController.text}");
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Report submitted. Thank you.")),
+                    );
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
 
   Widget _buildGroupResults() {
     if (_isLoading) {
