@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:frontend/auth.dart';
+import 'package:frontend/models/user.dart';
 
 class MemberProfileScreen extends StatefulWidget {
   final String userId;
@@ -61,7 +62,48 @@ class _MemberProfileScreenState extends State<MemberProfileScreen> {
           leading: IconButton(
             icon: Icon(Icons.arrow_back_ios_rounded),
             onPressed: () => Navigator.pop(context),
-          )),
+          ),
+          actions: [
+            PopupMenuButton<String>(
+              onSelected: (value) {
+                final profile = userProfile?['profile'];
+                final user = User(
+                  id: widget.userId,
+                  name: '${profile['first_name']} ${profile['last_name']}',
+                  username: profile['username'],
+                  avatarUrl: profile['profile_picture']      
+                );
+                if (value == 'block') {
+                  _showBlockConfirmation(user);
+                } else if (value == 'report') {
+                  //_showReportConfirmation();
+                }
+              },
+              itemBuilder: (BuildContext context) => [
+                PopupMenuItem(
+                  value: 'block',
+                  child: Row(
+                    children: [
+                      Icon(Icons.block, color: Colors.red),
+                      SizedBox(width: 8),
+                      Text('Block'),
+                    ],
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'report',
+                  child: Row(
+                    children: [
+                      Icon(Icons.flag, color: Colors.red),
+                      SizedBox(width: 8),
+                      Text('Report'),
+                    ],
+                  ),
+                ),
+              ],
+            )
+          ],
+          ),
       body: isLoading
           ? Center(
               child: CircularProgressIndicator(
@@ -78,6 +120,62 @@ class _MemberProfileScreenState extends State<MemberProfileScreen> {
                 ],
               ),
             ),
+    );
+  }
+
+  void _showBlockConfirmation(User user) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Block User'),
+          content: Text(
+            'Are you sure you want to block ${user.name}? This action cannot be undone.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _blockUser(user.id ?? '');
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              child: const Text('Block'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _blockUser(String blockedUserId) async {
+    try {
+      final response = await Auth.makeAuthenticatedPostRequest("user/block", {
+        "blockedId": blockedUserId,
+      });
+
+      if (response.statusCode == 200) {
+        _showSuccessSnackBar('User blocked successfully!');
+      } else {
+        _showErrorSnackBar('Failed to block user: ${response.body}');
+      }
+    } catch (e) {
+      _showErrorSnackBar('Error blocking user: $e');
+    }
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
+    );
+  }
+
+  void _showSuccessSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.green),
     );
   }
 
