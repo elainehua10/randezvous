@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/contact_us_page.dart';
 
 class PrivacySecurityPage extends StatelessWidget {
   const PrivacySecurityPage({super.key});
@@ -117,7 +118,10 @@ class PrivacySecurityPage extends StatelessWidget {
                   const SizedBox(height: 12),
                   ElevatedButton(
                     onPressed: () {
-                      // Contact support action
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const ContactUsPage()),
+                      );
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.amber[800],
@@ -138,23 +142,6 @@ class PrivacySecurityPage extends StatelessWidget {
                 ],
               ),
             ),
-            /*const SizedBox(height: 20),
-            Center(
-              child: TextButton.icon(
-                onPressed: () {
-                  // Action for reporting issues
-                },
-                icon: Icon(Icons.help_outline, color: Colors.amber[800]),
-                label: Text(
-                  "Get Help",
-                  style: TextStyle(
-                    color: Colors.amber[800],
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),*/
           ],
         ),
       ),
