@@ -12,7 +12,7 @@ import 'package:frontend/search_screen.dart';
 import 'package:frontend/member_profile.dart';
 import 'package:frontend/faq_page.dart';
 import 'package:frontend/privacy_security_page.dart';
-import 'package:frontend/report_issue_page.dart';
+import 'package:frontend/contact_us_page.dart';
 // import 'package:supabase_flutter/supabase_flutter.dart';
 // import 'package:flutter_dotenv/flutter_dotenv.dart';
 
@@ -67,7 +67,7 @@ class MyApp extends StatelessWidget {
         '/settings': (context) => SettingsPage(),
         '/privacy-security': (context) => PrivacySecurityPage(),
         '/faq': (context) => FAQPage(),
-        '/report-issue': (context) => ReportIssuePage(),
+        '/contact-us': (context) => ContactUsPage(),
         '/member-profile': (context) => MemberProfileScreen(userId: ''),
       },
       onGenerateRoute: (settings) {

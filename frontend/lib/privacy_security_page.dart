@@ -70,7 +70,7 @@ class PrivacySecurityPage extends StatelessWidget {
               isLast: true,
             ),
             const SizedBox(height: 30),
-            Container(
+            /*Container(
               padding: const EdgeInsets.symmetric(
                 horizontal: 24.0,
                 vertical: 16.0,
@@ -99,8 +99,46 @@ class PrivacySecurityPage extends StatelessWidget {
                   ),
                 ],
               ),
+            ),*/
+
+            Container(
+              padding: const EdgeInsets.all(16),
+              color: Colors.white,
+              child: Column(
+                children: [
+                  Text(
+                    "Can't find what you're looking for?",
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[700],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    onPressed: () {
+                      // Contact support action
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.amber[800],
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text(
+                      "Contact Support",
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 20),
+            /*const SizedBox(height: 20),
             Center(
               child: TextButton.icon(
                 onPressed: () {
@@ -116,7 +154,7 @@ class PrivacySecurityPage extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 16),*/
           ],
         ),
       ),
