@@ -19,7 +19,12 @@ class PubSubBroker {
   publish(topic: string, data: any) {
     const subscribers = this.topics.get(topic);
     if (subscribers) {
-      subscribers.forEach((subscriber) => subscriber.receiveUpdate(data));
+      subscribers.forEach((subscriber) => {
+        subscriber.receiveUpdate(data);
+        if (data.user_id == "BEACON") {
+          console.log(subscriber.userInfo, data);
+        }
+      });
     }
   }
 }

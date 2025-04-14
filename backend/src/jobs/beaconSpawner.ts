@@ -67,10 +67,6 @@ export async function spawnBeacon(groupId: string) {
   const now = new Date();
   const { latitude, longitude } = await getRandomCoordinates(groupId);
 
-  console.log(longitude, latitude);
-
-  // const { latitude, longitude } = { latitude: 37.3346, longitude: -122.0090 };  // apple headquarters
-
   try {
     // Get the existing beacon ID for the group
     const [oldBeacon] = await sql`
@@ -104,7 +100,7 @@ export async function spawnBeacon(groupId: string) {
         ${latitude}
       );
     `;
-    locationBroker.publish(`${groupId}`, {
+    locationBroker.publish("" + groupId, {
       user_id: "BEACON",
       first_name: "",
       last_name: "",
@@ -113,9 +109,6 @@ export async function spawnBeacon(groupId: string) {
       longitude,
       latitude,
     });
-    console.log(
-      `✅ Beacon spawned for group ${groupId} at (${latitude}, ${longitude})`
-    );
 
     // Send notifs
     const members = await sql`
@@ -137,6 +130,10 @@ export async function spawnBeacon(groupId: string) {
 
       await Promise.all(notificationPromises);
       console.log(`Sent notifications to ${members.length} members.`);
+
+      console.log(
+        `✅ Beacon spawned for group ${groupId} at (${latitude}, ${longitude})`
+      );
     } else {
       console.log("No members have notifications enabled.");
     }
@@ -190,7 +187,11 @@ async function notifyUnreachedUsers(groupId: string) {
           "A beacon was placed. Head to the location before it's too late!"
         )
       );
-      await Promise.all(notificationPromises);
+      try {
+        await Promise.all(notificationPromises);
+      } catch (e) {
+        console.log("error");
+      }
       console.log(
         `🔔 Sent reminder notifications to ${unreached.length} users.`
       );
@@ -209,7 +210,7 @@ function scheduleGroupBeacon(
   groupId: string,
   frequency: number
 ): schedule.Job | null {
-  spawnBeacon(groupId); // Spawn immediately
+  // spawnBeacon(groupId); // Spawn immediately
 
   let cronExpr: string;
   let maxDelay: number;

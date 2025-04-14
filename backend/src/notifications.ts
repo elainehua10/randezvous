@@ -14,7 +14,6 @@ export const sendNotification = async (
   body: string
 ) => {
   try {
-    console.log("HELLO????");
     const deviceResult = await sql`
       SELECT device_id
       FROM profile
@@ -22,13 +21,10 @@ export const sendNotification = async (
     `;
 
     if (deviceResult.length === 0 || !deviceResult[0].device_id) {
-      console.log("NO DEVICE");
       return -1;
     }
 
     const deviceId = deviceResult[0].device_id;
-
-    console.log("SENDING NOTIF TO", deviceId);
 
     // Construct the FCM message
     const message = {
@@ -40,13 +36,10 @@ export const sendNotification = async (
     };
 
     // Send the notification
-    const response = await firebaseAdmin.messaging().send(message);
-
-    console.log("message response", response);
+    await firebaseAdmin.messaging().send(message);
 
     return 0;
   } catch (error) {
-    console.error("Error sending notification:", error);
     return -1;
   }
 };
