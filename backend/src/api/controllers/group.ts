@@ -816,3 +816,29 @@ export const checkMembership = async (req: Request, res: Response) => {
     return res.status(500).json({ error: "Internal server error" });
   }
 };
+
+// Get group leaderboard
+export const getGroupLeaderboard = async (req: Request, res: Response) => {
+  try {
+    // Get pagination parameters from request body with defaults
+    const { limit = 100 } = req.body;
+
+    // Validate limit is a positive number
+    if (isNaN(limit) || limit <= 0) {
+      return res.status(400).json({ error: "Limit must be a positive number" });
+    }
+
+    const leaderboardData = await sql`
+      SELECT id, name, is_public, leader_id, group_score, created_at, icon_url
+      FROM groups
+      ORDER BY group_score DESC
+      LIMIT ${limit};
+    `;
+
+    // Return the leaderboard data along with pagination metadata
+    return res.status(200).json(leaderboardData);
+  } catch (error) {
+    console.error("Error fetching group leaderboard:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
