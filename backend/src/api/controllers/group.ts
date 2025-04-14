@@ -9,7 +9,7 @@ import { sendNotification } from "../../notifications";
 import { rescheduleBeaconJob } from "../../jobs/beaconSpawner";
 
 // Set limit to how many groups a user can create
-const MAX_GROUPS_PER_USER = 3;
+const MAX_GROUPS_PER_USER = 10000;
 
 // ============= Leader of group functions ===================
 
