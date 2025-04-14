@@ -659,7 +659,7 @@ export const searchPublicGroups = async (req: Request, res: Response) => {
 
     // Search for public groups where name matches the query (case-insensitive)
     const result = await sql`
-      SELECT id, name, leader_id, is_public, icon_url
+      SELECT id, name, leader_id, is_public, icon_url, group_score
       FROM groups 
       WHERE is_public = true 
       AND LOWER(name) LIKE LOWER(${`%${groupName}%`});
