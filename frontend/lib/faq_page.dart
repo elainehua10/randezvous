@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/contact_us_page.dart';
 
 class FAQPage extends StatefulWidget {
   const FAQPage({super.key});
@@ -329,6 +330,10 @@ class _FAQPageState extends State<FAQPage> {
                 ElevatedButton(
                   onPressed: () {
                     // Contact support action
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const ContactUsPage()),
+                      );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.amber[800],

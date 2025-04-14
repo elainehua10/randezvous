@@ -14,6 +14,7 @@ export const sendNotification = async (
   body: string
 ) => {
   try {
+    //console.log("HELLO????");
     const deviceResult = await sql`
       SELECT device_id
       FROM profile
@@ -25,6 +26,8 @@ export const sendNotification = async (
     }
 
     const deviceId = deviceResult[0].device_id;
+
+    //console.log("SENDING NOTIF TO", deviceId);
 
     // Construct the FCM message
     const message = {
