@@ -455,7 +455,9 @@ export const sendFriendRequest = async (req: Request, res: Response) => {
     return res.status(400).json({ error: "Missing senderId or receiverId" });
   }
   if (senderId === receiverId) {
-    return res.status(400).json({ error: "Cannot send a friend request to yourself" });
+    return res
+      .status(400)
+      .json({ error: "Cannot send a friend request to yourself" });
   }
 
   try {
@@ -511,13 +513,14 @@ export const acceptFriendRequest = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Friend request not found" });
     }
 
-    res.status(200).json({ message: "Friend request accepted", request: updated[0] });
+    res
+      .status(200)
+      .json({ message: "Friend request accepted", request: updated[0] });
   } catch (err) {
     console.error("Error accepting friend request:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 };
-
 
 export const setDeviceId = async (req: Request, res: Response) => {
   try {
@@ -574,6 +577,50 @@ export const getUserGroups = async (req: Request, res: Response) => {
     res.status(200).json(groups);
   } catch (error) {
     console.error("Error fetching user groups:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const getAllAchievements = async (req: Request, res: Response) => {
+  try {
+    const achievements = await sql`
+      SELECT id, name, description, icon_url -- Add other relevant columns if needed
+      FROM achievements
+      ORDER BY name; -- Or order by ID, points, etc.
+    `;
+
+    res.status(200).json({ achievements });
+  } catch (error) {
+    console.error("Error fetching all achievements:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// Retrieve achievements unlocked by a specific user
+export const getUnlockedAchievements = async (req: Request, res: Response) => {
+  const { userId } = req.body;
+
+  if (!userId) {
+    return res.status(400).json({ error: "Missing userId" });
+  }
+
+  try {
+    const unlockedAchievements = await sql`
+      SELECT 
+        a.id, 
+        a.name, 
+        a.description, 
+        a.icon_url, 
+        ua.unlocked_at -- Select other achievement columns as needed
+      FROM user_achievements ua
+      JOIN achievements a ON ua.achievement_id = a.id
+      WHERE ua.user_id = ${userId}
+      ORDER BY ua.unlocked_at DESC; -- Or order by achievement name, etc.
+    `;
+
+    res.status(200).json({ unlocked_achievements: unlockedAchievements });
+  } catch (error) {
+    console.error("Error fetching unlocked achievements:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
