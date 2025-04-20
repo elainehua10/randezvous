@@ -2,6 +2,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:frontend/auth.dart';
 import 'package:frontend/group_screen.dart';
+import 'package:frontend/leaderboard_group_list.dart';
 import 'package:frontend/login.dart';
 import 'package:frontend/register.dart';
 import 'package:frontend/map_screen.dart';
@@ -63,7 +64,8 @@ class MyApp extends StatelessWidget {
         '/login': (context) => LoginScreen(),
         '/register': (context) => RegisterScreen(),
         '/home': (context) => MapScreen(),
-        '/leaderboard': (context) => LeaderboardPage(),
+        '/leaderboard-groups': (context) => LeaderboardGroupList(),
+        '/leaderboard': (context) => LeaderboardPage(groupId: ''),
         '/profile': (context) => ProfileScreen(),
         '/edit-profile': (context) => EditProfileScreen(),
         '/settings': (context) => SettingsPage(),

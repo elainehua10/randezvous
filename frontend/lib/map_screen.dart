@@ -302,7 +302,7 @@ class _MapScreenState extends State<MapScreen> {
             left: 20,
             child: GestureDetector(
               onTap: () {
-                Navigator.pushNamed(context, '/leaderboard');
+                Navigator.pushNamed(context, '/leaderboard-groups');
               },
               child: Container(
                 padding: EdgeInsets.all(12),
