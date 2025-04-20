@@ -820,25 +820,29 @@ export const checkMembership = async (req: Request, res: Response) => {
 // Get group leaderboard
 export const getGroupLeaderboard = async (req: Request, res: Response) => {
   try {
-    // Get pagination parameters from request body with defaults
-    const { limit = 100 } = req.body;
+    const { groupId } = req.body;
 
-    // Validate limit is a positive number
-    if (isNaN(limit) || limit <= 0) {
-      return res.status(400).json({ error: "Limit must be a positive number" });
+    if (!groupId) {
+      return res.status(400).json({ error: "Missing groupId" });
     }
 
-    const leaderboardData = await sql`
-      SELECT id, name, is_public, leader_id, group_score, created_at, icon_url
-      FROM groups
-      ORDER BY group_score DESC
-      LIMIT ${limit};
+    const leaderboard = await sql`
+      SELECT 
+        u.id AS user_id, 
+        u.first_name, 
+        u.last_name, 
+        u.profile_picture, 
+        ug.points, 
+        ug.rank
+      FROM user_group ug
+      JOIN profile u ON ug.user_id = u.id
+      WHERE ug.group_id = ${groupId}
+      ORDER BY ug.points DESC;
     `;
 
-    // Return the leaderboard data along with pagination metadata
-    return res.status(200).json(leaderboardData);
+    res.status(200).json(leaderboard);
   } catch (error) {
     console.error("Error fetching group leaderboard:", error);
-    return res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: "Internal server error" });
   }
 };

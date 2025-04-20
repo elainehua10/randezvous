@@ -463,3 +463,25 @@ export const setDeviceId = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
+export const getUserGroups = async (req: Request, res: Response) => {
+  try {
+    const userId = req.body.userId;
+
+    if (!userId) {
+      return res.status(400).json({ error: "Missing userId" });
+    }
+
+    const groups = await sql`
+      SELECT g.id, g.name, g.icon_url
+      FROM user_group ug
+      JOIN groups g ON ug.group_id = g.id
+      WHERE ug.user_id = ${userId};
+    `;
+
+    res.status(200).json(groups);
+  } catch (error) {
+    console.error("Error fetching user groups:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
