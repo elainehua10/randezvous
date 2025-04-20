@@ -25,6 +25,7 @@ router.use("/user/search", requireAuth, user.search);
 router.use("/user/block", requireAuth, user.block);
 router.use("/user/view-profile", user.getMemberProfile);
 router.use("/user/send-friend-request", requireAuth, user.sendFriendRequest);
+router.post("/user/accept-friend-request", user.acceptFriendRequest);
 router.use("/change-username", requireAuth, user.changeUsername);
 router.use("/logout", requireAuth, user.logout);
 router.use("/set-profile-picture", requireAuth, user.setProfilePicture);

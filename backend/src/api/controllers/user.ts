@@ -370,12 +370,32 @@ export const getUserProfileInfo = async (req: Request, res: Response) => {
       notifications_enabled,
     } = result[0];
 
+    const friends = await sql`
+      SELECT p.id, p.username, p.first_name, p.last_name, p.profile_picture
+      FROM friend_requests f
+      JOIN profile p ON (p.id = CASE 
+        WHEN f.sender_id = ${userId} THEN f.receiver_id
+        WHEN f.receiver_id = ${userId} THEN f.sender_id
+        ELSE NULL END)
+      WHERE (f.sender_id = ${userId} OR f.receiver_id = ${userId})
+        AND f.status = 'accepted';
+    `;
+
+    const pendingRequests = await sql`
+        SELECT p.id, p.username, p.first_name, p.last_name, p.profile_picture
+        FROM friend_requests f
+        JOIN profile p ON f.sender_id = p.id
+        WHERE f.receiver_id = ${userId} AND f.status = 'pending';
+    `;
+
     res.status(200).json({
       first_name,
       last_name,
       username,
       profile_picture,
       notifications_enabled,
+      friends,
+      pending_requests: pendingRequests,
     });
   } catch (error) {
     console.error(error);
@@ -469,6 +489,35 @@ export const sendFriendRequest = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
+// Accept friend request
+export const acceptFriendRequest = async (req: Request, res: Response) => {
+  const { senderId, receiverId } = req.body;
+
+  if (!senderId || !receiverId) {
+    return res.status(400).json({ error: "Missing senderId or receiverId" });
+  }
+
+  try {
+    // Update the friend request to accepted
+    const updated = await sql`
+      UPDATE friend_requests
+      SET status = 'accepted', updated_at = timezone('utc', now())
+      WHERE sender_id = ${senderId} AND receiver_id = ${receiverId}
+      RETURNING *;
+    `;
+
+    if (updated.length === 0) {
+      return res.status(404).json({ error: "Friend request not found" });
+    }
+
+    res.status(200).json({ message: "Friend request accepted", request: updated[0] });
+  } catch (err) {
+    console.error("Error accepting friend request:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
 
 export const setDeviceId = async (req: Request, res: Response) => {
   try {

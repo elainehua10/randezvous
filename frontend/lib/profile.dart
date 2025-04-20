@@ -19,6 +19,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String icon = "pfp";
   final ImagePicker _picker = ImagePicker();
   File? _profileImage;
+  List<dynamic> friends = [];
+  List<dynamic> pendingRequests = [];
 
   @override
   void initState() {
@@ -40,6 +42,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           lastName = data['last_name'] ?? 'Last';
           username = data['username'] ?? 'username';
           icon = data['profile_picture'] ?? 'pfp';
+          friends = data['friends'] ?? [];
+          pendingRequests = data['pending_requests'] ?? [];
           isLoading = false;
         });
       } else {
@@ -53,6 +57,68 @@ class _ProfileScreenState extends State<ProfileScreen> {
       });
     }
   }
+
+  void _showFriendList(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => ListView(
+        padding: const EdgeInsets.all(16),
+        children: friends.map((friend) => ListTile(
+          leading: const Icon(Icons.person),
+          title: Text(friend['username'] ?? ''),
+        )).toList(),
+      ),
+    );
+  }
+
+  void _showPendingRequests(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => ListView(
+        padding: const EdgeInsets.all(16),
+        children: pendingRequests.map((request) {
+          return ListTile(
+            leading: const Icon(Icons.person_add),
+            title: Text(request['username'] ?? ''),
+            trailing: ElevatedButton(
+              child: const Text("Accept"),
+              onPressed: () async {
+                final response = await Auth.makeAuthenticatedPostRequest(
+                  'user/accept-friend-request',
+                  {
+                    "senderId": request['id'],
+                    "receiverId": await Auth.getCurrentUserId(),
+                  },
+                );
+
+                Navigator.pop(context);
+
+                if (response.statusCode == 200) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("Friend request accepted")),
+                  );
+
+                  // Refresh state after accepting
+                  _fetchUserDetails();
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("Failed to accept friend request")),
+                  );
+                }
+              },
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -80,6 +146,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Column(
                   children: [
                     _buildProfileHeader(),
+                    const SizedBox(height: 16),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          GestureDetector(
+                            onTap: () => _showFriendList(context),
+                            child: Column(
+                              children: [
+                                Text("${friends.length}", style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                                Text("Friends", style: TextStyle(fontSize: 14, color: Colors.grey[700])),
+                              ],
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () => _showPendingRequests(context),
+                            child: Column(
+                              children: [
+                                Text("${pendingRequests.length}", style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                                Text("Requests", style: TextStyle(fontSize: 14, color: Colors.grey[700])),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                     const SizedBox(height: 24),
                     Container(
                       margin: EdgeInsets.symmetric(horizontal: 16),
