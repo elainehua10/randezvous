@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:frontend/auth.dart';
 import 'package:frontend/models/user.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
 
 class MemberProfileScreen extends StatefulWidget {
   final String userId;
@@ -47,6 +48,24 @@ class _MemberProfileScreenState extends State<MemberProfileScreen> {
       });
     }
   }
+
+  Future<void> _sendFriendRequest() async {
+    final currentUserId = await Auth.getCurrentUserId();
+    final response = await Auth.makeAuthenticatedPostRequest(
+      "user/send-friend-request",
+      {
+        "senderId": currentUserId,
+        "receiverId": widget.userId,
+      },
+    );
+
+    if (response.statusCode == 200) {
+      _showSuccessSnackBar('Friend request sent!');
+    } else {
+      _showErrorSnackBar('Failed to send friend request: ${response.body}');
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -325,6 +344,18 @@ void _showReportConfirmation(User user) {
                 color: Colors.amber[800],
                 fontWeight: FontWeight.w500,
               ),
+            ),
+          ),
+          SizedBox(height: 12),
+          ElevatedButton.icon(
+            onPressed: _sendFriendRequest,
+            icon: Icon(Icons.person_add_alt_1),
+            label: Text("Send Friend Request"),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.amber[800],
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             ),
           ),
         ],

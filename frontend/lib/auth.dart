@@ -6,6 +6,7 @@ import 'package:http/http.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:path/path.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
 
 class Auth {
   static final storage = FlutterSecureStorage();
@@ -88,6 +89,19 @@ class Auth {
       } else {
         await removeTokens();
       }
+    }
+  }
+
+  static Future<String?> getCurrentUserId() async {
+    final token = await getAccessToken();
+    if (token == null) return null;
+
+    try {
+      Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
+      return decodedToken['sub'];
+    } catch (e) {
+      print("Error decoding token: $e");
+      return null;
     }
   }
 

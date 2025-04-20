@@ -13,8 +13,6 @@ import 'package:frontend/member_profile.dart';
 import 'package:frontend/faq_page.dart';
 import 'package:frontend/privacy_security_page.dart';
 import 'package:frontend/contact_us_page.dart';
-// import 'package:supabase_flutter/supabase_flutter.dart';
-// import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:frontend/util.dart';

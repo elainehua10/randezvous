@@ -427,6 +427,49 @@ export const getMemberProfile = async (req: Request, res: Response) => {
   }
 };
 
+// Send friend request
+export const sendFriendRequest = async (req: Request, res: Response) => {
+  const { senderId, receiverId } = req.body;
+
+  if (!senderId || !receiverId) {
+    return res.status(400).json({ error: "Missing senderId or receiverId" });
+  }
+  if (senderId === receiverId) {
+    return res.status(400).json({ error: "Cannot send a friend request to yourself" });
+  }
+
+  try {
+    // Check if users are already friends
+    const existingFriend = await sql`
+      SELECT 1 FROM friend_requests
+      WHERE ((sender_id = ${senderId} AND receiver_id = ${receiverId})
+         OR (sender_id = ${receiverId} AND receiver_id = ${senderId}))
+        AND status = 'accepted';
+    `;
+    if (existingFriend.length > 0) {
+      return res.status(400).json({ error: "You are already friends" });
+    }
+
+    const pendingRequest = await sql`
+      SELECT 1 FROM friend_requests
+      WHERE sender_id = ${senderId} AND receiver_id = ${receiverId} AND status = 'pending';
+    `;
+    if (pendingRequest.length > 0) {
+      return res.status(400).json({ error: "Friend request already sent" });
+    }
+
+    await sql`
+      INSERT INTO friend_requests (sender_id, receiver_id)
+      VALUES (${senderId}, ${receiverId});
+    `;
+
+    res.status(200).json({ message: "Friend request sent successfully" });
+  } catch (error) {
+    console.error("Error sending friend request:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
 export const setDeviceId = async (req: Request, res: Response) => {
   try {
     const { userId, deviceId } = req.body;
