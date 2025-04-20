@@ -296,6 +296,35 @@ class _MapScreenState extends State<MapScreen> {
                 ),
               ),
             ),
+          // Add the leaderboard icon
+          Positioned(
+            bottom: 20,
+            left: 20,
+            child: GestureDetector(
+              onTap: () {
+                Navigator.pushNamed(context, '/leaderboard-groups');
+              },
+              child: Container(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(50),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  Icons.leaderboard_rounded,
+                  color: Colors.amber[800],
+                  size: 28,
+                ),
+              ),
+            ),
+          ),
         ],
       ),
       bottomNavigationBar: Container(
