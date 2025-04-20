@@ -296,13 +296,13 @@ class _MapScreenState extends State<MapScreen> {
                 ),
               ),
             ),
+          // Add the leaderboard icon
           Positioned(
             bottom: 20,
-            right: 20,
+            left: 20,
             child: GestureDetector(
               onTap: () {
-                // Add navigation to the leaderboard page here
-                print("Leaderboard icon tapped");
+                Navigator.pushNamed(context, '/leaderboard');
               },
               child: Container(
                 padding: EdgeInsets.all(12),

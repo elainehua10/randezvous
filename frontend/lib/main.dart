@@ -20,6 +20,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:frontend/util.dart';
 import 'firebase_options.dart';
 import '/services/notification_service.dart';
+import 'package:frontend/leaderboard_page.dart';
 
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
@@ -62,6 +63,7 @@ class MyApp extends StatelessWidget {
         '/login': (context) => LoginScreen(),
         '/register': (context) => RegisterScreen(),
         '/home': (context) => MapScreen(),
+        '/leaderboard': (context) => LeaderboardPage(),
         '/profile': (context) => ProfileScreen(),
         '/edit-profile': (context) => EditProfileScreen(),
         '/settings': (context) => SettingsPage(),
