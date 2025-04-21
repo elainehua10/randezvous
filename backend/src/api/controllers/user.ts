@@ -406,7 +406,8 @@ export const getUserProfileInfo = async (req: Request, res: Response) => {
 // retrieve other user profile information
 export const getMemberProfile = async (req: Request, res: Response) => {
   try {
-    const userId = req.body.userId;
+    const userId = req.body.targetUserId;
+    const currId = req.body.userId;
     const result = await sql`
       SELECT first_name, last_name, username, profile_picture, num_groups
       FROM profile
@@ -416,6 +417,19 @@ export const getMemberProfile = async (req: Request, res: Response) => {
     if (result.length == 0) {
       return res.status(404).json({ error: "User not found" });
     }
+
+    if (!currId || !userId) {
+      return res.status(400).json({ error: "Missing userId or current user ID" });
+    }
+
+    const isFriend = await sql`
+      SELECT 1 FROM friend_requests
+      WHERE 
+        ((sender_id = ${currId} AND receiver_id = ${userId}) OR
+        (sender_id = ${userId} AND receiver_id = ${currId}))
+        AND status = 'accepted'
+      LIMIT 1;
+    `;
 
     const rawGroups = await sql`
       SELECT g.id, g.name, g.icon_url, ug.points, ug.rank
@@ -440,6 +454,7 @@ export const getMemberProfile = async (req: Request, res: Response) => {
         profile_picture: result[0].profile_picture,
       },
       groups: groups,
+      is_friend: isFriend.length > 0,
     });
   } catch (error) {
     console.error("Error fetching user profile:", error);

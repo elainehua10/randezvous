@@ -23,7 +23,7 @@ router.use("/login", user.login);
 router.use("/set-device-id", requireAuth, user.setDeviceId);
 router.use("/user/search", requireAuth, user.search);
 router.use("/user/block", requireAuth, user.block);
-router.use("/user/view-profile", user.getMemberProfile);
+router.use("/user/view-profile", requireAuth, user.getMemberProfile);
 router.use("/user/send-friend-request", requireAuth, user.sendFriendRequest);
 router.post("/user/accept-friend-request", user.acceptFriendRequest);
 router.use("/change-username", requireAuth, user.changeUsername);
