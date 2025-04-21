@@ -86,32 +86,62 @@ class _ProfileScreenState extends State<ProfileScreen> {
           return ListTile(
             leading: const Icon(Icons.person_add),
             title: Text(request['username'] ?? ''),
-            trailing: ElevatedButton(
-              child: const Text("Accept"),
-              onPressed: () async {
-                final response = await Auth.makeAuthenticatedPostRequest(
-                  'user/accept-friend-request',
-                  {
-                    "senderId": request['id'],
-                    "receiverId": await Auth.getCurrentUserId(),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ElevatedButton(
+                  onPressed: () async {
+                    final response = await Auth.makeAuthenticatedPostRequest(
+                      'user/accept-friend-request',
+                      {
+                        "senderId": request['id'],
+                        "receiverId": await Auth.getCurrentUserId(),
+                      },
+                    );
+
+                    Navigator.pop(context);
+
+                    if (response.statusCode == 200) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text("Friend request accepted")),
+                      );
+                      _fetchUserDetails();
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text("Failed to accept friend request")),
+                      );
+                    }
                   },
-                );
+                  child: const Text("Accept"),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton(
+                  onPressed: () async {
+                    final response = await Auth.makeAuthenticatedPostRequest(
+                      'user/decline-friend-request',
+                      {
+                        "senderId": request['id'],
+                        "receiverId": await Auth.getCurrentUserId(),
+                      },
+                    );
 
-                Navigator.pop(context);
+                    Navigator.pop(context);
 
-                if (response.statusCode == 200) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Friend request accepted")),
-                  );
-
-                  // Refresh state after accepting
-                  _fetchUserDetails();
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Failed to accept friend request")),
-                  );
-                }
-              },
+                    if (response.statusCode == 200) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text("Friend request declined")),
+                      );
+                      _fetchUserDetails();
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text("Failed to decline friend request")),
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                  child: const Text("Decline"),
+                ),
+              ],
             ),
           );
         }).toList(),

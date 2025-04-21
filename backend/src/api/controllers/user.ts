@@ -537,6 +537,31 @@ export const acceptFriendRequest = async (req: Request, res: Response) => {
   }
 };
 
+// Decline friend request
+export const declineFriendRequest = async (req: Request, res: Response) => {
+  const { senderId, receiverId } = req.body;
+
+  if (!senderId || !receiverId) {
+    return res.status(400).json({ error: "Missing senderId or receiverId" });
+  }
+
+  try {
+    await sql`
+      DELETE FROM friend_requests
+      WHERE sender_id = ${senderId}
+        AND receiver_id = ${receiverId}
+        AND status = 'pending';
+    `;
+
+    res.status(200).json({ message: "Friend request declined" });
+  } catch (error) {
+    console.error("Error declining request:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+
+
 export const setDeviceId = async (req: Request, res: Response) => {
   try {
     const { userId, deviceId } = req.body;
