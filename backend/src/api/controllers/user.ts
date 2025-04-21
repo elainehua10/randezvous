@@ -370,12 +370,32 @@ export const getUserProfileInfo = async (req: Request, res: Response) => {
       notifications_enabled,
     } = result[0];
 
+    const friends = await sql`
+      SELECT p.id, p.username, p.first_name, p.last_name, p.profile_picture
+      FROM friend_requests f
+      JOIN profile p ON (p.id = CASE 
+        WHEN f.sender_id = ${userId} THEN f.receiver_id
+        WHEN f.receiver_id = ${userId} THEN f.sender_id
+        ELSE NULL END)
+      WHERE (f.sender_id = ${userId} OR f.receiver_id = ${userId})
+        AND f.status = 'accepted';
+    `;
+
+    const pendingRequests = await sql`
+        SELECT p.id, p.username, p.first_name, p.last_name, p.profile_picture
+        FROM friend_requests f
+        JOIN profile p ON f.sender_id = p.id
+        WHERE f.receiver_id = ${userId} AND f.status = 'pending';
+    `;
+
     res.status(200).json({
       first_name,
       last_name,
       username,
       profile_picture,
       notifications_enabled,
+      friends,
+      pending_requests: pendingRequests,
     });
   } catch (error) {
     console.error(error);
@@ -386,7 +406,8 @@ export const getUserProfileInfo = async (req: Request, res: Response) => {
 // retrieve other user profile information
 export const getMemberProfile = async (req: Request, res: Response) => {
   try {
-    const userId = req.body.userId;
+    const userId = req.body.targetUserId;
+    const currId = req.body.userId;
     const result = await sql`
       SELECT first_name, last_name, username, profile_picture, num_groups
       FROM profile
@@ -396,6 +417,19 @@ export const getMemberProfile = async (req: Request, res: Response) => {
     if (result.length == 0) {
       return res.status(404).json({ error: "User not found" });
     }
+
+    if (!currId || !userId) {
+      return res.status(400).json({ error: "Missing userId or current user ID" });
+    }
+
+    const isFriend = await sql`
+      SELECT 1 FROM friend_requests
+      WHERE 
+        ((sender_id = ${currId} AND receiver_id = ${userId}) OR
+        (sender_id = ${userId} AND receiver_id = ${currId}))
+        AND status = 'accepted'
+      LIMIT 1;
+    `;
 
     const rawGroups = await sql`
       SELECT g.id, g.name, g.icon_url, ug.points, ug.rank
@@ -420,12 +454,113 @@ export const getMemberProfile = async (req: Request, res: Response) => {
         profile_picture: result[0].profile_picture,
       },
       groups: groups,
+      is_friend: isFriend.length > 0,
     });
   } catch (error) {
     console.error("Error fetching user profile:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
+// Send friend request
+export const sendFriendRequest = async (req: Request, res: Response) => {
+  const { senderId, receiverId } = req.body;
+
+  if (!senderId || !receiverId) {
+    return res.status(400).json({ error: "Missing senderId or receiverId" });
+  }
+  if (senderId === receiverId) {
+    return res
+      .status(400)
+      .json({ error: "Cannot send a friend request to yourself" });
+  }
+
+  try {
+    // Check if users are already friends
+    const existingFriend = await sql`
+      SELECT 1 FROM friend_requests
+      WHERE ((sender_id = ${senderId} AND receiver_id = ${receiverId})
+         OR (sender_id = ${receiverId} AND receiver_id = ${senderId}))
+        AND status = 'accepted';
+    `;
+    if (existingFriend.length > 0) {
+      return res.status(400).json({ error: "You are already friends" });
+    }
+
+    const pendingRequest = await sql`
+      SELECT 1 FROM friend_requests
+      WHERE sender_id = ${senderId} AND receiver_id = ${receiverId} AND status = 'pending';
+    `;
+    if (pendingRequest.length > 0) {
+      return res.status(400).json({ error: "Friend request already sent" });
+    }
+
+    await sql`
+      INSERT INTO friend_requests (sender_id, receiver_id)
+      VALUES (${senderId}, ${receiverId});
+    `;
+
+    res.status(200).json({ message: "Friend request sent successfully" });
+  } catch (error) {
+    console.error("Error sending friend request:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// Accept friend request
+export const acceptFriendRequest = async (req: Request, res: Response) => {
+  const { senderId, receiverId } = req.body;
+
+  if (!senderId || !receiverId) {
+    return res.status(400).json({ error: "Missing senderId or receiverId" });
+  }
+
+  try {
+    // Update the friend request to accepted
+    const updated = await sql`
+      UPDATE friend_requests
+      SET status = 'accepted', updated_at = timezone('utc', now())
+      WHERE sender_id = ${senderId} AND receiver_id = ${receiverId}
+      RETURNING *;
+    `;
+
+    if (updated.length === 0) {
+      return res.status(404).json({ error: "Friend request not found" });
+    }
+
+    res
+      .status(200)
+      .json({ message: "Friend request accepted", request: updated[0] });
+  } catch (err) {
+    console.error("Error accepting friend request:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// Decline friend request
+export const declineFriendRequest = async (req: Request, res: Response) => {
+  const { senderId, receiverId } = req.body;
+
+  if (!senderId || !receiverId) {
+    return res.status(400).json({ error: "Missing senderId or receiverId" });
+  }
+
+  try {
+    await sql`
+      DELETE FROM friend_requests
+      WHERE sender_id = ${senderId}
+        AND receiver_id = ${receiverId}
+        AND status = 'pending';
+    `;
+
+    res.status(200).json({ message: "Friend request declined" });
+  } catch (error) {
+    console.error("Error declining request:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+
 
 export const setDeviceId = async (req: Request, res: Response) => {
   try {
@@ -460,6 +595,72 @@ export const setDeviceId = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Error setting device ID:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const getUserGroups = async (req: Request, res: Response) => {
+  try {
+    const userId = req.body.userId;
+
+    if (!userId) {
+      return res.status(400).json({ error: "Missing userId" });
+    }
+
+    const groups = await sql`
+      SELECT g.id, g.name, g.icon_url
+      FROM user_group ug
+      JOIN groups g ON ug.group_id = g.id
+      WHERE ug.user_id = ${userId};
+    `;
+
+    res.status(200).json(groups);
+  } catch (error) {
+    console.error("Error fetching user groups:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const getAllAchievements = async (req: Request, res: Response) => {
+  try {
+    const achievements = await sql`
+      SELECT id, name, description, icon_url -- Add other relevant columns if needed
+      FROM achievements
+      ORDER BY name; -- Or order by ID, points, etc.
+    `;
+
+    res.status(200).json({ achievements });
+  } catch (error) {
+    console.error("Error fetching all achievements:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// Retrieve achievements unlocked by a specific user
+export const getUnlockedAchievements = async (req: Request, res: Response) => {
+  const { userId } = req.body;
+
+  if (!userId) {
+    return res.status(400).json({ error: "Missing userId" });
+  }
+
+  try {
+    const unlockedAchievements = await sql`
+      SELECT 
+        a.id, 
+        a.name, 
+        a.description, 
+        a.icon_url, 
+        ua.unlocked_at -- Select other achievement columns as needed
+      FROM user_achievements ua
+      JOIN achievements a ON ua.achievement_id = a.id
+      WHERE ua.user_id = ${userId}
+      ORDER BY ua.unlocked_at DESC; -- Or order by achievement name, etc.
+    `;
+
+    res.status(200).json({ unlocked_achievements: unlockedAchievements });
+  } catch (error) {
+    console.error("Error fetching unlocked achievements:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:frontend/auth.dart';
 import 'package:frontend/models/user.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
 
 class MemberProfileScreen extends StatefulWidget {
   final String userId;
@@ -14,6 +15,7 @@ class MemberProfileScreen extends StatefulWidget {
 
 class _MemberProfileScreenState extends State<MemberProfileScreen> {
   Map<String, dynamic>? userProfile;
+  bool isFriend = false;
   bool isLoading = true;
 
   @override
@@ -27,13 +29,14 @@ class _MemberProfileScreenState extends State<MemberProfileScreen> {
       print("Sending userId: ${widget.userId}");
       final response = await Auth.makeAuthenticatedPostRequest(
         "user/view-profile",
-        {"userId": widget.userId},
+        {"targetUserId": widget.userId},
       );
       final data = json.decode(response.body);
       print(data);
       if (response.statusCode == 200) {
         setState(() {
           userProfile = data;
+          isFriend = data['is_friend'] ?? false;
           isLoading = false;
         });
       } else {
@@ -47,6 +50,24 @@ class _MemberProfileScreenState extends State<MemberProfileScreen> {
       });
     }
   }
+
+  Future<void> _sendFriendRequest() async {
+    final currentUserId = await Auth.getCurrentUserId();
+    final response = await Auth.makeAuthenticatedPostRequest(
+      "user/send-friend-request",
+      {
+        "senderId": currentUserId,
+        "receiverId": widget.userId,
+      },
+    );
+
+    if (response.statusCode == 200) {
+      _showSuccessSnackBar('Friend request sent!');
+    } else {
+      _showErrorSnackBar('Failed to send friend request: ${response.body}');
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -327,6 +348,42 @@ void _showReportConfirmation(User user) {
               ),
             ),
           ),
+          SizedBox(height: 12),
+          /*ElevatedButton.icon(
+            onPressed: _sendFriendRequest,
+            icon: Icon(Icons.person_add_alt_1),
+            label: Text("Send Friend Request"),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.amber[800],
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            ),
+          ),*/
+          SizedBox(height: 12),
+          isFriend
+            ? ElevatedButton.icon(
+                onPressed: null, // disables the button
+                icon: Icon(Icons.check),
+                label: Text("Friends"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.grey,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                ),
+              )
+            : ElevatedButton.icon(
+                onPressed: _sendFriendRequest,
+                icon: Icon(Icons.person_add_alt_1),
+                label: Text("Send Friend Request"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.amber[800],
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                ),
+              ),
         ],
       ),
     );
