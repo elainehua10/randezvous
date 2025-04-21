@@ -817,6 +817,48 @@ export const checkMembership = async (req: Request, res: Response) => {
   }
 };
 
+export const getGroupMemberLeaderboard = async (req: Request, res: Response) => {
+  try {
+    const groupIdParam = req.query.groupId;
+
+    if (!groupIdParam) {
+      return res.status(400).json({ error: "Missing groupId in query" });
+    }
+
+    // Convert to string - handles different possible types
+    const groupId = String(groupIdParam);
+
+    const members = await sql`
+      SELECT 
+        p.id, 
+        p.first_name, 
+        p.last_name, 
+        p.username, 
+        p.profile_picture,
+        ug.points
+      FROM user_group ug
+      JOIN profile p ON ug.user_id = p.id
+      WHERE ug.group_id = ${groupId}
+      ORDER BY ug.points DESC;
+    `;
+
+    const leaderboard = members.map(member => ({
+      id: member.id,
+      name: `${member.first_name} ${member.last_name}`,
+      username: member.username,
+      profilePicture: member.profile_picture,
+      points: member.points ?? 0,
+    }));
+
+    return res.status(200).json({ leaderboard });
+  } catch (error) {
+    console.error("Error fetching group leaderboard:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+
+
 // Get group leaderboard
 export const getGroupLeaderboard = async (req: Request, res: Response) => {
   try {
