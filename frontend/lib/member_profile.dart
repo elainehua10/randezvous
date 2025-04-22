@@ -200,80 +200,80 @@ class _MemberProfileScreenState extends State<MemberProfileScreen> {
     );
   }
 
-void _showReportConfirmation(User user) {
-  final List<String> reportReasons = [
-    "Inappropriate content",
-    "Harassment or bullying",
-    "Fake profile",
-    "Spam",
-    "Other"
-  ];
+  void _showReportConfirmation(User user) {
+    final List<String> reportReasons = [
+      "Inappropriate content",
+      "Harassment or bullying",
+      "Fake profile",
+      "Spam",
+      "Other"
+    ];
 
-  final TextEditingController descriptionController = TextEditingController();
+    final TextEditingController descriptionController = TextEditingController();
 
-  showDialog(
-    context: context,
-    builder: (context) {
-      String selectedReason = reportReasons[0];
+    showDialog(
+      context: context,
+      builder: (context) {
+        String selectedReason = reportReasons[0];
 
-      return StatefulBuilder(
-        builder: (context, setState) {
-          return AlertDialog(
-            title: const Text("Report User"),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ...reportReasons.map((reason) {
-                    return RadioListTile<String>(
-                      title: Text(reason),
-                      value: reason,
-                      groupValue: selectedReason,
-                      onChanged: (value) {
-                        if (value != null) {
-                          setState(() {
-                            selectedReason = value;
-                          });
-                        }
-                      },
-                    );
-                  }).toList(),
-                  TextField(
-                    controller: descriptionController,
-                    decoration: InputDecoration(
-                      labelText: "Additional details (optional)",
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text("Report User"),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ...reportReasons.map((reason) {
+                      return RadioListTile<String>(
+                        title: Text(reason),
+                        value: reason,
+                        groupValue: selectedReason,
+                        onChanged: (value) {
+                          if (value != null) {
+                            setState(() {
+                              selectedReason = value;
+                            });
+                          }
+                        },
+                      );
+                    }).toList(),
+                    TextField(
+                      controller: descriptionController,
+                      decoration: InputDecoration(
+                        labelText: "Additional details (optional)",
+                      ),
+                      maxLines: 3,
                     ),
-                    maxLines: 3,
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            actions: [
-              TextButton(
-                child: const Text("Cancel"),
-                onPressed: () => Navigator.pop(context),
-              ),
-              ElevatedButton(
-                child: const Text("Submit"),
-                onPressed: () async {
-                  Navigator.pop(context);
+              actions: [
+                TextButton(
+                  child: const Text("Cancel"),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                ElevatedButton(
+                  child: const Text("Submit"),
+                  onPressed: () async {
+                    Navigator.pop(context);
 
-                  print("Reporting ${user.name}");
-                  print("Reason: $selectedReason");
-                  print("Details: ${descriptionController.text}");
+                    print("Reporting ${user.name}");
+                    print("Reason: $selectedReason");
+                    print("Details: ${descriptionController.text}");
 
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Report submitted. Thank you.")),
-                  );
-                },
-              ),
-            ],
-          );
-        },
-      );
-    },
-  );
-}
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Report submitted. Thank you.")),
+                    );
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
 
   Widget _buildProfileHeader() {
     final profile = userProfile?['profile'];
@@ -349,17 +349,6 @@ void _showReportConfirmation(User user) {
             ),
           ),
           SizedBox(height: 12),
-          /*ElevatedButton.icon(
-            onPressed: _sendFriendRequest,
-            icon: Icon(Icons.person_add_alt_1),
-            label: Text("Send Friend Request"),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.amber[800],
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            ),
-          ),*/
           SizedBox(height: 12),
           isFriend
             ? ElevatedButton.icon(

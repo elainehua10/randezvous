@@ -204,6 +204,9 @@ class MapWidgetState extends State<MapWidget> {
                     : LatLng(0, 0),
             icon: bitmap,
             infoWindow: InfoWindow(title: user.username),
+            onTap: user.id == "BEACON"
+              ? () => _showBeaconOptions(context, user.id)
+              : null,
           );
         }).toList();
 
@@ -212,6 +215,107 @@ class MapWidgetState extends State<MapWidget> {
       setState(() => _markers = resolvedMarkers.toSet());
     }
   }
+
+  void _showBeaconOptions(BuildContext context, String beaconId) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.pop(context);
+                _showReportConfirmation(context, beaconId);
+              },
+              icon: Icon(Icons.report),
+              label: Text("Report Beacon"),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showReportConfirmation(BuildContext context, String beaconId) {
+  final List<String> reportReasons = [
+    "Inappropriate content",
+    "Dangerous location",
+    "Spam",
+    "Other"
+  ];
+
+  final TextEditingController descriptionController = TextEditingController();
+
+  showDialog(
+    context: context,
+    builder: (context) {
+      String selectedReason = reportReasons[0];
+
+      return StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: const Text("Report Beacon"),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ...reportReasons.map((reason) {
+                    return RadioListTile<String>(
+                      title: Text(reason),
+                      value: reason,
+                      groupValue: selectedReason,
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() {
+                            selectedReason = value;
+                          });
+                        }
+                      },
+                    );
+                  }).toList(),
+                  TextField(
+                    controller: descriptionController,
+                    decoration: InputDecoration(
+                      labelText: "Additional details (optional)",
+                    ),
+                    maxLines: 3,
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                child: const Text("Cancel"),
+                onPressed: () => Navigator.pop(context),
+              ),
+              ElevatedButton(
+                child: const Text("Submit"),
+                onPressed: () async {
+                  Navigator.pop(context);
+
+                  print("Reporting ${beaconId}");
+                  print("Reason: $selectedReason");
+                  print("Details: ${descriptionController.text}");
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("Report submitted. Thank you.")),
+                  );
+                },
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+}
 
   Future<BitmapDescriptor> _createMarkerIcon(
     String? profilePicture,
