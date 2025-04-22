@@ -216,7 +216,7 @@ class MapWidgetState extends State<MapWidget> {
     }
   }
 
-  void _showBeaconOptions(BuildContext context, String beaconId) {
+  /*void _showBeaconOptions(BuildContext context, String beaconId) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -234,18 +234,90 @@ class MapWidgetState extends State<MapWidget> {
                 _showReportConfirmation(context, beaconId);
               },
               icon: Icon(Icons.report),
-              label: Text("Report Beacon"),
+              label: Text("Report Beacon Location"),
               style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             ),
           ],
         ),
       ),
     );
+  }*/
+
+  /*void _showBeaconOptions(BuildContext context, String beaconId) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          //content: Text("Report Beacon Location"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text("Cancel"),
+            ),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.pop(context);  // Close this dialog
+                _showReportConfirmation(context, beaconId);  // Open report dialog
+              },
+              icon: Icon(Icons.report),
+              label: Text("Report Beacon"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }*/
+
+  void _showBeaconOptions(BuildContext context, String beaconId) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(
+            "Report Beacon Location",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          actionsAlignment: MainAxisAlignment.spaceBetween,
+          actionsPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(
+                "Cancel",
+                style: TextStyle(color: Colors.grey[700]),
+              ),
+            ),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.pop(context);  // Close dialog
+                _showReportConfirmation(context, beaconId);  // Trigger report
+              },
+              icon: Icon(Icons.report, size: 20),
+              label: Text("Report"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red[600],
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _showReportConfirmation(BuildContext context, String beaconId) {
   final List<String> reportReasons = [
-    "Inappropriate content",
     "Dangerous location",
     "Spam",
     "Other"
