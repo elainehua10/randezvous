@@ -536,7 +536,7 @@ export const getGroupMembers = async (req: Request, res: Response) => {
 
     // Check if the group exists and fetch the leader's ID and group name
     const group = await sql`
-    SELECT leader_id, name, icon_url, is_public, beacon_frequency FROM groups WHERE id = ${groupId};
+    SELECT leader_id, name, group_score, icon_url, is_public, beacon_frequency FROM groups WHERE id = ${groupId};
   `;
 
     if (group.length === 0) {
@@ -545,6 +545,7 @@ export const getGroupMembers = async (req: Request, res: Response) => {
 
     const leader_id = group[0].leader_id;
     const name = group[0].name;
+    const group_score = group[0].group_score;
     const iconUrl = group[0].icon_url;
     const isPublic = group[0].is_public;
     const isUserLeader = userId === leader_id;
@@ -566,6 +567,7 @@ export const getGroupMembers = async (req: Request, res: Response) => {
     return res.status(200).json({
       groupId,
       name,
+      group_score,
       leader_id,
       isUserLeader,
       members,
