@@ -1,8 +1,7 @@
 import server from "./app";
 import { setupBeaconSchedulers } from "./jobs/beaconSpawner";
 
-
-const port = 5001;
+const port = parseInt(process.env.PORT || "8080", 10);
 
 server.listen(port, "0.0.0.0", 34, async () => {
   /* eslint-disable no-console */
