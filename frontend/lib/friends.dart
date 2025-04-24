@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:frontend/auth.dart';
 import 'package:frontend/member_profile.dart';
 import 'dart:convert';
-//import 'dart:io';
 
 class FriendsPage extends StatefulWidget {
   @override
@@ -19,9 +18,15 @@ class _FriendsPageState extends State<FriendsPage> with SingleTickerProviderStat
   List<dynamic> pendingRequests = [];
 
   @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final args = ModalRoute.of(context)?.settings.arguments;
+    int initialIndex = 0;
+
+    if (args is int && (args == 0 || args == 1)) {
+      initialIndex = args;
+    }
+    _tabController = TabController(length: 2, vsync: this, initialIndex: initialIndex);
     _fetchUserDetails();
   }
 
