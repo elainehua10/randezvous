@@ -1,94 +1,144 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/auth.dart';
+import 'dart:convert';
 
-class AchievementsPage extends StatelessWidget {
-  final List<Map<String, String>> unlockedAchievements = [
-  ];
+class AchievementsPage extends StatefulWidget {
+  @override
+  _AchievementsPageState createState() => _AchievementsPageState();
+}
 
-  final List<Map<String, String>> lockedAchievements = [
-  ];
+class _AchievementsPageState extends State<AchievementsPage> {
+  List<dynamic> unlocked = [];
+  List<dynamic> locked = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchAchievements();
+  }
+
+  Future<void> _fetchAchievements() async {
+    try {
+      final response = await Auth.makeAuthenticatedPostRequest(
+        "user/get-achievements",
+        {},
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        setState(() {
+          unlocked = data['unlocked'] ?? [];
+          locked = data['locked'] ?? [];
+          isLoading = false;
+        });
+      } else {
+        print("Failed to load achievements");
+        setState(() => isLoading = false);
+      }
+    } catch (e) {
+      print("Error: $e");
+      setState(() => isLoading = false);
+    }
+  }
+
+  Widget _buildAchievementCard(Map<String, dynamic> achievement, bool unlocked) {
+    return Card(
+      margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: unlocked ? Colors.amber[100] : Colors.grey[300],
+          child: Icon(
+            unlocked ? Icons.emoji_events : Icons.lock,
+            color: unlocked ? Colors.amber[800] : Colors.grey[600],
+          ),
+        ),
+        title: Text(
+          achievement['title'] ?? '',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: unlocked ? Colors.black : Colors.grey,
+          ),
+        ),
+        subtitle: Text(
+          achievement['description'] ?? '',
+          style: TextStyle(color: unlocked ? Colors.black87 : Colors.grey),
+        ),
+        trailing: unlocked
+            ? Icon(Icons.check_circle, color: Colors.green)
+            : null,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: Text("Achievements", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(
+          "Achievements",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.white,
         foregroundColor: Colors.amber[800],
         elevation: 0,
         centerTitle: true,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_rounded),
-          onPressed: () => Navigator.pop(context),
-        ),
       ),
-      body: ListView(
-        padding: EdgeInsets.all(16),
-        children: [
-          _buildSectionTitle("Unlocked"),
-          unlockedAchievements.isEmpty
-              ? _buildEmptyState("No achievements unlocked yet!")
-              : _buildAchievementList(unlockedAchievements, unlocked: true),
+      body: isLoading
+          ? Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.amber[800]!),
+              ),
+            )
+          : SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Unlocked Achievements Section
+                  Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Text(
+                      "Unlocked Achievements",
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  if (unlocked.isNotEmpty)
+                    ...unlocked.map((ach) => _buildAchievementCard(ach, true)).toList()
+                  else
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16),
+                      child: Text(
+                        "No achievements unlocked yet.",
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    ),
 
-          SizedBox(height: 24),
+                  SizedBox(height: 24),
 
-          _buildSectionTitle("Locked"),
-          lockedAchievements.isEmpty
-              ? _buildEmptyState("All achievements unlocked!")
-              : _buildAchievementList(lockedAchievements, unlocked: false),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSectionTitle(String title) {
-    return Text(
-      title,
-      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.grey[800]),
-    );
-  }
-
-  Widget _buildEmptyState(String message) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 20),
-      child: Center(
-        child: Text(
-          message,
-          style: TextStyle(color: Colors.grey[600], fontSize: 16),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAchievementList(List<Map<String, String>> achievements, {required bool unlocked}) {
-    return Column(
-      children: achievements.map((achievement) {
-        return Card(
-          color: unlocked ? Colors.white : Colors.grey[200],
-          margin: EdgeInsets.symmetric(vertical: 8),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          child: ListTile(
-            leading: Icon(
-              unlocked ? Icons.emoji_events : Icons.lock,
-              color: unlocked ? Colors.amber[800] : Colors.grey,
-              size: 32,
-            ),
-            title: Text(
-              achievement['title'] ?? '',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: unlocked ? Colors.grey[800] : Colors.grey[600],
+                  // Locked Achievements Section
+                  Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Text(
+                      "Locked Achievements",
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  if (locked.isNotEmpty)
+                    ...locked.map((ach) => _buildAchievementCard(ach, false)).toList()
+                  else
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16),
+                      child: Text(
+                        "All achievements unlocked!",
+                        style: TextStyle(color: Colors.green),
+                      ),
+                    ),
+                ],
               ),
             ),
-            subtitle: Text(
-              achievement['description'] ?? '',
-              style: TextStyle(
-                color: unlocked ? Colors.grey[700] : Colors.grey[500],
-              ),
-            ),
-          ),
-        );
-      }).toList(),
     );
   }
 }
