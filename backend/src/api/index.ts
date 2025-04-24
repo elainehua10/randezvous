@@ -10,7 +10,7 @@ const router = express.Router();
 
 router.get<{}, MessageResponse>("/", (req, res) => {
   res.json({
-    message: "API - 👋🌎🌍🌏",
+    message: "API - 👋🌎🌍🌏 NO!",
   });
 });
 
@@ -26,7 +26,11 @@ router.use("/user/block", requireAuth, user.block);
 router.use("/user/view-profile", requireAuth, user.getMemberProfile);
 router.use("/user/send-friend-request", requireAuth, user.sendFriendRequest);
 router.use("/user/accept-friend-request", user.acceptFriendRequest);
-router.use("/user/decline-friend-request", requireAuth, user.declineFriendRequest);
+router.use(
+  "/user/decline-friend-request",
+  requireAuth,
+  user.declineFriendRequest
+);
 router.use("/change-username", requireAuth, user.changeUsername);
 router.use("/logout", requireAuth, user.logout);
 router.use("/set-profile-picture", requireAuth, user.setProfilePicture);
@@ -82,9 +86,16 @@ router.use("/groups/all-public", requireAuth, group.getAllPublicGroups);
 router.use("/groups/join", requireAuth, group.joinGroup);
 router.use("/groups/setbfreq", requireAuth, group.setBeaconFreq);
 router.use("/groups/leaderboard", requireAuth, group.getGroupLeaderboard);
-router.get("/groups/member-leaderboard", requireAuth, group.getGroupMemberLeaderboard);
-router.get("/groups/global-leaderboard", requireAuth, group.getGlobalLeaderboard);
-
+router.get(
+  "/groups/member-leaderboard",
+  requireAuth,
+  group.getGroupMemberLeaderboard
+);
+router.get(
+  "/groups/global-leaderboard",
+  requireAuth,
+  group.getGlobalLeaderboard
+);
 
 // Beacon routes
 router.use("/getbeacon", requireAuth, beacon.getLatestBeacon);
