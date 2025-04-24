@@ -204,6 +204,10 @@ class MapWidgetState extends State<MapWidget> {
                     : LatLng(0, 0),
             icon: bitmap,
             infoWindow: InfoWindow(title: user.username),
+            onTap:
+                user.id == "BEACON"
+                    ? () => _showBeaconOptions(context, user.id)
+                    : null,
           );
         }).toList();
 
@@ -211,6 +215,176 @@ class MapWidgetState extends State<MapWidget> {
     if (mounted) {
       setState(() => _markers = resolvedMarkers.toSet());
     }
+  }
+
+  /*void _showBeaconOptions(BuildContext context, String beaconId) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.pop(context);
+                _showReportConfirmation(context, beaconId);
+              },
+              icon: Icon(Icons.report),
+              label: Text("Report Beacon Location"),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            ),
+          ],
+        ),
+      ),
+    );
+  }*/
+
+  /*void _showBeaconOptions(BuildContext context, String beaconId) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          //content: Text("Report Beacon Location"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text("Cancel"),
+            ),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.pop(context);  // Close this dialog
+                _showReportConfirmation(context, beaconId);  // Open report dialog
+              },
+              icon: Icon(Icons.report),
+              label: Text("Report Beacon"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }*/
+
+  void _showBeaconOptions(BuildContext context, String beaconId) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(
+            "Report Beacon Location",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          actionsAlignment: MainAxisAlignment.spaceBetween,
+          actionsPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text("Cancel", style: TextStyle(color: Colors.grey[700])),
+            ),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.pop(context); // Close dialog
+                _showReportConfirmation(context, beaconId); // Trigger report
+              },
+              icon: Icon(Icons.report, size: 20),
+              label: Text("Report"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red[600],
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showReportConfirmation(BuildContext context, String beaconId) {
+    final List<String> reportReasons = [
+      "Dangerous location",
+      "Inaccessible location",
+      "Other",
+    ];
+
+    final TextEditingController descriptionController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        String selectedReason = reportReasons[0];
+
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text("Report Beacon"),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ...reportReasons.map((reason) {
+                      return RadioListTile<String>(
+                        title: Text(reason),
+                        value: reason,
+                        groupValue: selectedReason,
+                        onChanged: (value) {
+                          if (value != null) {
+                            setState(() {
+                              selectedReason = value;
+                            });
+                          }
+                        },
+                      );
+                    }).toList(),
+                    TextField(
+                      controller: descriptionController,
+                      decoration: InputDecoration(
+                        labelText: "Additional details (optional)",
+                      ),
+                      maxLines: 3,
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  child: const Text("Cancel"),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                ElevatedButton(
+                  child: const Text("Submit"),
+                  onPressed: () async {
+                    Navigator.pop(context);
+
+                    print("Reporting ${beaconId}");
+                    print("Reason: $selectedReason");
+                    print("Details: ${descriptionController.text}");
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Report submitted. Thank you.")),
+                    );
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   Future<BitmapDescriptor> _createMarkerIcon(

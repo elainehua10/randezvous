@@ -5,6 +5,7 @@ import 'package:frontend/widgets/groups_bottom_sheet.dart';
 import 'package:frontend/models/group.dart';
 import 'package:frontend/group_screen.dart';
 import 'package:frontend/auth.dart';
+import 'package:frontend/leaderboard_screen.dart';
 import 'dart:convert';
 
 class MapScreen extends StatefulWidget {
@@ -69,10 +70,30 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+  Future<void> _onItemTapped(int index) async {
+    if (index == 2) {
+      // Leaderboard tab
+      if (_selectedGroupId != null) {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => LeaderboardScreen(groupId: _selectedGroupId!),
+          ),
+        );
+        _checkGroupMembership(); // Refresh in case membership changed
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Select a group first to view the leaderboard.'),
+            backgroundColor: Colors.amber[800],
+          ),
+        );
+      }
+    } else {
+      setState(() {
+        _selectedIndex = index;
+      });
+    }
   }
 
   void _openGroupsBottomSheet() {
@@ -296,6 +317,35 @@ class _MapScreenState extends State<MapScreen> {
                 ),
               ),
             ),
+          // Add the leaderboard icon
+          Positioned(
+            bottom: 20,
+            left: 20,
+            child: GestureDetector(
+              onTap: () {
+                Navigator.pushNamed(context, '/leaderboard-groups');
+              },
+              child: Container(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(50),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  Icons.leaderboard_rounded,
+                  color: Colors.amber[800],
+                  size: 28,
+                ),
+              ),
+            ),
+          ),
         ],
       ),
       bottomNavigationBar: Container(
@@ -323,7 +373,7 @@ class _MapScreenState extends State<MapScreen> {
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.emoji_events_rounded),
-                label: 'Events',
+                label: 'Leaderboard',
               ),
             ],
             currentIndex: _selectedIndex,

@@ -2,6 +2,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:frontend/auth.dart';
 import 'package:frontend/group_screen.dart';
+import 'package:frontend/leaderboard_group_list.dart';
 import 'package:frontend/login.dart';
 import 'package:frontend/register.dart';
 import 'package:frontend/map_screen.dart';
@@ -12,14 +13,14 @@ import 'package:frontend/search_screen.dart';
 import 'package:frontend/member_profile.dart';
 import 'package:frontend/faq_page.dart';
 import 'package:frontend/privacy_security_page.dart';
-import 'package:frontend/report_issue_page.dart';
-// import 'package:supabase_flutter/supabase_flutter.dart';
-// import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:frontend/contact_us_page.dart';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:frontend/util.dart';
 import 'firebase_options.dart';
 import '/services/notification_service.dart';
+import 'package:frontend/leaderboard_page.dart';
+import 'package:frontend/global_leaderboard_screen.dart';
 
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
@@ -62,12 +63,15 @@ class MyApp extends StatelessWidget {
         '/login': (context) => LoginScreen(),
         '/register': (context) => RegisterScreen(),
         '/home': (context) => MapScreen(),
+        '/leaderboard-groups': (context) => LeaderboardGroupList(),
+        '/leaderboard': (context) => LeaderboardPage(groupId: ''),
+        '/global-leaderboard': (context) => GlobalLeaderboardScreen(),
         '/profile': (context) => ProfileScreen(),
         '/edit-profile': (context) => EditProfileScreen(),
         '/settings': (context) => SettingsPage(),
         '/privacy-security': (context) => PrivacySecurityPage(),
         '/faq': (context) => FAQPage(),
-        '/report-issue': (context) => ReportIssuePage(),
+        '/contact-us': (context) => ContactUsPage(),
         '/member-profile': (context) => MemberProfileScreen(userId: ''),
       },
       onGenerateRoute: (settings) {

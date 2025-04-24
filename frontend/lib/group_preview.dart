@@ -17,6 +17,7 @@ class _GroupPreviewState extends State<GroupPreview> {
   bool isLoading = true;
   String? groupIconUrl;
   String? groupName;
+  int? groupScore;
 
   @override
   void initState() {
@@ -35,6 +36,7 @@ class _GroupPreviewState extends State<GroupPreview> {
       setState(() {
         groupIconUrl = data['iconUrl']; // Set the group icon URL
         groupName = data['name'] ?? 'Group'; // Add group name
+        groupScore = data['group_score']; // Group score
 
         members =
             (data['members'] as List)
@@ -139,7 +141,7 @@ class _GroupPreviewState extends State<GroupPreview> {
                             ),
                           ),
                           Text(
-                            '${members.length} Members',
+                            '${members.length} Members • Score: ${groupScore ?? 0}',
                             style: TextStyle(
                               fontSize: 16,
                               color: Colors.grey[600],

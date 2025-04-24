@@ -22,7 +22,6 @@ export const sendNotification = async (
     `;
 
     if (deviceResult.length === 0 || !deviceResult[0].device_id) {
-      console.log("NO DEVICE");
       return -1;
     }
 
@@ -40,13 +39,10 @@ export const sendNotification = async (
     };
 
     // Send the notification
-    const response = await firebaseAdmin.messaging().send(message);
-
-    //console.log("message response", response);
+    await firebaseAdmin.messaging().send(message);
 
     return 0;
   } catch (error) {
-    console.error("Error sending notification:", error);
     return -1;
   }
 };

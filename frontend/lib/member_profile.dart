@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:frontend/auth.dart';
+import 'package:frontend/models/user.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
 
 class MemberProfileScreen extends StatefulWidget {
   final String userId;
@@ -13,6 +15,7 @@ class MemberProfileScreen extends StatefulWidget {
 
 class _MemberProfileScreenState extends State<MemberProfileScreen> {
   Map<String, dynamic>? userProfile;
+  bool isFriend = false;
   bool isLoading = true;
 
   @override
@@ -26,13 +29,14 @@ class _MemberProfileScreenState extends State<MemberProfileScreen> {
       print("Sending userId: ${widget.userId}");
       final response = await Auth.makeAuthenticatedPostRequest(
         "user/view-profile",
-        {"userId": widget.userId},
+        {"targetUserId": widget.userId},
       );
       final data = json.decode(response.body);
       print(data);
       if (response.statusCode == 200) {
         setState(() {
           userProfile = data;
+          isFriend = data['is_friend'] ?? false;
           isLoading = false;
         });
       } else {
@@ -46,6 +50,24 @@ class _MemberProfileScreenState extends State<MemberProfileScreen> {
       });
     }
   }
+
+  Future<void> _sendFriendRequest() async {
+    final currentUserId = await Auth.getCurrentUserId();
+    final response = await Auth.makeAuthenticatedPostRequest(
+      "user/send-friend-request",
+      {
+        "senderId": currentUserId,
+        "receiverId": widget.userId,
+      },
+    );
+
+    if (response.statusCode == 200) {
+      _showSuccessSnackBar('Friend request sent!');
+    } else {
+      _showErrorSnackBar('Failed to send friend request: ${response.body}');
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +83,48 @@ class _MemberProfileScreenState extends State<MemberProfileScreen> {
           leading: IconButton(
             icon: Icon(Icons.arrow_back_ios_rounded),
             onPressed: () => Navigator.pop(context),
-          )),
+          ),
+          actions: [
+            PopupMenuButton<String>(
+              onSelected: (value) {
+                final profile = userProfile?['profile'];
+                final user = User(
+                  id: widget.userId,
+                  name: '${profile['first_name']} ${profile['last_name']}',
+                  username: profile['username'],
+                  avatarUrl: profile['profile_picture']      
+                );
+                if (value == 'block') {
+                  _showBlockConfirmation(user);
+                } else if (value == 'report') {
+                  _showReportConfirmation(user);
+                }
+              },
+              itemBuilder: (BuildContext context) => [
+                PopupMenuItem(
+                  value: 'block',
+                  child: Row(
+                    children: [
+                      Icon(Icons.block, color: Colors.red),
+                      SizedBox(width: 8),
+                      Text('Block'),
+                    ],
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'report',
+                  child: Row(
+                    children: [
+                      Icon(Icons.report_gmailerrorred, color: Colors.red),
+                      SizedBox(width: 8),
+                      Text('Report'),
+                    ],
+                  ),
+                ),
+              ],
+            )
+          ],
+          ),
       body: isLoading
           ? Center(
               child: CircularProgressIndicator(
@@ -78,6 +141,137 @@ class _MemberProfileScreenState extends State<MemberProfileScreen> {
                 ],
               ),
             ),
+    );
+  }
+
+  void _showBlockConfirmation(User user) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Block User'),
+          content: Text(
+            'Are you sure you want to block ${user.name}? This action cannot be undone.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _blockUser(user.id ?? '');
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              child: const Text('Block'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _blockUser(String blockedUserId) async {
+    try {
+      final response = await Auth.makeAuthenticatedPostRequest("user/block", {
+        "blockedId": blockedUserId,
+      });
+
+      if (response.statusCode == 200) {
+        _showSuccessSnackBar('User blocked successfully!');
+      } else {
+        _showErrorSnackBar('Failed to block user: ${response.body}');
+      }
+    } catch (e) {
+      _showErrorSnackBar('Error blocking user: $e');
+    }
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
+    );
+  }
+
+  void _showSuccessSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.green),
+    );
+  }
+
+  void _showReportConfirmation(User user) {
+    final List<String> reportReasons = [
+      "Inappropriate content",
+      "Harassment or bullying",
+      "Fake profile",
+      "Spam",
+      "Other"
+    ];
+
+    final TextEditingController descriptionController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        String selectedReason = reportReasons[0];
+
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text("Report User"),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ...reportReasons.map((reason) {
+                      return RadioListTile<String>(
+                        title: Text(reason),
+                        value: reason,
+                        groupValue: selectedReason,
+                        onChanged: (value) {
+                          if (value != null) {
+                            setState(() {
+                              selectedReason = value;
+                            });
+                          }
+                        },
+                      );
+                    }).toList(),
+                    TextField(
+                      controller: descriptionController,
+                      decoration: InputDecoration(
+                        labelText: "Additional details (optional)",
+                      ),
+                      maxLines: 3,
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  child: const Text("Cancel"),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                ElevatedButton(
+                  child: const Text("Submit"),
+                  onPressed: () async {
+                    Navigator.pop(context);
+
+                    print("Reporting ${user.name}");
+                    print("Reason: $selectedReason");
+                    print("Details: ${descriptionController.text}");
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Report submitted. Thank you.")),
+                    );
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 
@@ -154,6 +348,31 @@ class _MemberProfileScreenState extends State<MemberProfileScreen> {
               ),
             ),
           ),
+          SizedBox(height: 12),
+          SizedBox(height: 12),
+          isFriend
+            ? ElevatedButton.icon(
+                onPressed: null, // disables the button
+                icon: Icon(Icons.check),
+                label: Text("Friends"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.grey,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                ),
+              )
+            : ElevatedButton.icon(
+                onPressed: _sendFriendRequest,
+                icon: Icon(Icons.person_add_alt_1),
+                label: Text("Send Friend Request"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.amber[800],
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                ),
+              ),
         ],
       ),
     );

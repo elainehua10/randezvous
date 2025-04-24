@@ -79,7 +79,7 @@ class ConnectedUser {
     try {
       const result = await sql`
         SELECT first_name, last_name, username, profile_picture, longitude, latitude
-        FROM profile 
+        FROM profile
         WHERE id = ${userId};
       `;
       if (result.length === 0) {
@@ -157,28 +157,6 @@ class ConnectedUser {
           );
         }
       }
-
-      /*let beaconlLocation = await sql`
-        SELECT latitude, longitude
-        FROM beacon
-        WHERE group_id = ${newGroupId}
-        ORDER BY started_at DESC
-        LIMIT 1;
-      `;
-      
-      if (beaconlLocation.length > 0) {
-        // beaconlLocation[0]['user_id'] = "BEACON";
-        this.socket.send(
-          JSON.stringify({
-            user_id: "BEACON",
-            first_name: "",
-            last_name: "",
-            username: "",
-            profile_picture: "",
-            ...beaconlLocation[0],
-          })
-        );
-      }*/
     } catch (err) {
       console.error("Error fetching initial locations:", err);
     }
@@ -208,8 +186,8 @@ class ConnectedUser {
     );
 
     sql`
-      UPDATE profile 
-      SET longitude = ${long}, latitude = ${lat} 
+      UPDATE profile
+      SET longitude = ${long}, latitude = ${lat}
       WHERE id = ${this.userInfo.user_id};
     `.catch((e) => console.error("ERRORED ON UPDATE"));
 
@@ -283,13 +261,39 @@ class ConnectedUser {
 
             // Check if all members have reached the beacon
             const [unconfirmedCount] = await sql`
-            SELECT COUNT(*) 
+            SELECT COUNT(*)
             FROM user_group ug
             LEFT JOIN user_beacons ub ON ug.user_id = ub.user_id AND ub.beacon_id = ${beacon.id}
             WHERE ug.group_id = ${groupId} AND (ub.reached IS DISTINCT FROM true);
             `;
 
             if (parseInt(unconfirmedCount.count) === 0) {
+              // --- START: Added logic to increase group score ---
+              const scoreIncrement = 10; // Define how much the score increases for a full meetup
+              try {
+                const updateResult = await sql`
+                  UPDATE groups
+                  SET group_score = group_score + ${scoreIncrement}
+                  WHERE id = ${groupId}
+                  RETURNING name, group_score;
+                `;
+                if (updateResult.length > 0) {
+                  console.log(
+                    `Group score updated for group ${updateResult[0].name} (ID: ${groupId}) due to full beacon arrival. New score: ${updateResult[0].group_score}`
+                  );
+                } else {
+                  console.warn(
+                    `Could not find group with ID ${groupId} to update score after full beacon arrival.`
+                  );
+                }
+              } catch (scoreUpdateError) {
+                console.error(
+                  `Error updating group score for group ${groupId} after full beacon arrival:`,
+                  scoreUpdateError
+                );
+              }
+              // --- END: Added logic to increase group score ---
+
               // Everyone has reached — notify all members with notifications enabled
               const groupMembersToNotify = await sql`
               SELECT p.id

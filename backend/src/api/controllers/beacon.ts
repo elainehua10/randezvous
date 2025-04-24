@@ -26,7 +26,8 @@ export const confirmArrival = async (req: Request, res: Response) => {
       LIMIT 1;
     `;
 
-    if (!beacon) return res.status(404).json({ error: "No active beacon found" });
+    if (!beacon)
+      return res.status(404).json({ error: "No active beacon found" });
 
     // Insert arrival
     await sql`
@@ -123,6 +124,7 @@ export const manualSpawn = async (req: Request, res: Response) => {
     return res.status(400).json({ error: "groupId is required" });
   }
   try {
+    console.log("manual spawn");
     await spawnBeacon(groupId);
     return res
       .status(200)

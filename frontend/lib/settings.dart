@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:frontend/auth.dart';
 import 'privacy_security_page.dart';
 import 'faq_page.dart';
-import 'report_issue_page.dart';
+import 'contact_us_page.dart';
 import 'package:http/http.dart' as http;
 import 'package:frontend/util.dart';
 import 'dart:io';
@@ -116,13 +116,13 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
             ),
             _buildRow(
-              title: "Report an Issue",
-              subtitle: "Let us know if something's not working",
-              icon: Icons.bug_report_outlined,
+              title: "Contact Us",
+              subtitle: "Ask questions or report an issue",
+              icon: Icons.mail_outline,
               onTap:
                   () => Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => ReportIssuePage()),
+                    MaterialPageRoute(builder: (context) => ContactUsPage()),
                   ),
             ),
             const SizedBox(height: 32),
