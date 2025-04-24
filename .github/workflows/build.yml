@@ -1,0 +1,23 @@
+name: Docker Image CI
+
+on:
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Type check
+      run: npm run typecheck
+      working-directory: ./backend
+      
+    - name: Build the Docker image
+      run: |
+        cd backend
+        run: docker build -t express-app-test ./backend
+    
