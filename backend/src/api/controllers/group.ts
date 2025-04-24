@@ -581,6 +581,39 @@ export const getGroupMembers = async (req: Request, res: Response) => {
   }
 };
 
+export const getGlobalLeaderboard = async (req: Request, res: Response) => {
+  try {
+    // Fetch all groups sorted by score
+    const groups = await sql`
+      SELECT 
+        id, 
+        name, 
+        group_score, 
+        icon_url
+      FROM groups
+      ORDER BY group_score DESC
+      LIMIT 100;
+    `;
+
+    if (groups.length === 0) {
+      return res.status(200).json({ leaderboard: [] });
+    }
+
+    // Format the response to match what the frontend expects
+    const leaderboard = groups.map(group => ({
+      id: group.id,
+      name: group.name,
+      group_score: group.group_score || 0,
+      icon_url: group.icon_url
+    }));
+
+    return res.status(200).json({ leaderboard });
+  } catch (error) {
+    console.error("Error fetching global leaderboard:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
 // Get locations of other users
 export const getGroupLocations = async (req: Request, res: Response) => {
   const { userId, groupId } = req.body;

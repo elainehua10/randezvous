@@ -2,19 +2,17 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:frontend/auth.dart';
 import 'package:frontend/services/notification_service.dart';
-import 'package:frontend/global_leaderboard_screen.dart';
 
-class LeaderboardScreen extends StatefulWidget {
-  final String groupId;
-
-  const LeaderboardScreen({super.key, required this.groupId});
+class GlobalLeaderboardScreen extends StatefulWidget {
+  const GlobalLeaderboardScreen({super.key});
 
   @override
-  _LeaderboardScreenState createState() => _LeaderboardScreenState();
+  _GlobalLeaderboardScreenState createState() =>
+      _GlobalLeaderboardScreenState();
 }
 
-class _LeaderboardScreenState extends State<LeaderboardScreen> {
-  List<dynamic> leaderboard = [];
+class _GlobalLeaderboardScreenState extends State<GlobalLeaderboardScreen> {
+  List<dynamic> globalLeaderboard = [];
   bool isLoading = true;
   String currentUserId = '';
   int _selectedIndex = 2; // Set to 2 for Leaderboard tab
@@ -22,7 +20,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchLeaderboard();
+    _fetchGlobalLeaderboard();
     _fetchCurrentUserId();
     _verifyAuthentication();
   }
@@ -59,10 +57,10 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     }
   }
 
-  Future<void> _fetchLeaderboard() async {
+  Future<void> _fetchGlobalLeaderboard() async {
     try {
       final response = await Auth.makeAuthenticatedGetRequest(
-        "groups/member-leaderboard?groupId=${widget.groupId}",
+        "groups/global-leaderboard",
       );
       print('RAW RESPONSE: ${response.body}');
       final data = json.decode(response.body);
@@ -71,24 +69,24 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
         final leaderboardData = data['leaderboard'];
         if (leaderboardData is List) {
           setState(() {
-            leaderboard = leaderboardData;
+            globalLeaderboard = leaderboardData;
             isLoading = false;
           });
         } else {
           setState(() {
-            leaderboard = [];
+            globalLeaderboard = [];
             isLoading = false;
           });
-          print('Warning: leaderboard is not a list');
+          print('Warning: global leaderboard is not a list');
         }
       } else {
-        print('Failed to load leaderboard: $data');
+        print('Failed to load global leaderboard: $data');
         setState(() {
           isLoading = false;
         });
       }
     } catch (e) {
-      print("Error fetching leaderboard: $e");
+      print("Error fetching global leaderboard: $e");
       setState(() {
         isLoading = false;
       });
@@ -97,15 +95,19 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
 
   void _onItemTapped(int index) {
     if (index != 2) {
-      // If not leaderboard tab
-      Navigator.pop(context); // Go back to previous screen
-
-      // If needed, you can add logic to navigate to specific screens
+      // If not on the leaderboard tab
       if (index == 0) {
-        // Explore tab logic if needed
+        // Navigate to Explore/Home screen
+        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
       } else if (index == 1) {
-        // Map tab logic if needed
+        // Navigate to Map screen
+        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
       }
+    } else {
+      // For leaderboard tab, navigate to leaderboard_screen.dart instead of leaderboard_page
+      Navigator.pop(
+        context,
+      ); // Go back to previous screen which should be leaderboard_screen
     }
   }
 
@@ -114,24 +116,10 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        automaticallyImplyLeading: false,
         title: const Text(
-          'Leaderboard',
+          'Global Leaderboard',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.public),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => GlobalLeaderboardScreen(),
-                ),
-              );
-            },
-          ),
-        ],
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
@@ -144,8 +132,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                   valueColor: AlwaysStoppedAnimation<Color>(Colors.amber[800]!),
                 ),
               )
-              : leaderboard.isEmpty
-              ? Center(child: Text('No leaderboard data available.'))
+              : globalLeaderboard.isEmpty
+              ? Center(child: Text('No global leaderboard data available.'))
               : _buildLeaderboardContent(),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
@@ -191,21 +179,16 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
   }
 
   Widget _buildLeaderboardContent() {
-    leaderboard.sort((a, b) => (b['points'] ?? 0).compareTo(a['points'] ?? 0));
-
-    int userPosition = leaderboard.indexWhere(
-      (member) => member['id'] == currentUserId,
+    globalLeaderboard.sort(
+      (a, b) => (b['group_score'] ?? 0).compareTo(a['group_score'] ?? 0),
     );
-
-    if (leaderboard.isEmpty) {
-      return Center(child: Text('No leaderboard data available.'));
-    }
 
     return Column(
       children: [
         SizedBox(height: 20), // Space below app bar
 
-        if (leaderboard.isNotEmpty) _buildTopPlayerWidget(leaderboard[0]),
+        if (globalLeaderboard.isNotEmpty)
+          _buildTopGroupWidget(globalLeaderboard[0]),
 
         SizedBox(height: 20),
 
@@ -218,35 +201,32 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
             ),
             child: ListView.builder(
               padding: EdgeInsets.only(top: 8),
-              itemCount: leaderboard.length,
+              itemCount: globalLeaderboard.length,
               itemBuilder: (context, index) {
                 if (index == 0) return SizedBox.shrink();
 
-                final member = leaderboard[index];
-                final name =
-                    member['username'] ?? (member['name'] ?? 'Unnamed');
-                final points = member['points'] ?? 0;
-                final profilePicture = member['profilePicture'];
-                final isCurrentUser = member['id'] == currentUserId;
+                final group = globalLeaderboard[index];
+                final groupName = group['name'] ?? 'Unnamed Group';
+                final groupScore = group['group_score'] ?? 0;
+                final groupIconUrl = group['icon_url'];
 
                 return Container(
                   margin: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
                   decoration: BoxDecoration(
-                    color: isCurrentUser ? Colors.amber[300] : Colors.white,
+                    color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: ListTile(
                     leading: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Rank number to left of profile picture
+                        // Rank number to left of group icon
                         Container(
                           width: 24,
                           height: 24,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color:
-                                isCurrentUser ? Colors.white : Colors.grey[200],
+                            color: Colors.grey[200],
                           ),
                           child: Center(
                             child: Text(
@@ -260,20 +240,19 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                           ),
                         ),
                         SizedBox(width: 8),
-                        // Profile picture
+                        // Group icon
                         Container(
                           width: 40,
                           height: 40,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color:
-                                isCurrentUser ? Colors.white : Colors.grey[200],
+                            color: Colors.grey[200],
                           ),
                           child: ClipOval(
                             child:
-                                profilePicture != null
+                                groupIconUrl != null
                                     ? Image.network(
-                                      profilePicture,
+                                      groupIconUrl,
                                       fit: BoxFit.cover,
                                       errorBuilder: (
                                         context,
@@ -281,14 +260,14 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                                         stackTrace,
                                       ) {
                                         return Icon(
-                                          Icons.person,
+                                          Icons.group,
                                           size: 24,
                                           color: Colors.grey[400],
                                         );
                                       },
                                     )
                                     : Icon(
-                                      Icons.person,
+                                      Icons.group,
                                       size: 24,
                                       color: Colors.grey[400],
                                     ),
@@ -297,11 +276,11 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                       ],
                     ),
                     title: Text(
-                      isCurrentUser ? 'You' : name,
+                      groupName,
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     trailing: Text(
-                      '${points} pts',
+                      '$groupScore pts',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: Colors.grey[700],
@@ -318,11 +297,10 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     );
   }
 
-  Widget _buildTopPlayerWidget(dynamic topPlayer) {
-    final name = topPlayer['username'] ?? (topPlayer['name'] ?? 'Unnamed');
-    final points = topPlayer['points'] ?? 0;
-    final profilePicture = topPlayer['profilePicture'];
-    final isCurrentUser = topPlayer['id'] == currentUserId;
+  Widget _buildTopGroupWidget(dynamic topGroup) {
+    final groupName = topGroup['name'] ?? 'Unnamed Group';
+    final groupScore = topGroup['group_score'] ?? 0;
+    final groupIconUrl = topGroup['icon_url'];
 
     return Column(
       children: [
@@ -338,19 +316,19 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
               ),
               child: ClipOval(
                 child:
-                    profilePicture != null
+                    groupIconUrl != null
                         ? Image.network(
-                          profilePicture,
+                          groupIconUrl,
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) {
                             return Icon(
-                              Icons.person,
+                              Icons.group,
                               size: 60,
                               color: Colors.grey[400],
                             );
                           },
                         )
-                        : Icon(Icons.person, size: 60, color: Colors.grey[400]),
+                        : Icon(Icons.group, size: 60, color: Colors.grey[400]),
               ),
             ),
             Positioned(
@@ -358,7 +336,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
               child: Icon(Icons.star, size: 40, color: Colors.amber[600]),
             ),
             Positioned(
-              bottom: -15, // Moved down to be ON the circle border
+              bottom: -15,
               child: Container(
                 width: 30,
                 height: 30,
@@ -383,7 +361,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
         ),
         SizedBox(height: 8),
         Text(
-          isCurrentUser ? 'You' : name,
+          groupName,
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         SizedBox(height: 4),
@@ -393,7 +371,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
             Icon(Icons.star, color: Colors.amber[500], size: 20),
             SizedBox(width: 4),
             Text(
-              '$points pts',
+              '$groupScore pts',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color: Colors.amber[700],

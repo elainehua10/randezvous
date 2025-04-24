@@ -82,6 +82,7 @@ router.use("/groups/join", requireAuth, group.joinGroup);
 router.use("/groups/setbfreq", requireAuth, group.setBeaconFreq);
 router.use("/groups/leaderboard", requireAuth, group.getGroupLeaderboard);
 router.get("/groups/member-leaderboard", requireAuth, group.getGroupMemberLeaderboard);
+router.get("/groups/global-leaderboard", requireAuth, group.getGlobalLeaderboard);
 
 
 // Beacon routes
