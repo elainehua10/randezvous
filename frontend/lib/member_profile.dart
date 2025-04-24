@@ -16,6 +16,7 @@ class MemberProfileScreen extends StatefulWidget {
 class _MemberProfileScreenState extends State<MemberProfileScreen> {
   Map<String, dynamic>? userProfile;
   bool isFriend = false;
+  bool isRequestPending = false;
   bool isLoading = true;
 
   @override
@@ -37,6 +38,7 @@ class _MemberProfileScreenState extends State<MemberProfileScreen> {
         setState(() {
           userProfile = data;
           isFriend = data['is_friend'] ?? false;
+          isRequestPending = data['is_request_pending'] ?? false;
           isLoading = false;
         });
       } else {
@@ -62,7 +64,18 @@ class _MemberProfileScreenState extends State<MemberProfileScreen> {
     );
 
     if (response.statusCode == 200) {
-      _showSuccessSnackBar('Friend request sent!');
+      final data = jsonDecode(response.body);
+      if (data['status'] == 'pending') {
+        setState(() {
+          isRequestPending = true;
+        });
+        _showSuccessSnackBar('Friend request is already pending!');
+      } else {
+        setState(() {
+          isRequestPending = true;
+        });
+        _showSuccessSnackBar('Friend request sent!');
+      }
     } else {
       _showErrorSnackBar('Failed to send friend request: ${response.body}');
     }
@@ -362,18 +375,30 @@ class _MemberProfileScreenState extends State<MemberProfileScreen> {
                   padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                 ),
               )
-            : ElevatedButton.icon(
-                onPressed: _sendFriendRequest,
-                icon: Icon(Icons.person_add_alt_1),
-                label: Text("Send Friend Request"),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.amber[800],
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            : isRequestPending
+              ? ElevatedButton.icon(
+                  onPressed: null,  // Disabled when pending
+                  icon: Icon(Icons.hourglass_top),
+                  label: Text("Pending"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  ),
+                )
+              : ElevatedButton.icon(
+                  onPressed: _sendFriendRequest,
+                  icon: Icon(Icons.person_add_alt_1),
+                  label: Text("Send Friend Request"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.amber[800],
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  ),
                 ),
-              ),
-        ],
+          ],
       ),
     );
   }

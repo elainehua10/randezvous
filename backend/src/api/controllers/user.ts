@@ -431,6 +431,12 @@ export const getMemberProfile = async (req: Request, res: Response) => {
       LIMIT 1;
     `;
 
+    const isRequestPending = await sql`
+      SELECT 1 FROM friend_requests
+      WHERE sender_id = ${currId} AND receiver_id = ${userId} AND status = 'pending'
+      LIMIT 1;
+    `
+
     const rawGroups = await sql`
       SELECT g.id, g.name, g.icon_url, ug.points, ug.rank
       FROM user_group ug
@@ -455,6 +461,7 @@ export const getMemberProfile = async (req: Request, res: Response) => {
       },
       groups: groups,
       is_friend: isFriend.length > 0,
+      is_request_pending: isRequestPending.length > 0,
     });
   } catch (error) {
     console.error("Error fetching user profile:", error);
