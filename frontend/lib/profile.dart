@@ -223,7 +223,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             title: "Achievements",
                             subtitle: "View your badges and accomplishments",
                             icon: Icons.emoji_events_rounded,
-                            onTap: () {},
+                            onTap:
+                              () => Navigator.pushNamed(context, '/achievements'),
                           ),
                           _buildDivider(),
                           _buildListTile(

@@ -9,6 +9,7 @@ import 'package:frontend/map_screen.dart';
 import 'package:frontend/profile.dart';
 import 'package:frontend/edit_profile.dart';
 import 'package:frontend/settings.dart';
+import 'package:frontend/achievements.dart';
 import 'package:frontend/search_screen.dart';
 import 'package:frontend/member_profile.dart';
 import 'package:frontend/faq_page.dart';
@@ -69,6 +70,7 @@ class MyApp extends StatelessWidget {
         '/profile': (context) => ProfileScreen(),
         '/edit-profile': (context) => EditProfileScreen(),
         '/settings': (context) => SettingsPage(),
+        '/achievements': (context) => AchievementsPage(),
         '/privacy-security': (context) => PrivacySecurityPage(),
         '/faq': (context) => FAQPage(),
         '/contact-us': (context) => ContactUsPage(),
