@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:frontend/auth.dart';
+import 'package:frontend/friends.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
@@ -177,7 +178,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   children: [
                     _buildProfileHeader(),
                     const SizedBox(height: 16),
-                    Padding(
+                    _buildSocialSection(),
+                    const SizedBox(height: 16),
+                    /*Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -202,7 +205,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                         ],
                       ),
-                    ),
+                    ),*/
                     const SizedBox(height: 24),
                     Container(
                       margin: EdgeInsets.symmetric(horizontal: 16),
@@ -534,6 +537,147 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 color: Colors.amber[800],
                 fontWeight: FontWeight.w500,
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSocialSection() {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => FriendsPage()),
+              ).then((_) => _fetchUserDetails());
+            },
+            child: Column(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.amber[50],
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.people,
+                    color: Colors.amber[800],
+                    size: 24,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  "${friends.length}",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.amber[800],
+                  ),
+                ),
+                Text(
+                  "Friends",
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[700],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            height: 50,
+            width: 1,
+            color: Colors.grey[200],
+          ),
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => FriendsPage(),
+                  settings: RouteSettings(arguments: 1), // Start on requests tab
+                ),
+              ).then((_) => _fetchUserDetails());
+            },
+            child: Column(
+              children: [
+                Stack(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.amber[50],
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.person_add,
+                        color: Colors.amber[800],
+                        size: 24,
+                      ),
+                    ),
+                    if (pendingRequests.isNotEmpty)
+                      Positioned(
+                        right: 0,
+                        top: 0,
+                        child: Container(
+                          padding: EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                          constraints: BoxConstraints(
+                            minWidth: 18,
+                            minHeight: 18,
+                          ),
+                          child: Center(
+                            child: Text(
+                              "${pendingRequests.length}",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                SizedBox(height: 8),
+                Text(
+                  "${pendingRequests.length}",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.amber[800],
+                  ),
+                ),
+                Text(
+                  "Requests",
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[700],
+                  ),
+                ),
+              ],
             ),
           ),
         ],
