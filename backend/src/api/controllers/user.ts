@@ -75,6 +75,7 @@ export const login = async (req: Request, res: Response) => {
   }
 };
 
+// Change username
 export const changeUsername = async (req: Request, res: Response) => {
   const { userId, newUsername } = req.body;
 
@@ -109,7 +110,6 @@ export const changeUsername = async (req: Request, res: Response) => {
 };
 
 // Set profile picture
-
 export const setProfilePicture = async (req: Request, res: Response) => {
   const { userId, deletePhoto } = req.body;
   if (!userId) {
@@ -669,5 +669,47 @@ export const getUnlockedAchievements = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Error fetching unlocked achievements:", error);
     res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// Reset password
+export const resetPassword = async (req: Request, res: Response) => {
+  const { email, newPassword, confirmPassword, userId } = req.body;
+
+  if (!email || !newPassword || !confirmPassword || !userId) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  if (newPassword !== confirmPassword) {
+    return res.status(400).json({ error: "Passwords do not match" });
+  }
+
+  try {
+    const { data: userInfo, error: userError } = await supabase.auth.admin.getUserById(userId);
+
+    if (userError) {
+      return res.status(500).json({ error: userError.message });
+    } else if(!userInfo?.user?.email) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const registeredEmail = userInfo.user.email;
+
+    if (registeredEmail !== email) {
+      return res.status(403).json({ error: "You can only reset your own password" });
+    }
+
+    const { error: updateError } = await supabase.auth.admin.updateUserById(userId, {
+      password: newPassword,
+    });
+
+    if (updateError) {
+      return res.status(500).json({ error: updateError.message });
+    }
+
+    return res.status(200).json({ message: "Password reset successful" });
+  } catch (err) {
+    console.error("Password reset error:", err);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };

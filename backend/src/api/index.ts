@@ -34,6 +34,7 @@ router.use("/delete-account", requireAuth, user.deleteAccount);
 router.use("/refresh-token", user.refreshToken);
 router.use("/get-user-profile-info", requireAuth, user.getUserProfileInfo);
 router.use("/toggle-notifications", requireAuth, user.toggleNotifications);
+router.use("/reset-password", requireAuth, user.resetPassword);
 
 // Group routes
 router.use("/groups/members", requireAuth, group.getGroupMembers);
