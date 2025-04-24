@@ -217,62 +217,6 @@ class MapWidgetState extends State<MapWidget> {
     }
   }
 
-  /*void _showBeaconOptions(BuildContext context, String beaconId) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: () {
-                Navigator.pop(context);
-                _showReportConfirmation(context, beaconId);
-              },
-              icon: Icon(Icons.report),
-              label: Text("Report Beacon Location"),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            ),
-          ],
-        ),
-      ),
-    );
-  }*/
-
-  /*void _showBeaconOptions(BuildContext context, String beaconId) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          //content: Text("Report Beacon Location"),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text("Cancel"),
-            ),
-            ElevatedButton.icon(
-              onPressed: () {
-                Navigator.pop(context);  // Close this dialog
-                _showReportConfirmation(context, beaconId);  // Open report dialog
-              },
-              icon: Icon(Icons.report),
-              label: Text("Report Beacon"),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }*/
-
   void _showBeaconOptions(BuildContext context, String beaconId) {
     showDialog(
       context: context,
