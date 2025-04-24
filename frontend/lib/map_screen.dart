@@ -72,23 +72,13 @@ class _MapScreenState extends State<MapScreen> {
 
   Future<void> _onItemTapped(int index) async {
     if (index == 2) {
-      // Leaderboard tab
-      if (_selectedGroupId != null) {
-        await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => LeaderboardScreen(groupId: _selectedGroupId!),
-          ),
-        );
-        _checkGroupMembership(); // Refresh in case membership changed
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Select a group first to view the leaderboard.'),
-            backgroundColor: Colors.amber[800],
-          ),
-        );
-      }
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => LeaderboardScreen(groupId: _selectedGroupId),
+        ),
+      );
+      _checkGroupMembership();
     } else {
       setState(() {
         _selectedIndex = index;

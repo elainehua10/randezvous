@@ -3,11 +3,13 @@ import 'dart:convert';
 import 'package:frontend/auth.dart';
 import 'package:frontend/services/notification_service.dart';
 import 'package:frontend/global_leaderboard_screen.dart';
+import 'package:frontend/widgets/groups_bottom_sheet.dart';
+import 'package:frontend/models/group.dart';
 
 class LeaderboardScreen extends StatefulWidget {
-  final String groupId;
+  final String? groupId;
 
-  const LeaderboardScreen({super.key, required this.groupId});
+  const LeaderboardScreen({super.key, this.groupId});
 
   @override
   _LeaderboardScreenState createState() => _LeaderboardScreenState();
@@ -18,11 +20,19 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
   bool isLoading = true;
   String currentUserId = '';
   int _selectedIndex = 2; // Set to 2 for Leaderboard tab
+  String? groupName;
 
   @override
   void initState() {
     super.initState();
-    _fetchLeaderboard();
+    if (widget.groupId != null) {
+      _fetchLeaderboard();
+      _fetchGroupName();
+    } else {
+      setState(() {
+        isLoading = false;
+      });
+    }
     _fetchCurrentUserId();
     _verifyAuthentication();
   }
@@ -59,7 +69,29 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     }
   }
 
+  Future<void> _fetchGroupName() async {
+    if (widget.groupId == null) return;
+
+    try {
+      final response = await Auth.makeAuthenticatedPostRequest(
+        "groups/details",
+        {"groupId": widget.groupId},
+      );
+      final data = json.decode(response.body);
+
+      if (response.statusCode == 200 && data != null) {
+        setState(() {
+          groupName = data['name'] ?? 'Group';
+        });
+      }
+    } catch (e) {
+      print("Error fetching group name: $e");
+    }
+  }
+
   Future<void> _fetchLeaderboard() async {
+    if (widget.groupId == null) return;
+
     try {
       final response = await Auth.makeAuthenticatedGetRequest(
         "groups/member-leaderboard?groupId=${widget.groupId}",
@@ -109,15 +141,48 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     }
   }
 
+  void _showGroupSelection() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true, // Makes the bottom sheet full height
+      backgroundColor: Colors.transparent, // Important for rounded corners
+      builder:
+          (_) => GroupsBottomSheet(
+            selectedGroupId: widget.groupId,
+            onGroupSelected: (Group group) {
+              Navigator.pop(context);
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => LeaderboardScreen(groupId: group.id),
+                ),
+              );
+            },
+          ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: const Text(
-          'Leaderboard',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              widget.groupId == null
+                  ? 'Leaderboard'
+                  : (groupName ?? 'Leaderboard'),
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            if (widget.groupId != null)
+              IconButton(
+                icon: Icon(Icons.arrow_drop_down),
+                onPressed: _showGroupSelection,
+              ),
+          ],
         ),
         actions: [
           IconButton(
@@ -138,7 +203,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
         centerTitle: true,
       ),
       body:
-          isLoading
+          widget.groupId == null
+              ? _buildNoGroupSelectedView()
+              : isLoading
               ? Center(
                 child: CircularProgressIndicator(
                   valueColor: AlwaysStoppedAnimation<Color>(Colors.amber[800]!),
@@ -185,6 +252,55 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
             type: BottomNavigationBarType.fixed,
             onTap: _onItemTapped,
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNoGroupSelectedView() {
+    return Center(
+      child: Container(
+        padding: EdgeInsets.all(24),
+        width: MediaQuery.of(context).size.width * 0.85,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.amber[50],
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.group, size: 48, color: Colors.amber[800]),
+            ),
+            SizedBox(height: 24),
+            Text(
+              'Select a Group',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[800],
+              ),
+            ),
+            SizedBox(height: 12),
+            Text(
+              'You need to join or select a group to view the leaderboard rankings.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+            ),
+            SizedBox(height: 24),
+          ],
         ),
       ),
     );
@@ -358,7 +474,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
               child: Icon(Icons.star, size: 40, color: Colors.amber[600]),
             ),
             Positioned(
-              bottom: -15, // Moved down to be ON the circle border
+              bottom: -15,
               child: Container(
                 width: 30,
                 height: 30,
