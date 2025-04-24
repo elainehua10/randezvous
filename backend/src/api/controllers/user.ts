@@ -592,60 +592,6 @@ export const declineFriendRequest = async (req: Request, res: Response) => {
   }
 };
 
-// get all user achievements
-export const getUserAchievements = async (req: Request, res: Response) => {
-  const userId = req.body.userId;
-
-  const unlocked = await sql`
-    SELECT a.id, a.title, a.description, ua.unlocked_at
-    FROM user_achievements ua
-    JOIN achievements a ON ua.achievement_id = a.id
-    WHERE ua.user_id = ${userId};
-  `;
-
-  const allAchievements = await sql`SELECT * FROM achievements;`;
-
-  const unlockedIds = unlocked.map((ua: any) => ua.id);
-
-  const locked = allAchievements.filter((a: any) => 
-    !unlocked.some((ua: any) => ua.id === a.id)
-  );
-
-  res.status(200).json({
-    unlocked: unlocked,
-    locked: locked
-  });
-};
-
-// check 5 friends achievement
-export const checkFriendAchievements = async (userId: string) => {
-  // Count friends
-  const friends = await sql`
-    SELECT COUNT(*) AS count FROM friend_requests
-    WHERE 
-      (sender_id = ${userId} OR receiver_id = ${userId})
-      AND status = 'accepted';
-  `;
-
-  const friendCount = parseInt(friends[0].count);
-
-  // Check if achievement already unlocked
-  const achievementId = 1;  // Assuming "Social Butterfly" is ID 1
-  const existing = await sql`
-    SELECT 1 FROM user_achievements
-    WHERE user_id = ${userId} AND achievement_id = ${achievementId};
-  `;
-
-  if (friendCount >= 5 && existing.length === 0) {
-    await sql`
-      INSERT INTO user_achievements (user_id, achievement_id)
-      VALUES (${userId}, ${achievementId});
-    `;
-    console.log("Achievement unlocked: Social Butterfly");
-  }
-};
-
-
 export const setDeviceId = async (req: Request, res: Response) => {
   try {
     const { userId, deviceId } = req.body;
@@ -705,47 +651,72 @@ export const getUserGroups = async (req: Request, res: Response) => {
   }
 };
 
-export const getAllAchievements = async (req: Request, res: Response) => {
-  try {
-    const achievements = await sql`
-      SELECT id, name, description, icon_url -- Add other relevant columns if needed
-      FROM achievements
-      ORDER BY name; -- Or order by ID, points, etc.
-    `;
+export const getUserAchievements = async (req: Request, res: Response) => {
+  // Check all possible achievements first
+  const { userId } = req.body;
+  await checkAllAchievements(userId);
+  
+  // Then fetch and return unlocked/locked achievements
+  const unlocked = await sql`
+    SELECT a.id, a.name, a.description, ua.unlocked_at
+    FROM user_achievements ua
+    JOIN achievements a ON ua.achievement_id = a.id
+    WHERE ua.user_id = ${userId};
+  `;
+  
+  const allAchievements = await sql`SELECT * FROM achievements;`;
+  
+  const locked = allAchievements.filter((a) => 
+    !unlocked.some((ua) => ua.id === a.id)
+  );
 
-    res.status(200).json({ achievements });
-  } catch (error) {
-    console.error("Error fetching all achievements:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
+  res.status(200).json({
+    unlocked: unlocked,
+    locked: locked
+  })
 };
 
-// Retrieve achievements unlocked by a specific user
-export const getUnlockedAchievements = async (req: Request, res: Response) => {
-  const { userId } = req.body;
+export const checkAllAchievements = async (userId: string) => {
+  await Promise.all([
+    checkFriendAchievements(userId),
+  ]);
+};
 
-  if (!userId) {
-    return res.status(400).json({ error: "Missing userId" });
-  }
+export const checkFriendAchievements = async (userId: string) => {
+  const friends = await sql`
+    SELECT COUNT(*) AS count FROM friend_requests
+    WHERE 
+      (sender_id = ${userId} OR receiver_id = ${userId})
+      AND status = 'accepted';
+  `;
+  
+  const friendCount = parseInt(friends[0].count);
+  
+  // Check multiple friend achievements
+  await checkAndAwardAchievement(userId, 1, friendCount >= 5); // Social Butterfly (5 friends)
+};
 
-  try {
-    const unlockedAchievements = await sql`
-      SELECT 
-        a.id, 
-        a.name, 
-        a.description, 
-        a.icon_url, 
-        ua.unlocked_at -- Select other achievement columns as needed
-      FROM user_achievements ua
-      JOIN achievements a ON ua.achievement_id = a.id
-      WHERE ua.user_id = ${userId}
-      ORDER BY ua.unlocked_at DESC; -- Or order by achievement name, etc.
+export const checkAndAwardAchievement = async (
+  userId: string, 
+  achievementId: number, 
+  condition: boolean
+) => {
+  if (!condition) return; // Skip if condition not met
+  
+  // Check if already awarded
+  const existing = await sql`
+    SELECT 1 FROM user_achievements
+    WHERE user_id = ${userId} AND achievement_id = ${achievementId};
+  `;
+  
+  if (existing.length === 0) {
+    // Award new achievement with timestamp
+    await sql`
+      INSERT INTO user_achievements (user_id, achievement_id, unlocked_at)
+      VALUES (${userId}, ${achievementId}, NOW());
     `;
-
-    res.status(200).json({ unlocked_achievements: unlockedAchievements });
-  } catch (error) {
-    console.error("Error fetching unlocked achievements:", error);
-    res.status(500).json({ error: "Internal server error" });
+    
+    console.log(`Achievement ${achievementId} awarded to user ${userId}`);
   }
 };
 

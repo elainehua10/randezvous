@@ -27,11 +27,14 @@ class _AchievementsPageState extends State<AchievementsPage> {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
+        print("Achievements data: ${data}");
         setState(() {
           unlocked = data['unlocked'] ?? [];
           locked = data['locked'] ?? [];
           isLoading = false;
         });
+        print("Unlocked achievements: $unlocked");
+        print("Locked achievements: $locked");
       } else {
         print("Failed to load achievements");
         setState(() => isLoading = false);
@@ -43,15 +46,20 @@ class _AchievementsPageState extends State<AchievementsPage> {
   }
 
   Widget _buildAchievementCard(Map<String, dynamic> achievement, bool unlocked) {
+    bool isSocialButterfly = achievement['id'] == 1;
+
     return Card(
+      color: isSocialButterfly && unlocked ? Colors.amber[50] : Colors.white,
       margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      elevation: 2,
+      elevation: 3,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: unlocked ? Colors.amber[100] : Colors.grey[300],
           child: Icon(
-            unlocked ? Icons.emoji_events : Icons.lock,
+            isSocialButterfly 
+                ? Icons.people_alt 
+                : (unlocked ? Icons.emoji_events : Icons.lock),
             color: unlocked ? Colors.amber[800] : Colors.grey[600],
           ),
         ),
@@ -60,6 +68,7 @@ class _AchievementsPageState extends State<AchievementsPage> {
           style: TextStyle(
             fontWeight: FontWeight.bold,
             color: unlocked ? Colors.black : Colors.grey,
+            fontSize: isSocialButterfly ? 18 : 16,
           ),
         ),
         subtitle: Text(
@@ -78,10 +87,7 @@ class _AchievementsPageState extends State<AchievementsPage> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: Text(
-          "Achievements",
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
+        title: Text("Achievements", style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         foregroundColor: Colors.amber[800],
         elevation: 0,
@@ -111,12 +117,10 @@ class _AchievementsPageState extends State<AchievementsPage> {
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 16),
                       child: Text(
-                        "No achievements unlocked yet.",
-                        style: TextStyle(color: Colors.grey),
+                        "No achievements unlocked yet. Start completing tasks!",
+                        style: TextStyle(color: Colors.grey[600]),
                       ),
                     ),
-
-                  SizedBox(height: 24),
 
                   // Locked Achievements Section
                   Padding(
@@ -126,19 +130,24 @@ class _AchievementsPageState extends State<AchievementsPage> {
                       style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                   ),
-                  if (locked.isNotEmpty)
-                    ...locked.map((ach) => _buildAchievementCard(ach, false)).toList()
-                  else
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16),
-                      child: Text(
-                        "All achievements unlocked!",
-                        style: TextStyle(color: Colors.green),
-                      ),
-                    ),
+                  ...(
+                    locked.isNotEmpty
+                      ? locked.map((ach) => _buildAchievementCard(ach, false)).toList()
+                      : [
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 16),
+                            child: Text(
+                              "You've unlocked all achievements! 🎉",
+                              style: TextStyle(color: Colors.green[700], fontSize: 16),
+                            ),
+                          )
+                        ]
+                  )
                 ],
               ),
             ),
     );
   }
+
+
 }

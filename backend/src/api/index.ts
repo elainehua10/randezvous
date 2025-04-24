@@ -27,7 +27,7 @@ router.use("/user/view-profile", requireAuth, user.getMemberProfile);
 router.use("/user/send-friend-request", requireAuth, user.sendFriendRequest);
 router.use("/user/accept-friend-request", user.acceptFriendRequest);
 router.use("/user/decline-friend-request", requireAuth, user.declineFriendRequest);
-router.use("/user/get-achievements", requireAuth, user.getAllAchievements);
+router.use("/user/get-achievements", requireAuth, user.getUserAchievements);
 router.use("/change-username", requireAuth, user.changeUsername);
 router.use("/logout", requireAuth, user.logout);
 router.use("/set-profile-picture", requireAuth, user.setProfilePicture);
