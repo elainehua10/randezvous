@@ -469,7 +469,6 @@ export const getMemberProfile = async (req: Request, res: Response) => {
   }
 };
 
-// Send friend request
 export const sendFriendRequest = async (req: Request, res: Response) => {
   const { senderId, receiverId } = req.body;
 
@@ -502,11 +501,37 @@ export const sendFriendRequest = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Friend request already sent" });
     }
 
+    // Fetch sender's username and receiver's notification settings
+    const usersInfo = await sql`
+      SELECT 
+        sender.username AS sender_username,
+        receiver.notifications_enabled
+      FROM profile sender, profile receiver
+      WHERE sender.id = ${senderId} AND receiver.id = ${receiverId};
+    `;
+
+    if (usersInfo.length === 0) {
+      return res.status(404).json({ error: "One or both users not found" });
+    }
+
+    const { sender_username, notifications_enabled } = usersInfo[0];
+
+    // Insert the friend request
     await sql`
       INSERT INTO friend_requests (sender_id, receiver_id)
       VALUES (${senderId}, ${receiverId});
     `;
 
+    // Send notification to the recipient if notifications are enabled
+    if (notifications_enabled) {
+      console.log("Sending friend request notification to user:", receiverId);
+      await sendNotification(
+        receiverId,
+        "Friend Request",
+        `${sender_username} sent you a friend request.`
+      );
+    }
+    
     res.status(200).json({ message: "Friend request sent successfully" });
   } catch (error) {
     console.error("Error sending friend request:", error);

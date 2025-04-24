@@ -27,7 +27,7 @@ export const sendNotification = async (
 
     const deviceId = deviceResult[0].device_id;
 
-    //console.log("SENDING NOTIF TO", deviceId);
+    console.log("SENDING NOTIF TO DEVICE: ", deviceId);
 
     // Construct the FCM message
     const message = {
