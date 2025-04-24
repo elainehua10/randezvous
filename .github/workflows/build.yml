@@ -21,7 +21,5 @@ jobs:
       working-directory: ./backend
       
     - name: Build the Docker image
-      run: |
-        cd backend
-        run: docker build -t express-app-test ./backend
+      run: docker build -t express-app-test ./backend
     
