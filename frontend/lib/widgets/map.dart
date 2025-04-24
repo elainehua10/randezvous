@@ -204,9 +204,10 @@ class MapWidgetState extends State<MapWidget> {
                     : LatLng(0, 0),
             icon: bitmap,
             infoWindow: InfoWindow(title: user.username),
-            onTap: user.id == "BEACON"
-              ? () => _showBeaconOptions(context, user.id)
-              : null,
+            onTap:
+                user.id == "BEACON"
+                    ? () => _showBeaconOptions(context, user.id)
+                    : null,
           );
         }).toList();
 
@@ -289,15 +290,12 @@ class MapWidgetState extends State<MapWidget> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text(
-                "Cancel",
-                style: TextStyle(color: Colors.grey[700]),
-              ),
+              child: Text("Cancel", style: TextStyle(color: Colors.grey[700])),
             ),
             ElevatedButton.icon(
               onPressed: () {
-                Navigator.pop(context);  // Close dialog
-                _showReportConfirmation(context, beaconId);  // Trigger report
+                Navigator.pop(context); // Close dialog
+                _showReportConfirmation(context, beaconId); // Trigger report
               },
               icon: Icon(Icons.report, size: 20),
               label: Text("Report"),
@@ -317,77 +315,77 @@ class MapWidgetState extends State<MapWidget> {
   }
 
   void _showReportConfirmation(BuildContext context, String beaconId) {
-  final List<String> reportReasons = [
-    "Dangerous location",
-    "Spam",
-    "Other"
-  ];
+    final List<String> reportReasons = [
+      "Dangerous location",
+      "Inaccessible location",
+      "Other",
+    ];
 
-  final TextEditingController descriptionController = TextEditingController();
+    final TextEditingController descriptionController = TextEditingController();
 
-  showDialog(
-    context: context,
-    builder: (context) {
-      String selectedReason = reportReasons[0];
+    showDialog(
+      context: context,
+      builder: (context) {
+        String selectedReason = reportReasons[0];
 
-      return StatefulBuilder(
-        builder: (context, setState) {
-          return AlertDialog(
-            title: const Text("Report Beacon"),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ...reportReasons.map((reason) {
-                    return RadioListTile<String>(
-                      title: Text(reason),
-                      value: reason,
-                      groupValue: selectedReason,
-                      onChanged: (value) {
-                        if (value != null) {
-                          setState(() {
-                            selectedReason = value;
-                          });
-                        }
-                      },
-                    );
-                  }).toList(),
-                  TextField(
-                    controller: descriptionController,
-                    decoration: InputDecoration(
-                      labelText: "Additional details (optional)",
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text("Report Beacon"),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ...reportReasons.map((reason) {
+                      return RadioListTile<String>(
+                        title: Text(reason),
+                        value: reason,
+                        groupValue: selectedReason,
+                        onChanged: (value) {
+                          if (value != null) {
+                            setState(() {
+                              selectedReason = value;
+                            });
+                          }
+                        },
+                      );
+                    }).toList(),
+                    TextField(
+                      controller: descriptionController,
+                      decoration: InputDecoration(
+                        labelText: "Additional details (optional)",
+                      ),
+                      maxLines: 3,
                     ),
-                    maxLines: 3,
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            actions: [
-              TextButton(
-                child: const Text("Cancel"),
-                onPressed: () => Navigator.pop(context),
-              ),
-              ElevatedButton(
-                child: const Text("Submit"),
-                onPressed: () async {
-                  Navigator.pop(context);
+              actions: [
+                TextButton(
+                  child: const Text("Cancel"),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                ElevatedButton(
+                  child: const Text("Submit"),
+                  onPressed: () async {
+                    Navigator.pop(context);
 
-                  print("Reporting ${beaconId}");
-                  print("Reason: $selectedReason");
-                  print("Details: ${descriptionController.text}");
+                    print("Reporting ${beaconId}");
+                    print("Reason: $selectedReason");
+                    print("Details: ${descriptionController.text}");
 
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Report submitted. Thank you.")),
-                  );
-                },
-              ),
-            ],
-          );
-        },
-      );
-    },
-  );
-}
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Report submitted. Thank you.")),
+                    );
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
 
   Future<BitmapDescriptor> _createMarkerIcon(
     String? profilePicture,
