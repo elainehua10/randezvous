@@ -254,7 +254,7 @@ export async function setupBeaconSchedulers() {
     // if (scheduledJobs.has(groupId)) continue;
 
     const job = scheduleGroupBeacon(groupId, beacon_frequency);
-    if (job) 
+    if (job) {
       scheduledJobs.set(groupId, job);
     }
   }
