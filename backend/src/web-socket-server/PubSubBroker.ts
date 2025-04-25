@@ -30,7 +30,12 @@ class PubSubBroker {
 
       this.subscriber.subscribe(`${topic}`, (message) => {
         const data = JSON.parse(message);
-        user.receiveUpdate(data);
+        const subscribers = this.topics.get(topic);
+        if (subscribers) {
+          for (const subUser of subscribers) {
+            subUser.receiveUpdate(data);
+          }
+        }
       });
     }
     const subscribers = this.topics.get(topic);
@@ -51,6 +56,7 @@ class PubSubBroker {
   }
 
   publish(topic: string, data: any) {
+    // console.log(FormDataEvent);
     this.publisher.publish(`${topic}`, JSON.stringify(data));
   }
 }
