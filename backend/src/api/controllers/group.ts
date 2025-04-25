@@ -602,8 +602,8 @@ export const getGlobalLeaderboard = async (req: Request, res: Response) => {
         group_score, 
         icon_url
       FROM groups
-      ORDER BY group_score DESC
       WHERE is_public = true
+      ORDER BY group_score DESC
       LIMIT 100;
     `;
 
