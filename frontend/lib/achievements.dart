@@ -46,29 +46,31 @@ class _AchievementsPageState extends State<AchievementsPage> {
   }
 
   Widget _buildAchievementCard(Map<String, dynamic> achievement, bool unlocked) {
-    bool isSocialButterfly = achievement['id'] == 1;
-
     return Card(
-      color: isSocialButterfly && unlocked ? Colors.amber[50] : Colors.white,
+      color: unlocked ? Colors.amber[50] : Colors.white,
       margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       elevation: 3,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: unlocked ? Colors.amber[100] : Colors.grey[300],
-          child: Icon(
-            isSocialButterfly 
-                ? Icons.people_alt 
-                : (unlocked ? Icons.emoji_events : Icons.lock),
-            color: unlocked ? Colors.amber[800] : Colors.grey[600],
-          ),
+          radius: 24,
+          backgroundImage: achievement['icon_url'] != null 
+              ? NetworkImage(achievement['icon_url']) 
+              : null,
+          child: achievement['icon_url'] == null 
+              ? Icon(
+                  unlocked ? Icons.emoji_events : Icons.lock,
+                  color: unlocked ? Colors.amber[800] : Colors.grey[600],
+                )
+              : null,
         ),
         title: Text(
           achievement['name'] ?? '',
           style: TextStyle(
             fontWeight: FontWeight.bold,
             color: unlocked ? Colors.black : Colors.grey,
-            fontSize: isSocialButterfly ? 18 : 16,
+            fontSize: 16,
           ),
         ),
         subtitle: Text(
@@ -81,6 +83,7 @@ class _AchievementsPageState extends State<AchievementsPage> {
       ),
     );
   }
+
 
   @override
   Widget build(BuildContext context) {

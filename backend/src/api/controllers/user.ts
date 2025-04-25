@@ -705,7 +705,7 @@ export const checkGroupAchievements = async (userId: string) => {
   `;
 
   const groupCount = parseInt(groups[0].count);
-  await checkAndAwardAchievement(userId, 2, groupCount >= 2);
+  await checkAndAwardAchievement(userId, 2, groupCount >= 1);
 }
 
 export const checkAndAwardAchievement = async (
