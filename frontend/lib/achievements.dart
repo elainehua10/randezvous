@@ -64,7 +64,7 @@ class _AchievementsPageState extends State<AchievementsPage> {
           ),
         ),
         title: Text(
-          achievement['title'] ?? '',
+          achievement['name'] ?? '',
           style: TextStyle(
             fontWeight: FontWeight.bold,
             color: unlocked ? Colors.black : Colors.grey,
@@ -137,7 +137,7 @@ class _AchievementsPageState extends State<AchievementsPage> {
                           Padding(
                             padding: EdgeInsets.symmetric(horizontal: 16),
                             child: Text(
-                              "You've unlocked all achievements! 🎉",
+                              "You've unlocked all achievements!",
                               style: TextStyle(color: Colors.green[700], fontSize: 16),
                             ),
                           )

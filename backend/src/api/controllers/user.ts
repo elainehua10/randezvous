@@ -679,6 +679,7 @@ export const getUserAchievements = async (req: Request, res: Response) => {
 export const checkAllAchievements = async (userId: string) => {
   await Promise.all([
     checkFriendAchievements(userId),
+    checkGroupAchievements(userId),
   ]);
 };
 
@@ -695,6 +696,17 @@ export const checkFriendAchievements = async (userId: string) => {
   // Check multiple friend achievements
   await checkAndAwardAchievement(userId, 1, friendCount >= 5); // Social Butterfly (5 friends)
 };
+
+// Join one group achievement
+export const checkGroupAchievements = async (userId: string) => {
+  const groups = await sql`
+    SELECT COUNT(*) AS count FROM user_group
+    WHERE user_id = ${userId};
+  `;
+
+  const groupCount = parseInt(groups[0].count);
+  await checkAndAwardAchievement(userId, 2, groupCount >= 2);
+}
 
 export const checkAndAwardAchievement = async (
   userId: string, 
