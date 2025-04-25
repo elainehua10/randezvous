@@ -75,6 +75,7 @@ export const login = async (req: Request, res: Response) => {
   }
 };
 
+// Change username
 export const changeUsername = async (req: Request, res: Response) => {
   const { userId, newUsername } = req.body;
 
@@ -109,7 +110,6 @@ export const changeUsername = async (req: Request, res: Response) => {
 };
 
 // Set profile picture
-
 export const setProfilePicture = async (req: Request, res: Response) => {
   const { userId, deletePhoto } = req.body;
   if (!userId) {
@@ -431,6 +431,12 @@ export const getMemberProfile = async (req: Request, res: Response) => {
       LIMIT 1;
     `;
 
+    const isRequestPending = await sql`
+      SELECT 1 FROM friend_requests
+      WHERE sender_id = ${currId} AND receiver_id = ${userId} AND status = 'pending'
+      LIMIT 1;
+    `
+
     const rawGroups = await sql`
       SELECT g.id, g.name, g.icon_url, ug.points, ug.rank
       FROM user_group ug
@@ -455,6 +461,7 @@ export const getMemberProfile = async (req: Request, res: Response) => {
       },
       groups: groups,
       is_friend: isFriend.length > 0,
+      is_request_pending: isRequestPending.length > 0,
     });
   } catch (error) {
     console.error("Error fetching user profile:", error);
@@ -462,7 +469,6 @@ export const getMemberProfile = async (req: Request, res: Response) => {
   }
 };
 
-// Send friend request
 export const sendFriendRequest = async (req: Request, res: Response) => {
   const { senderId, receiverId } = req.body;
 
@@ -495,11 +501,37 @@ export const sendFriendRequest = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Friend request already sent" });
     }
 
+    // Fetch sender's username and receiver's notification settings
+    const usersInfo = await sql`
+      SELECT 
+        sender.username AS sender_username,
+        receiver.notifications_enabled
+      FROM profile sender, profile receiver
+      WHERE sender.id = ${senderId} AND receiver.id = ${receiverId};
+    `;
+
+    if (usersInfo.length === 0) {
+      return res.status(404).json({ error: "One or both users not found" });
+    }
+
+    const { sender_username, notifications_enabled } = usersInfo[0];
+
+    // Insert the friend request
     await sql`
       INSERT INTO friend_requests (sender_id, receiver_id)
       VALUES (${senderId}, ${receiverId});
     `;
 
+    // Send notification to the recipient if notifications are enabled
+    if (notifications_enabled) {
+      console.log("Sending friend request notification to user:", receiverId);
+      await sendNotification(
+        receiverId,
+        "Friend Request",
+        `${sender_username} sent you a friend request.`
+      );
+    }
+    
     res.status(200).json({ message: "Friend request sent successfully" });
   } catch (error) {
     console.error("Error sending friend request:", error);
@@ -560,8 +592,6 @@ export const declineFriendRequest = async (req: Request, res: Response) => {
   }
 };
 
-
-
 export const setDeviceId = async (req: Request, res: Response) => {
   try {
     const { userId, deviceId } = req.body;
@@ -621,46 +651,125 @@ export const getUserGroups = async (req: Request, res: Response) => {
   }
 };
 
-export const getAllAchievements = async (req: Request, res: Response) => {
-  try {
-    const achievements = await sql`
-      SELECT id, name, description, icon_url -- Add other relevant columns if needed
-      FROM achievements
-      ORDER BY name; -- Or order by ID, points, etc.
-    `;
+export const getUserAchievements = async (req: Request, res: Response) => {
+  // Check all possible achievements first
+  const { userId } = req.body;
+  await checkAllAchievements(userId);
+  
+  // Then fetch and return unlocked/locked achievements
+  const unlocked = await sql`
+    SELECT a.id, a.name, a.description, ua.unlocked_at
+    FROM user_achievements ua
+    JOIN achievements a ON ua.achievement_id = a.id
+    WHERE ua.user_id = ${userId};
+  `;
+  
+  const allAchievements = await sql`SELECT * FROM achievements;`;
+  
+  const locked = allAchievements.filter((a) => 
+    !unlocked.some((ua) => ua.id === a.id)
+  );
 
-    res.status(200).json({ achievements });
-  } catch (error) {
-    console.error("Error fetching all achievements:", error);
-    res.status(500).json({ error: "Internal server error" });
+  res.status(200).json({
+    unlocked: unlocked,
+    locked: locked
+  })
+};
+
+export const checkAllAchievements = async (userId: string) => {
+  await Promise.all([
+    checkFriendAchievements(userId),
+    checkGroupAchievements(userId),
+  ]);
+};
+
+export const checkFriendAchievements = async (userId: string) => {
+  const friends = await sql`
+    SELECT COUNT(*) AS count FROM friend_requests
+    WHERE 
+      (sender_id = ${userId} OR receiver_id = ${userId})
+      AND status = 'accepted';
+  `;
+  
+  const friendCount = parseInt(friends[0].count);
+  
+  // Check multiple friend achievements
+  await checkAndAwardAchievement(userId, 1, friendCount >= 3); // Social Butterfly (5 friends)
+};
+
+// Join one group achievement
+export const checkGroupAchievements = async (userId: string) => {
+  const groups = await sql`
+    SELECT COUNT(*) AS count FROM user_group
+    WHERE user_id = ${userId};
+  `;
+
+  const groupCount = parseInt(groups[0].count);
+  await checkAndAwardAchievement(userId, 2, groupCount >= 1);
+}
+
+export const checkAndAwardAchievement = async (
+  userId: string, 
+  achievementId: number, 
+  condition: boolean
+) => {
+  if (!condition) return; // Skip if condition not met
+  
+  // Check if already awarded
+  const existing = await sql`
+    SELECT 1 FROM user_achievements
+    WHERE user_id = ${userId} AND achievement_id = ${achievementId};
+  `;
+  
+  if (existing.length === 0) {
+    // Award new achievement with timestamp
+    await sql`
+      INSERT INTO user_achievements (user_id, achievement_id, unlocked_at)
+      VALUES (${userId}, ${achievementId}, NOW());
+    `;
+    
+    console.log(`Achievement ${achievementId} awarded to user ${userId}`);
   }
 };
 
-// Retrieve achievements unlocked by a specific user
-export const getUnlockedAchievements = async (req: Request, res: Response) => {
-  const { userId } = req.body;
+// Reset password
+export const resetPassword = async (req: Request, res: Response) => {
+  const { email, newPassword, confirmPassword, userId } = req.body;
 
-  if (!userId) {
-    return res.status(400).json({ error: "Missing userId" });
+  if (!email || !newPassword || !confirmPassword || !userId) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  if (newPassword !== confirmPassword) {
+    return res.status(400).json({ error: "Passwords do not match" });
   }
 
   try {
-    const unlockedAchievements = await sql`
-      SELECT 
-        a.id, 
-        a.name, 
-        a.description, 
-        a.icon_url, 
-        ua.unlocked_at -- Select other achievement columns as needed
-      FROM user_achievements ua
-      JOIN achievements a ON ua.achievement_id = a.id
-      WHERE ua.user_id = ${userId}
-      ORDER BY ua.unlocked_at DESC; -- Or order by achievement name, etc.
-    `;
+    const { data: userInfo, error: userError } = await supabase.auth.admin.getUserById(userId);
 
-    res.status(200).json({ unlocked_achievements: unlockedAchievements });
-  } catch (error) {
-    console.error("Error fetching unlocked achievements:", error);
-    res.status(500).json({ error: "Internal server error" });
+    if (userError) {
+      return res.status(500).json({ error: userError.message });
+    } else if(!userInfo?.user?.email) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const registeredEmail = userInfo.user.email;
+
+    if (registeredEmail !== email) {
+      return res.status(403).json({ error: "You can only reset your own password" });
+    }
+
+    const { error: updateError } = await supabase.auth.admin.updateUserById(userId, {
+      password: newPassword,
+    });
+
+    if (updateError) {
+      return res.status(500).json({ error: updateError.message });
+    }
+
+    return res.status(200).json({ message: "Password reset successful" });
+  } catch (err) {
+    console.error("Password reset error:", err);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };

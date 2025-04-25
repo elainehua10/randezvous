@@ -464,6 +464,17 @@ export const acceptInvite = async (req: Request, res: Response) => {
       });
     }
 
+    // Check if user is already a member
+    const membership = await sql`
+      SELECT id 
+      FROM user_group 
+      WHERE group_id = ${groupId} AND user_id = ${userId};
+    `;
+
+    if (membership.length > 0) {
+      return res.status(400).json({ error: "Already a member of this group" });
+    }
+
     // Adding user to the user_group table
     await sql`
       INSERT INTO user_group (group_id, user_id)

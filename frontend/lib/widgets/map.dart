@@ -32,6 +32,8 @@ class MapWidgetState extends State<MapWidget> {
   bool _showBeaconReachedModal = false;
   String _beaconMessage = "";
   bool _showConfirmationMessage = false; // Confirmation message state
+  double _currentPoints = 10.0; // Default to max points
+  DateTime? _beaconStartTime;
 
   @override
   void initState() {
@@ -39,25 +41,46 @@ class MapWidgetState extends State<MapWidget> {
     _connectToWebSocket();
     _moveToUser();
   }
+  double _calculatePoints(int timeTakenInSeconds) {
+    const double maxPoints = 10.0; // Maximum points
+    const double minPoints = 2.0;  // Minimum points
+    const double decayRate = 0.005; // Adjust this to control the decay rate
 
+    // Calculate points using exponential decay
+    double points = maxPoints * (1 / (1 + decayRate * timeTakenInSeconds));
+
+    // Clamp points between minPoints and maxPoints
+    return points.clamp(minPoints, maxPoints);
+  }
+  
   void _closeBeaconModal() {
+    if (_beaconStartTime == null) return;
+
+    final timeTakenInSeconds = DateTime.now().difference(_beaconStartTime!).inSeconds;
+    final points = _calculatePoints(timeTakenInSeconds);
+
+    print("Time taken in seconds: $timeTakenInSeconds");
+    print("Calculated points: $points");
+
     setState(() {
+      _currentPoints = points;
       _showBeaconReachedModal = false;
       _beaconMessage = "";
       _showConfirmationMessage = true; // Show confirmation message
     });
 
     // Hide confirmation message after a few seconds
-    Future.delayed(Duration(seconds: 2), () {
+    Future.delayed(Duration(seconds: 3), () {
       if (mounted) {
         setState(() {
           _showConfirmationMessage = false; // Hide it after 2 seconds
         });
       }
     });
+
   }
 
-  Widget _buildConfirmationMessage() {
+  Widget _buildConfirmationMessage(double points) {
     return AnimatedPositioned(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
@@ -75,7 +98,7 @@ class MapWidgetState extends State<MapWidget> {
             border: Border.all(color: Colors.green[300]!),
           ),
           child: Text(
-            'Congrats! Points have been rewarded!',
+            'Congrats! ${points.toStringAsFixed(1)} Points have been rewarded!',
             style: TextStyle(
               fontWeight: FontWeight.bold,
               color: Colors.green[800],
@@ -119,6 +142,7 @@ class MapWidgetState extends State<MapWidget> {
           setState(() {
             _beaconMessage = "You've reached the beacon!";
             _showBeaconReachedModal = true;
+            _beaconStartTime = DateTime.now(); // Record the start time
           });
           return;
         }
@@ -216,62 +240,6 @@ class MapWidgetState extends State<MapWidget> {
       setState(() => _markers = resolvedMarkers.toSet());
     }
   }
-
-  /*void _showBeaconOptions(BuildContext context, String beaconId) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: () {
-                Navigator.pop(context);
-                _showReportConfirmation(context, beaconId);
-              },
-              icon: Icon(Icons.report),
-              label: Text("Report Beacon Location"),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            ),
-          ],
-        ),
-      ),
-    );
-  }*/
-
-  /*void _showBeaconOptions(BuildContext context, String beaconId) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          //content: Text("Report Beacon Location"),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text("Cancel"),
-            ),
-            ElevatedButton.icon(
-              onPressed: () {
-                Navigator.pop(context);  // Close this dialog
-                _showReportConfirmation(context, beaconId);  // Open report dialog
-              },
-              icon: Icon(Icons.report),
-              label: Text("Report Beacon"),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }*/
 
   void _showBeaconOptions(BuildContext context, String beaconId) {
     showDialog(
@@ -438,7 +406,7 @@ class MapWidgetState extends State<MapWidget> {
                   ),
                   IconButton(
                     icon: Icon(Icons.close, color: Colors.amber[800]),
-                    onPressed: _closeBeaconModal,
+                    onPressed: () => _closeBeaconModal(),
                   ),
                 ],
               ),
@@ -469,7 +437,7 @@ class MapWidgetState extends State<MapWidget> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                onPressed: _closeBeaconModal,
+                onPressed: () => _closeBeaconModal(),
                 child: const Text("I'm Here!"),
               ),
             ],
@@ -499,7 +467,7 @@ class MapWidgetState extends State<MapWidget> {
           myLocationButtonEnabled: true,
         ),
         _buildBeaconReachedModal(),
-        _buildConfirmationMessage(),
+        _buildConfirmationMessage(_currentPoints),
       ],
     );
   }

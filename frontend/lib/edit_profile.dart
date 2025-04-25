@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:frontend/auth.dart';
 import 'dart:io';
+import 'package:frontend/password_reset_screen.dart'; // This will be your new page
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -13,12 +14,16 @@ class EditProfileScreen extends StatefulWidget {
 }
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
-  final _formKey = GlobalKey<FormState>();
+  final _usernameFormKey = GlobalKey<FormState>();
+  final _emailFormKey = GlobalKey<FormState>();
+
   String firstName = "First";
   String lastName = "Last";
   String username = "username";
   String new_user = "";
   String? errorMessage;
+  String email = "";
+  final emailController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -37,11 +42,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       ),
       body: Padding(
         padding: EdgeInsets.all(20.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              TextFormField(
+        child: Column(
+          children: [
+            // Username section
+            Form(
+              key: _usernameFormKey,
+              child: TextFormField(
                 initialValue: new_user,
                 decoration: InputDecoration(
                   labelText: 'New Username',
@@ -57,79 +63,87 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    Container(
-                      padding: EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.red[50],
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.red[200]!),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.error_outline,
-                            color: Colors.red,
-                            size: 16,
-                          ),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              "Please enter a username.",
-                              style: TextStyle(
-                                color: Colors.red[800],
-                                fontSize: 14,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
                     return 'Please enter a username';
                   }
                   return null;
                 },
                 onSaved: (value) => new_user = value!,
               ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _updateUsername,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.amber[800],
-                  foregroundColor: Colors.white,
-                ),
-                child: Text('Update Profile'),
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _updateUsername,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.amber[800],
+                foregroundColor: Colors.white,
               ),
-            ],
-          ),
+              child: Text('Update Profile'),
+            ),
+
+            SizedBox(height: 20),
+
+            // Email section
+            Form(
+              key: _emailFormKey,
+              child: TextFormField(
+                controller: emailController,
+                decoration: InputDecoration(
+                  labelText: 'Email (for verification)',
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(color: Colors.grey[300]!),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(color: Colors.amber[800]!),
+                  ),
+                  prefixIcon: Icon(Icons.email, color: Colors.grey[700]),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your email';
+                  }
+                  if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
+                    return 'Please enter a valid email';
+                  }
+                  return null;
+                },
+                onSaved: (value) => email = value!,
+              ),
+            ),
+            SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: _handlePasswordResetRedirect,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red[400],
+                foregroundColor: Colors.white,
+              ),
+              child: Text('Reset Password'),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Future<void> _fetchUserDetails() async {
-    try {
-      final response = await Auth.makeAuthenticatedPostRequest(
-        "get-user-profile-info",
-        {},
+  // Handle only the password reset email form
+  void _handlePasswordResetRedirect() {
+    if (_emailFormKey.currentState!.validate()) {
+      _emailFormKey.currentState!.save();
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PasswordResetScreen(email: email),
+        ),
       );
-      final data = json.decode(response.body);
-      if (response.statusCode == 200) {
-        setState(() {
-          firstName = data['first_name'] ?? 'First';
-          lastName = data['last_name'] ?? 'Last';
-          username = data['username'] ?? 'username';
-        });
-      } else {
-        throw Exception('Failed to load user details');
-      }
-    } catch (e) {
-      print("Error fetching user details: $e");
     }
   }
 
+  // Handle only the username update form
   Future<void> _updateUsername() async {
-    if (_formKey.currentState!.validate()) {
-      _formKey.currentState!.save();
+    if (_usernameFormKey.currentState!.validate()) {
+      _usernameFormKey.currentState!.save();
       try {
         String? accessToken = await Auth.getAccessToken();
 
@@ -142,81 +156,48 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           },
           body: jsonEncode({'userId': username, 'newUsername': new_user}),
         );
+
         if (response.statusCode == 200) {
-          print('Username updated successfully');
           showDialog(
             context: context,
-            builder:
-                (context) => AlertDialog(
-                  title: Text('Success!'),
-                  content: Text('Username changed to $new_user'),
-                  actions: <Widget>[
-                    TextButton(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                      },
-                      child: Text('OK'),
-                    ),
-                  ],
+            builder: (context) => AlertDialog(
+              title: Text('Success!'),
+              content: Text('Username changed to $new_user'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text('OK'),
                 ),
-          ).then((_) {
-            Navigator.pop(context, true);
-          });
+              ],
+            ),
+          ).then((_) => Navigator.pop(context, true));
         } else {
-          print('Failed to update username: ${response.body}');
           final responseData = jsonDecode(response.body);
-          int error = 0;
-          if (responseData['error'] ==
-              "The new username must be different from the current one") {
-            error = 1;
-          }
-          if (error == 1) {
-            showDialog(
-              context: context,
-              builder:
-                  (context) => AlertDialog(
-                    title: Text('Update Failed'),
-                    content: Text(
-                      'The new username must be different from the current one. Please try again.',
-                    ),
-                    actions: <Widget>[
-                      TextButton(
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                        child: Text('OK'),
-                      ),
-                    ],
-                  ),
-            );
-          } else {
-            showDialog(
-              context: context,
-              builder:
-                  (context) => AlertDialog(
-                    title: Text('Update Failed'),
-                    content: Text('Username is unavailable. Please try again.'),
-                    actions: <Widget>[
-                      TextButton(
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                        child: Text('OK'),
-                      ),
-                    ],
-                  ),
-            );
-          }
+          final errorText = responseData['error'] ??
+              'Username is unavailable. Please try again.';
+
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: Text('Update Failed'),
+              content: Text(errorText),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text('OK'),
+                ),
+              ],
+            ),
+          );
         }
       } catch (error) {
         print('Error: $error');
         showDialog(
           context: context,
-          builder:
-              (context) => AlertDialog(
-                title: Text('Error'),
-                content: Text('An error occurred while updating the username.'),
-              ),
+          builder: (context) => AlertDialog(
+            title: Text('Error'),
+            content: Text('An error occurred while updating the username.'),
+          ),
         );
       }
     }
