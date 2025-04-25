@@ -603,6 +603,7 @@ export const getGlobalLeaderboard = async (req: Request, res: Response) => {
         icon_url
       FROM groups
       ORDER BY group_score DESC
+      WHERE is_public = true
       LIMIT 100;
     `;
 
@@ -611,11 +612,11 @@ export const getGlobalLeaderboard = async (req: Request, res: Response) => {
     }
 
     // Format the response to match what the frontend expects
-    const leaderboard = groups.map(group => ({
+    const leaderboard = groups.map((group) => ({
       id: group.id,
       name: group.name,
       group_score: group.group_score || 0,
-      icon_url: group.icon_url
+      icon_url: group.icon_url,
     }));
 
     return res.status(200).json({ leaderboard });
@@ -863,7 +864,10 @@ export const checkMembership = async (req: Request, res: Response) => {
   }
 };
 
-export const getGroupMemberLeaderboard = async (req: Request, res: Response) => {
+export const getGroupMemberLeaderboard = async (
+  req: Request,
+  res: Response
+) => {
   try {
     const groupIdParam = req.query.groupId;
 
@@ -888,7 +892,7 @@ export const getGroupMemberLeaderboard = async (req: Request, res: Response) => 
       ORDER BY ug.points DESC;
     `;
 
-    const leaderboard = members.map(member => ({
+    const leaderboard = members.map((member) => ({
       id: member.id,
       name: `${member.first_name} ${member.last_name}`,
       username: member.username,
@@ -902,8 +906,6 @@ export const getGroupMemberLeaderboard = async (req: Request, res: Response) => 
     return res.status(500).json({ error: "Internal server error" });
   }
 };
-
-
 
 // Get group leaderboard
 export const getGroupLeaderboard = async (req: Request, res: Response) => {
