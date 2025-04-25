@@ -694,7 +694,7 @@ export const checkFriendAchievements = async (userId: string) => {
   const friendCount = parseInt(friends[0].count);
   
   // Check multiple friend achievements
-  await checkAndAwardAchievement(userId, 1, friendCount >= 5); // Social Butterfly (5 friends)
+  await checkAndAwardAchievement(userId, 1, friendCount >= 3); // Social Butterfly (5 friends)
 };
 
 // Join one group achievement
