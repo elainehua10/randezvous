@@ -3,9 +3,8 @@ import ConnectedUser from "./ConnectedUser";
 import jwt from "jsonwebtoken";
 import PubSubBroker from "./PubSubBroker";
 import { Server } from "http";
-import sql from "../db"; // Assuming you have a database connection setup
 
-export const locationBroker = new PubSubBroker();
+export const locationBroker = PubSubBroker.getInstance();
 
 export const setupWebsocketServer = (server: Server) => {
   const wsServer = new WebSocketServer({ server: server, path: "/locations" });
