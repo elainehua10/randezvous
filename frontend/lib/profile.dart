@@ -180,32 +180,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const SizedBox(height: 16),
                     _buildSocialSection(),
                     const SizedBox(height: 16),
-                    /*Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          GestureDetector(
-                            onTap: () => _showFriendList(context),
-                            child: Column(
-                              children: [
-                                Text("${friends.length}", style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                                Text("Friends", style: TextStyle(fontSize: 14, color: Colors.grey[700])),
-                              ],
-                            ),
-                          ),
-                          GestureDetector(
-                            onTap: () => _showPendingRequests(context),
-                            child: Column(
-                              children: [
-                                Text("${pendingRequests.length}", style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                                Text("Requests", style: TextStyle(fontSize: 14, color: Colors.grey[700])),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),*/
                     const SizedBox(height: 24),
                     Container(
                       margin: EdgeInsets.symmetric(horizontal: 16),
@@ -249,7 +223,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             title: "Achievements",
                             subtitle: "View your badges and accomplishments",
                             icon: Icons.emoji_events_rounded,
-                            onTap: () {},
+                            onTap:
+                              () => Navigator.pushNamed(context, '/achievements'),
                           ),
                           _buildDivider(),
                           _buildListTile(

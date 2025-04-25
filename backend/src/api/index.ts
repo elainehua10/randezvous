@@ -26,11 +26,8 @@ router.use("/user/block", requireAuth, user.block);
 router.use("/user/view-profile", requireAuth, user.getMemberProfile);
 router.use("/user/send-friend-request", requireAuth, user.sendFriendRequest);
 router.use("/user/accept-friend-request", user.acceptFriendRequest);
-router.use(
-  "/user/decline-friend-request",
-  requireAuth,
-  user.declineFriendRequest
-);
+router.use("/user/decline-friend-request", requireAuth, user.declineFriendRequest);
+router.use("/user/get-achievements", requireAuth, user.getUserAchievements);
 router.use("/change-username", requireAuth, user.changeUsername);
 router.use("/logout", requireAuth, user.logout);
 router.use("/set-profile-picture", requireAuth, user.setProfilePicture);
@@ -38,6 +35,7 @@ router.use("/delete-account", requireAuth, user.deleteAccount);
 router.use("/refresh-token", user.refreshToken);
 router.use("/get-user-profile-info", requireAuth, user.getUserProfileInfo);
 router.use("/toggle-notifications", requireAuth, user.toggleNotifications);
+router.use("/reset-password", requireAuth, user.resetPassword);
 
 // Group routes
 router.use("/groups/members", requireAuth, group.getGroupMembers);
