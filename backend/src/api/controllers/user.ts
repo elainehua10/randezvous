@@ -419,7 +419,9 @@ export const getMemberProfile = async (req: Request, res: Response) => {
     }
 
     if (!currId || !userId) {
-      return res.status(400).json({ error: "Missing userId or current user ID" });
+      return res
+        .status(400)
+        .json({ error: "Missing userId or current user ID" });
     }
 
     const isFriend = await sql`
@@ -435,7 +437,7 @@ export const getMemberProfile = async (req: Request, res: Response) => {
       SELECT 1 FROM friend_requests
       WHERE sender_id = ${currId} AND receiver_id = ${userId} AND status = 'pending'
       LIMIT 1;
-    `
+    `;
 
     const rawGroups = await sql`
       SELECT g.id, g.name, g.icon_url, ug.points, ug.rank
@@ -531,7 +533,7 @@ export const sendFriendRequest = async (req: Request, res: Response) => {
         `${sender_username} sent you a friend request.`
       );
     }
-    
+
     res.status(200).json({ message: "Friend request sent successfully" });
   } catch (error) {
     console.error("Error sending friend request:", error);
@@ -655,7 +657,7 @@ export const getUserAchievements = async (req: Request, res: Response) => {
   // Check all possible achievements first
   const { userId } = req.body;
   await checkAllAchievements(userId);
-  
+
   // Then fetch and return unlocked/locked achievements
   const unlocked = await sql`
     SELECT a.id, a.name, a.description, ua.unlocked_at
@@ -663,17 +665,17 @@ export const getUserAchievements = async (req: Request, res: Response) => {
     JOIN achievements a ON ua.achievement_id = a.id
     WHERE ua.user_id = ${userId};
   `;
-  
+
   const allAchievements = await sql`SELECT * FROM achievements;`;
-  
-  const locked = allAchievements.filter((a) => 
-    !unlocked.some((ua) => ua.id === a.id)
+
+  const locked = allAchievements.filter(
+    (a) => !unlocked.some((ua) => ua.id === a.id)
   );
 
   res.status(200).json({
     unlocked: unlocked,
-    locked: locked
-  })
+    locked: locked,
+  });
 };
 
 export const checkAllAchievements = async (userId: string) => {
@@ -690,9 +692,9 @@ export const checkFriendAchievements = async (userId: string) => {
       (sender_id = ${userId} OR receiver_id = ${userId})
       AND status = 'accepted';
   `;
-  
+
   const friendCount = parseInt(friends[0].count);
-  
+
   // Check multiple friend achievements
   await checkAndAwardAchievement(userId, 1, friendCount >= 3); // Social Butterfly (5 friends)
 };
@@ -706,29 +708,44 @@ export const checkGroupAchievements = async (userId: string) => {
 
   const groupCount = parseInt(groups[0].count);
   await checkAndAwardAchievement(userId, 2, groupCount >= 1);
-}
+};
 
 export const checkAndAwardAchievement = async (
-  userId: string, 
-  achievementId: number, 
+  userId: string,
+  achievementId: number,
   condition: boolean
 ) => {
   if (!condition) return; // Skip if condition not met
-  
+
   // Check if already awarded
   const existing = await sql`
     SELECT 1 FROM user_achievements
     WHERE user_id = ${userId} AND achievement_id = ${achievementId};
   `;
-  
+
   if (existing.length === 0) {
     // Award new achievement with timestamp
     await sql`
       INSERT INTO user_achievements (user_id, achievement_id, unlocked_at)
       VALUES (${userId}, ${achievementId}, NOW());
     `;
-    
-    console.log(`Achievement ${achievementId} awarded to user ${userId}`);
+
+    const achievement = await sql`
+      SELECT 1 FROM achievements
+      WHERE id = ${achievementId};
+    `;
+
+    if (achievement.length === 0) {
+      console.error("Achievement not found:", achievementId);
+      return;
+    }
+
+    // Send notification
+    const { name, description } = achievement[0];
+    console.log(
+      `Achievement unlocked: ${name} - ${description} for user ${userId}`
+    );
+    sendNotification(userId, `Achievement Unlocked: ${name}`, `${description}`);
   }
 };
 
@@ -745,23 +762,29 @@ export const resetPassword = async (req: Request, res: Response) => {
   }
 
   try {
-    const { data: userInfo, error: userError } = await supabase.auth.admin.getUserById(userId);
+    const { data: userInfo, error: userError } =
+      await supabase.auth.admin.getUserById(userId);
 
     if (userError) {
       return res.status(500).json({ error: userError.message });
-    } else if(!userInfo?.user?.email) {
+    } else if (!userInfo?.user?.email) {
       return res.status(404).json({ error: "User not found" });
     }
 
     const registeredEmail = userInfo.user.email;
 
     if (registeredEmail !== email) {
-      return res.status(403).json({ error: "You can only reset your own password" });
+      return res
+        .status(403)
+        .json({ error: "You can only reset your own password" });
     }
 
-    const { error: updateError } = await supabase.auth.admin.updateUserById(userId, {
-      password: newPassword,
-    });
+    const { error: updateError } = await supabase.auth.admin.updateUserById(
+      userId,
+      {
+        password: newPassword,
+      }
+    );
 
     if (updateError) {
       return res.status(500).json({ error: updateError.message });

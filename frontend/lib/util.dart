@@ -9,10 +9,12 @@ import 'package:frontend/auth.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class Util {
-  static final String BACKEND_URL =
-      // Platform.isAndroid ? "http://10.0.2.2:5001" : "http://100.69.73.91:5001";
-      // Platform.isAndroid ? "http://10.0.2.2:5001" : "http://localhost:5001";
-      "https://randezvous-68978884599.us-east1.run.app";
+  static final String HOST_NAME = "randezvous-68978884599.us-east1.run.app";
+  static final String BACKEND_URL = "https://$HOST_NAME";
+  // static final String BACKEND_URL =
+  //     // Platform.isAndroid ? "http://10.0.2.2:5001" : "http://100.69.73.91:5001";
+  //     // Platform.isAndroid ? "http://10.0.2.2:5001" : "http://localhost:5001";
+  //     "https://randezvous-68978884599.us-east1.run.app";
 }
 
 void initBackgroundFetch() async {

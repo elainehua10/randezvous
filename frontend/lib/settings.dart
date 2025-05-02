@@ -1,12 +1,14 @@
 import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:frontend/auth.dart';
+import 'package:frontend/util.dart';
+import 'package:http/http.dart' as http;
+
 import 'privacy_security_page.dart';
 import 'faq_page.dart';
 import 'contact_us_page.dart';
-import 'package:http/http.dart' as http;
-import 'package:frontend/util.dart';
-import 'dart:io';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -21,24 +23,20 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   void initState() {
     super.initState();
-    _fetchNotificationSetting(); // Fetch the current setting when the page loads
+    _fetchNotificationSetting();
   }
 
   Future<void> _fetchNotificationSetting() async {
     try {
-      String? accessToken =
-          await Auth.getAccessToken(); // Get the access token of the logged-in user
-
+      final token = await Auth.getAccessToken();
       final url = Uri.parse('${Util.BACKEND_URL}/api/v1/get-user-profile-info');
       final response = await http.post(
         url,
         headers: {
           'Content-Type': 'application/json',
-          HttpHeaders.authorizationHeader: 'Bearer $accessToken',
+          HttpHeaders.authorizationHeader: 'Bearer $token',
         },
-        body: jsonEncode({
-          'userId': 'user_id_here',
-        }), // Replace with actual user ID
+        body: jsonEncode({'userId': 'user_id_here'}),
       );
 
       if (response.statusCode == 200) {
@@ -46,173 +44,74 @@ class _SettingsPageState extends State<SettingsPage> {
         setState(() {
           _notificationsEnabled = data['notifications_enabled'] ?? true;
         });
-      } else {
-        print('Failed to load notification setting: ${response.body}');
       }
-    } catch (error) {
-      print('Error fetching notification setting: $error');
+    } catch (e) {
+      // ignore
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          "Settings",
-          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 20),
-        ),
-        backgroundColor: Colors.amber[800],
-        foregroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(bottom: Radius.circular(16)),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_rounded),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: Container(
-        color: Colors.grey[50],
-        child: ListView(
-          padding: const EdgeInsets.only(top: 16),
-          children: [
-            _buildSectionTitle("Preferences"),
-            _buildToggleRow(
-              title: "Notifications",
-              subtitle: "Receive alerts and updates",
-              icon: Icons.notifications_outlined,
-              value: _notificationsEnabled ?? false,
-              onChanged: (bool value) {
-                setState(() {
-                  _notificationsEnabled = value;
-                });
-                _updateNotificationSetting(value);
-              },
-            ),
-            _buildSectionTitle("Support & Information"),
-            _buildRow(
-              title: "Privacy & Security",
-              subtitle: "Manage your privacy settings",
-              icon: Icons.shield_outlined,
-              onTap:
-                  () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => PrivacySecurityPage(),
-                    ),
-                  ),
-            ),
-            _buildRow(
-              title: "FAQ",
-              subtitle: "Frequently asked questions",
-              icon: Icons.help_outline_rounded,
-              onTap:
-                  () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => FAQPage()),
-                  ),
-            ),
-            _buildRow(
-              title: "Contact Us",
-              subtitle: "Ask questions or report an issue",
-              icon: Icons.mail_outline,
-              onTap:
-                  () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => ContactUsPage()),
-                  ),
-            ),
-            const SizedBox(height: 32),
-            Center(
-              child: Text(
-                "App Version 1.0.0",
-                style: TextStyle(color: Colors.grey[500], fontSize: 12),
-              ),
-            ),
-            const SizedBox(height: 16),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _updateNotificationSetting(bool enableNotifications) async {
+  Future<void> _updateNotificationSetting(bool enabled) async {
     try {
-      String? accessToken =
-          await Auth.getAccessToken(); // Get the access token of the logged-in user
-
+      final token = await Auth.getAccessToken();
       final url = Uri.parse('${Util.BACKEND_URL}/api/v1/toggle-notifications');
       final response = await http.post(
         url,
         headers: {
           'Content-Type': 'application/json',
-          HttpHeaders.authorizationHeader: 'Bearer $accessToken',
+          HttpHeaders.authorizationHeader: 'Bearer $token',
         },
-        body: jsonEncode({
-          'enableNotifications':
-              enableNotifications, // Send the new notification preference
-        }),
+        body: jsonEncode({'enableNotifications': enabled}),
       );
 
       if (response.statusCode == 200) {
-        print('Notification preference updated successfully');
-        showDialog(
-          context: context,
-          builder:
-              (context) => AlertDialog(
-                title: Text('Success!'),
-                content: Text(
-                  'Notifications ${enableNotifications ? 'enabled' : 'disabled'} successfully',
-                ),
-                actions: <Widget>[
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
-                    child: Text('OK'),
-                  ),
-                ],
-              ),
+        _showAlert(
+          title: 'Success',
+          message:
+              'Notifications ${enabled ? 'enabled' : 'disabled'} successfully.',
         );
       } else {
-        print('Failed to update notifications: ${response.body}');
-        _showErrorDialog('Failed to update notification preferences');
+        _showAlert(title: 'Error', message: 'Couldn\'t update settings.');
       }
-    } catch (error) {
-      print('Error: $error');
-      _showErrorDialog(
-        'An error occurred while updating the notification preferences',
+    } catch (e) {
+      _showAlert(
+        title: 'Error',
+        message: 'An error occurred while updating your preferences.',
       );
     }
   }
 
-  void _showErrorDialog(String message) {
+  void _showAlert({required String title, required String message}) {
     showDialog(
       context: context,
       builder:
-          (context) => AlertDialog(
-            title: Text('Error'),
+          (ctx) => AlertDialog(
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: Text(
+              title,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.amber[800],
+              ),
+            ),
             content: Text(message),
-            actions: <Widget>[
+            actions: [
               TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: Text('OK'),
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: Text('OK', style: TextStyle(color: Colors.amber[800])),
               ),
             ],
           ),
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget _buildSectionTitle(String text) {
     return Padding(
-      padding: const EdgeInsets.only(left: 16, top: 16, bottom: 8),
+      padding: const EdgeInsets.fromLTRB(16, 24, 0, 8),
       child: Text(
-        title.toUpperCase(),
+        text.toUpperCase(),
         style: TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.bold,
@@ -223,56 +122,142 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  Widget _buildToggleRow({
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required bool value,
-    required Function(bool) onChanged,
-  }) {
+  Widget _buildCard({required Widget child}) {
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey[200]!, width: 1),
-      ),
-      child: SwitchListTile(
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
-        subtitle: Text(
-          subtitle,
-          style: TextStyle(color: Colors.grey[600], fontSize: 13),
-        ),
-        secondary: Icon(icon, color: Colors.amber[800]),
-        value: value,
-        onChanged: onChanged,
-        activeColor: Colors.amber[800],
-      ),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 1,
+      child: child,
+      color: Colors.white,
     );
   }
 
-  Widget _buildRow({
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey[200]!, width: 1),
-      ),
-      child: ListTile(
-        leading: Icon(icon, color: Colors.amber[800]),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
-        subtitle: Text(
-          subtitle,
-          style: TextStyle(color: Colors.grey[600], fontSize: 13),
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: Text(
+          'Settings',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+            color: Colors.amber[800],
+          ),
         ),
-        trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
-        onTap: onTap,
+        backgroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
+        iconTheme: IconThemeData(color: Colors.amber[800]),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(bottom: Radius.circular(16)),
+        ),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.only(top: 16, bottom: 32),
+        children: [
+          _buildSectionTitle('Preferences'),
+          // Notifications toggle
+          _buildCard(
+            child: SwitchListTile(
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 4,
+              ),
+              secondary: Icon(
+                Icons.notifications_outlined,
+                color: Colors.amber[800],
+              ),
+              title: Text(
+                'Notifications',
+                style: TextStyle(fontWeight: FontWeight.w500),
+              ),
+              subtitle: Text(
+                'Receive alerts and updates',
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+              value: _notificationsEnabled ?? false,
+              activeColor: Colors.amber[800],
+              onChanged: (v) {
+                setState(() => _notificationsEnabled = v);
+                _updateNotificationSetting(v);
+              },
+            ),
+          ),
+
+          _buildSectionTitle('Support & Information'),
+          // Privacy & Security
+          _buildCard(
+            child: ListTile(
+              leading: Icon(Icons.shield_outlined, color: Colors.amber[800]),
+              title: Text(
+                'Privacy & Security',
+                style: TextStyle(fontWeight: FontWeight.w500),
+              ),
+              subtitle: Text(
+                'Manage your privacy settings',
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+              trailing: Icon(Icons.arrow_forward_ios_rounded, size: 16),
+              onTap:
+                  () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => PrivacySecurityPage()),
+                  ),
+            ),
+          ),
+
+          // FAQ
+          _buildCard(
+            child: ListTile(
+              leading: Icon(
+                Icons.help_outline_rounded,
+                color: Colors.amber[800],
+              ),
+              title: Text('FAQ', style: TextStyle(fontWeight: FontWeight.w500)),
+              subtitle: Text(
+                'Frequently asked questions',
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+              trailing: Icon(Icons.arrow_forward_ios_rounded, size: 16),
+              onTap:
+                  () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => FAQPage()),
+                  ),
+            ),
+          ),
+
+          // Contact Us
+          _buildCard(
+            child: ListTile(
+              leading: Icon(Icons.mail_outline, color: Colors.amber[800]),
+              title: Text(
+                'Contact Us',
+                style: TextStyle(fontWeight: FontWeight.w500),
+              ),
+              subtitle: Text(
+                'Ask questions or report an issue',
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+              trailing: Icon(Icons.arrow_forward_ios_rounded, size: 16),
+              onTap:
+                  () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => ContactUsPage()),
+                  ),
+            ),
+          ),
+
+          // App version
+          const SizedBox(height: 24),
+          Center(
+            child: Text(
+              'App Version 1.0.0',
+              style: TextStyle(color: Colors.grey[500], fontSize: 12),
+            ),
+          ),
+        ],
       ),
     );
   }

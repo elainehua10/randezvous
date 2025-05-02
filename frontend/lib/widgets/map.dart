@@ -41,9 +41,10 @@ class MapWidgetState extends State<MapWidget> {
     _connectToWebSocket();
     _moveToUser();
   }
+
   double _calculatePoints(int timeTakenInSeconds) {
     const double maxPoints = 10.0; // Maximum points
-    const double minPoints = 2.0;  // Minimum points
+    const double minPoints = 2.0; // Minimum points
     const double decayRate = 0.005; // Adjust this to control the decay rate
 
     // Calculate points using exponential decay
@@ -52,11 +53,12 @@ class MapWidgetState extends State<MapWidget> {
     // Clamp points between minPoints and maxPoints
     return points.clamp(minPoints, maxPoints);
   }
-  
+
   void _closeBeaconModal() {
     if (_beaconStartTime == null) return;
 
-    final timeTakenInSeconds = DateTime.now().difference(_beaconStartTime!).inSeconds;
+    final timeTakenInSeconds =
+        DateTime.now().difference(_beaconStartTime!).inSeconds;
     final points = _calculatePoints(timeTakenInSeconds);
 
     print("Time taken in seconds: $timeTakenInSeconds");
@@ -77,7 +79,6 @@ class MapWidgetState extends State<MapWidget> {
         });
       }
     });
-
   }
 
   Widget _buildConfirmationMessage(double points) {
@@ -127,12 +128,15 @@ class MapWidgetState extends State<MapWidget> {
     final token = await Auth.getAccessToken();
     if (token == null) return;
 
+    print("Connecting to WebSocket at ${Util.BACKEND_URL}/locations");
+
     _channel = WebSocketChannel.connect(
       Uri.parse(
         // 'ws://localhost:5001/locations',
-        Platform.isAndroid
-            ? "ws://10.0.2.2:5001/locations"
-            : 'ws://localhost:5001/locations',
+        // Platform.isAndroid
+        //     ? "ws://10.0.2.2:5001/locations"
+        //     : 'ws://localhost:5001/locations',
+        "ws://${Util.HOST_NAME}/locations",
       ), // Replace with your server URL
     );
 

@@ -304,60 +304,69 @@ class _GlobalLeaderboardScreenState extends State<GlobalLeaderboardScreen> {
 
     return Column(
       children: [
-        Stack(
-          alignment: Alignment.center,
-          children: [
-            Container(
-              width: 110,
-              height: 110,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.amber[500]!, width: 4),
-              ),
-              child: ClipOval(
-                child:
-                    groupIconUrl != null
-                        ? Image.network(
-                          groupIconUrl,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Icon(
-                              Icons.group,
-                              size: 60,
-                              color: Colors.grey[400],
-                            );
-                          },
-                        )
-                        : Icon(Icons.group, size: 60, color: Colors.grey[400]),
-              ),
-            ),
-            Positioned(
-              top: -10,
-              child: Icon(Icons.star, size: 40, color: Colors.amber[600]),
-            ),
-            Positioned(
-              bottom: -15,
-              child: Container(
-                width: 30,
-                height: 30,
+        SizedBox(
+          height: 130, // give enough space for overflow above and below
+          width: 110,
+          child: Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.center,
+            children: [
+              Container(
+                width: 110,
+                height: 110,
                 decoration: BoxDecoration(
-                  color: Colors.amber[500],
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 2),
+                  border: Border.all(color: Colors.amber[500]!, width: 4),
                 ),
-                child: Center(
-                  child: Text(
-                    "1",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                child: ClipOval(
+                  child:
+                      groupIconUrl != null
+                          ? Image.network(
+                            groupIconUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Icon(
+                                Icons.person,
+                                size: 60,
+                                color: Colors.grey[400],
+                              );
+                            },
+                          )
+                          : Icon(
+                            Icons.person,
+                            size: 60,
+                            color: Colors.grey[400],
+                          ),
+                ),
+              ),
+              Positioned(
+                top: -10,
+                child: Icon(Icons.star, size: 40, color: Colors.amber[600]),
+              ),
+              Positioned(
+                bottom: -15,
+                child: Container(
+                  width: 30,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    color: Colors.amber[500],
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2),
+                  ),
+                  child: Center(
+                    child: Text(
+                      "1",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         SizedBox(height: 8),
         Text(
