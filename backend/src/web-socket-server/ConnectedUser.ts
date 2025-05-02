@@ -173,6 +173,22 @@ class ConnectedUser {
     this.broker.subscribe(newGroupId, this);
   }
 
+  async updateGroupIds() {
+    if (!this.userInfo) {
+      return;
+    }
+    const newGroupIds = await sql`
+    SELECT group_id
+    FROM user_group
+    WHERE user_id = ${this.userInfo.user_id};
+  `;
+    const newGroupIdsSet = new Set(newGroupIds.map((row) => row.group_id));
+    const newGroups = Array.from(newGroupIdsSet).filter(
+      (groupId) => !this.groupIds.has(groupId)
+    );
+    this.groupIds = new Set([...this.groupIds, ...newGroupIdsSet]);
+  }
+
   async publish(long: number, lat: number) {
     if (!this.userInfo) {
       return;
@@ -195,6 +211,8 @@ class ConnectedUser {
     const now = Date.now();
     if (now - this.lastBeaconCheckTime < 10000) return; // wait at least 10 seconds
     this.lastBeaconCheckTime = now;
+
+    this.updateGroupIds();
 
     // Beacon proximity check & auto-confirmation
     this.groupIds.forEach(async (groupId) => {
