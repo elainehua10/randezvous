@@ -57,10 +57,7 @@ class _MemberProfileScreenState extends State<MemberProfileScreen> {
     final currentUserId = await Auth.getCurrentUserId();
     final response = await Auth.makeAuthenticatedPostRequest(
       "user/send-friend-request",
-      {
-        "senderId": currentUserId,
-        "receiverId": widget.userId,
-      },
+      {"senderId": currentUserId, "receiverId": widget.userId},
     );
 
     if (response.statusCode == 200) {
@@ -81,79 +78,78 @@ class _MemberProfileScreenState extends State<MemberProfileScreen> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-          title:
-              Text('Profile', style: TextStyle(fontWeight: FontWeight.bold)),
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.amber[800],
-          elevation: 0,
-          centerTitle: true,
-          leading: IconButton(
-            icon: Icon(Icons.arrow_back_ios_rounded),
-            onPressed: () => Navigator.pop(context),
-          ),
-          actions: [
-            PopupMenuButton<String>(
-              onSelected: (value) {
-                final profile = userProfile?['profile'];
-                final user = User(
-                  id: widget.userId,
-                  name: '${profile['first_name']} ${profile['last_name']}',
-                  username: profile['username'],
-                  avatarUrl: profile['profile_picture']      
-                );
-                if (value == 'block') {
-                  _showBlockConfirmation(user);
-                } else if (value == 'report') {
-                  _showReportConfirmation(user);
-                }
-              },
-              itemBuilder: (BuildContext context) => [
-                PopupMenuItem(
-                  value: 'block',
-                  child: Row(
-                    children: [
-                      Icon(Icons.block, color: Colors.red),
-                      SizedBox(width: 8),
-                      Text('Block'),
-                    ],
+        title: Text('Profile', style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.amber[800],
+        elevation: 0,
+        centerTitle: true,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_rounded),
+          onPressed: () => Navigator.pop(context),
+        ),
+        actions: [
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              final profile = userProfile?['profile'];
+              final user = User(
+                id: widget.userId,
+                name: '${profile['first_name']} ${profile['last_name']}',
+                username: profile['username'],
+                avatarUrl: profile['profile_picture'],
+              );
+              if (value == 'block') {
+                _showBlockConfirmation(user);
+              } else if (value == 'report') {
+                _showReportConfirmation(user);
+              }
+            },
+            itemBuilder:
+                (BuildContext context) => [
+                  PopupMenuItem(
+                    value: 'block',
+                    child: Row(
+                      children: [
+                        Icon(Icons.block, color: Colors.red),
+                        SizedBox(width: 8),
+                        Text('Block'),
+                      ],
+                    ),
                   ),
-                ),
-                PopupMenuItem(
-                  value: 'report',
-                  child: Row(
-                    children: [
-                      Icon(Icons.report_gmailerrorred, color: Colors.red),
-                      SizedBox(width: 8),
-                      Text('Report'),
-                    ],
+                  PopupMenuItem(
+                    value: 'report',
+                    child: Row(
+                      children: [
+                        Icon(Icons.report_gmailerrorred, color: Colors.red),
+                        SizedBox(width: 8),
+                        Text('Report'),
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            )
-          ],
-          ),
-      body: isLoading
-          ? Center(
-              child: CircularProgressIndicator(
-                valueColor:
-                    AlwaysStoppedAnimation<Color>(Colors.amber[800]!),
-              ),
-            )
-          : SingleChildScrollView(
-              child: Column(
-                children: [
-                  _buildProfileHeader(),
-                  SizedBox(height: 24),
-                  _buildGroupsList(),
                 ],
+          ),
+        ],
+      ),
+      body:
+          isLoading
+              ? Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.amber[800]!),
+                ),
+              )
+              : SingleChildScrollView(
+                child: Column(
+                  children: [
+                    _buildProfileHeader(),
+                    SizedBox(height: 24),
+                    _buildGroupsList(),
+                  ],
+                ),
               ),
-            ),
     );
   }
 
@@ -219,7 +215,7 @@ class _MemberProfileScreenState extends State<MemberProfileScreen> {
       "Harassment or bullying",
       "Fake profile",
       "Spam",
-      "Other"
+      "Other",
     ];
 
     final TextEditingController descriptionController = TextEditingController();
@@ -324,15 +320,18 @@ class _MemberProfileScreenState extends State<MemberProfileScreen> {
                 child: CircleAvatar(
                   radius: 60,
                   backgroundColor: Colors.amber[50],
-                  backgroundImage: profile != null &&
-                          profile!['profile_picture'] != null
-                      ? NetworkImage(profile!['profile_picture'])
-                      : null,
-                  child: profile == null ||
-                          profile!['profile_picture'] == null
-                      ? Icon(Icons.person,
-                          size: 60, color: Colors.amber[800])
-                      : null,
+                  backgroundImage:
+                      profile != null && profile!['profile_picture'] != null
+                          ? NetworkImage(profile!['profile_picture'])
+                          : null,
+                  child:
+                      profile == null || profile!['profile_picture'] == null
+                          ? Icon(
+                            Icons.person,
+                            size: 60,
+                            color: Colors.amber[800],
+                          )
+                          : null,
                 ),
               ),
             ],
@@ -364,41 +363,47 @@ class _MemberProfileScreenState extends State<MemberProfileScreen> {
           SizedBox(height: 12),
           SizedBox(height: 12),
           isFriend
-            ? ElevatedButton.icon(
+              ? ElevatedButton.icon(
                 onPressed: null, // disables the button
                 icon: Icon(Icons.check),
                 label: Text("Friends"),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.grey,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
                   padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                 ),
               )
-            : isRequestPending
+              : isRequestPending
               ? ElevatedButton.icon(
-                  onPressed: null,  // Disabled when pending
-                  icon: Icon(Icons.hourglass_top),
-                  label: Text("Pending"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                onPressed: null, // Disabled when pending
+                icon: Icon(Icons.hourglass_top),
+                label: Text("Pending"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
                   ),
-                )
-              : ElevatedButton.icon(
-                  onPressed: _sendFriendRequest,
-                  icon: Icon(Icons.person_add_alt_1),
-                  label: Text("Send Friend Request"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.amber[800],
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  ),
+                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                 ),
-          ],
+              )
+              : ElevatedButton.icon(
+                onPressed: _sendFriendRequest,
+                icon: Icon(Icons.person_add_alt_1, color: Colors.white),
+                label: Text("Send Friend Request"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.amber[800],
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                ),
+              ),
+        ],
       ),
     );
   }
@@ -409,8 +414,10 @@ class _MemberProfileScreenState extends State<MemberProfileScreen> {
         (userProfile!['groups'] as List).isEmpty) {
       return Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Text("No groups found.",
-            style: TextStyle(fontSize: 16, color: Colors.grey)),
+        child: Text(
+          "No groups found.",
+          style: TextStyle(fontSize: 16, color: Colors.grey),
+        ),
       );
     }
 
@@ -446,24 +453,20 @@ class _MemberProfileScreenState extends State<MemberProfileScreen> {
               final points = group['points'];
               final rank = group['rank'];
 
-
               return ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: group['icon_url'] != null
-                    ? CircleAvatar(
-                        backgroundImage: NetworkImage(group['icon_url']),
-                      )
-                    : CircleAvatar(
-                        backgroundColor: Colors.amber[800],
-                        child: Icon(Icons.group, color: Colors.white),
-                      ),
+                leading:
+                    group['icon_url'] != null
+                        ? CircleAvatar(
+                          backgroundImage: NetworkImage(group['icon_url']),
+                        )
+                        : CircleAvatar(
+                          backgroundColor: Colors.amber[800],
+                          child: Icon(Icons.group, color: Colors.white),
+                        ),
                 title: Text(group['name']),
                 subtitle: Text('Points: $points | Rank: $rank'),
-                onTap: () {
-                  // handle group tap if needed
-                },
               );
-
             },
           ),
         ],

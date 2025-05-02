@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:frontend/auth.dart';
 import 'package:frontend/models/user.dart';
@@ -16,7 +15,6 @@ class InviteMembersDialog {
 
 class _InviteMembersDialog extends StatefulWidget {
   final String groupId;
-
   const _InviteMembersDialog({required this.groupId});
 
   @override
@@ -30,30 +28,26 @@ class _InviteMembersDialogState extends State<_InviteMembersDialog> {
   void _performUserSearch(String userId) async {
     if (userId.isEmpty) return;
 
-    Response response = await Auth.makeAuthenticatedPostRequest("user/search", {
+    final response = await Auth.makeAuthenticatedPostRequest("user/search", {
       "username": userId,
     });
-    final responseData = jsonDecode(response.body);
 
+    final data = jsonDecode(response.body);
     if (response.statusCode == 200) {
-      print(responseData["users"]);
-      List<User> results =
-          responseData["users"]
-              .map<User>(
-                (user) => User(
-                  id: user["id"],
-                  name: "${user["first_name"]} ${user["last_name"]}",
-                  avatarUrl: user["profile_picture"],
-                  username: user["username"],
-                ),
-              )
-              .toList();
-
       setState(() {
-        _searchResults = results;
+        _searchResults =
+            (data["users"] as List)
+                .map(
+                  (u) => User(
+                    id: u["id"],
+                    name: "${u["first_name"]} ${u["last_name"]}",
+                    avatarUrl: u["profile_picture"],
+                    username: u["username"],
+                  ),
+                )
+                .toList();
       });
     } else {
-      print(responseData);
       setState(() {
         _searchResults = [];
       });
@@ -63,77 +57,112 @@ class _InviteMembersDialogState extends State<_InviteMembersDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('Invite Members'),
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: Text(
+        'Invite Members',
+        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.amber[800]),
+      ),
       content: SizedBox(
         width: double.maxFinite,
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Search for a user by ID:'),
-            SizedBox(height: 16),
             TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Enter User ID',
-                prefixIcon: Icon(Icons.person),
+                hintText: 'Enter username',
+                prefixIcon: Icon(Icons.person, color: Colors.amber[800]),
                 suffixIcon: IconButton(
-                  icon: Icon(Icons.search),
-                  onPressed: () {
-                    _performUserSearch(_searchController.text);
-                  },
+                  icon: Icon(Icons.search, color: Colors.amber[800]),
+                  onPressed: () => _performUserSearch(_searchController.text),
                 ),
+                filled: true,
+                fillColor: Colors.grey[100],
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
                 ),
               ),
             ),
             SizedBox(height: 16),
             if (_searchResults.isNotEmpty)
               Container(
-                constraints: BoxConstraints(maxHeight: 200),
+                constraints: BoxConstraints(maxHeight: 240),
                 child: ListView.builder(
-                  shrinkWrap: true,
                   itemCount: _searchResults.length,
                   itemBuilder: (context, index) {
                     final user = _searchResults[index];
-                    return ListTile(
-                      leading: CircleAvatar(child: Text(user.name[0])),
-                      title: Text(user.name),
-                      subtitle: Text(user.username),
-                      trailing: IconButton(
-                        icon: Icon(Icons.add),
-                        onPressed: () async {
-                          await Auth.makeAuthenticatedPostRequest(
-                            "groups/invite",
-                            {
-                              "groupId":
-                                  widget.groupId, // Pass the groupId here
-                              "toUserId": user.id, // Pass the user ID to invite
-                            },
-                          );
-                          Navigator.pop(context);
-                          // Optionally, show a confirmation
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Invited ${user.name}')),
-                          );
-                        },
+                    return Container(
+                      margin: EdgeInsets.symmetric(vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 6,
+                            offset: Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: ListTile(
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        leading: CircleAvatar(
+                          backgroundColor: Colors.amber[100],
+                          backgroundImage:
+                              user.avatarUrl != null
+                                  ? NetworkImage(user.avatarUrl!)
+                                  : null,
+                          child:
+                              user.avatarUrl == null
+                                  ? Icon(Icons.person, color: Colors.amber[800])
+                                  : null,
+                        ),
+                        title: Text(
+                          user.name,
+                          style: TextStyle(fontWeight: FontWeight.w500),
+                        ),
+                        subtitle: Text(user.username),
+                        trailing: IconButton(
+                          icon: Icon(
+                            Icons.person_add,
+                            color: Colors.amber[800],
+                          ),
+                          onPressed: () async {
+                            await Auth.makeAuthenticatedPostRequest(
+                              "groups/invite",
+                              {"groupId": widget.groupId, "toUserId": user.id},
+                            );
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Invited ${user.name}')),
+                            );
+                          },
+                        ),
                       ),
                     );
                   },
                 ),
               )
             else if (_searchController.text.isNotEmpty)
-              Text('No results found'),
+              Padding(
+                padding: const EdgeInsets.only(top: 16),
+                child: Text(
+                  'No results found',
+                  style: TextStyle(color: Colors.grey[600]),
+                ),
+              ),
           ],
         ),
       ),
       actions: [
         TextButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
-          child: Text('Cancel'),
+          onPressed: () => Navigator.pop(context),
+          child: Text('Cancel', style: TextStyle(color: Colors.amber[800])),
         ),
       ],
     );

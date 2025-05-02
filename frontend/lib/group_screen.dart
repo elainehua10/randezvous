@@ -1,16 +1,17 @@
+// Refactored GroupScreen with cleaner visuals and consistency with LeaderboardScreen
+
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:frontend/models/group.dart';
 import 'package:frontend/models/user.dart';
 import 'package:frontend/widgets/invite.dart';
 import 'package:frontend/auth.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:frontend/member_profile.dart';
 
 class GroupScreen extends StatefulWidget {
   final String groupId;
-
   const GroupScreen({super.key, required this.groupId});
 
   @override
@@ -21,6 +22,7 @@ class _GroupScreenState extends State<GroupScreen> {
   late Group group;
   late List<User> members;
   bool isLoading = true;
+  bool isUserLeader = false;
 
   @override
   void initState() {
@@ -28,9 +30,6 @@ class _GroupScreenState extends State<GroupScreen> {
     fetchGroupDetails();
   }
 
-  bool isUserLeader = false;
-
-  // Fetch group details from the backend
   Future<void> fetchGroupDetails() async {
     final response = await Auth.makeAuthenticatedPostRequest("groups/members", {
       "groupId": widget.groupId,
@@ -43,13 +42,11 @@ class _GroupScreenState extends State<GroupScreen> {
           id: data['groupId'],
           name: data['name'],
           leaderId: data['leader_id'],
-          isPublic: data['isPublic'] == true, // Ensure it’s a boolean
-          iconUrl: data['iconUrl'] as String?, // Allow it to be null
+          isPublic: data['isPublic'] == true,
+          iconUrl: data['iconUrl'] as String?,
           beaconFrequency: data['beaconFrequency'],
         );
 
-        // print(group.iconUrl);
-        // print("Fetched beacon frequency: ${data['beaconFrequency']}, ${group.beaconFrequency}");
         members =
             (data['members'] as List)
                 .map(
@@ -65,506 +62,75 @@ class _GroupScreenState extends State<GroupScreen> {
         isUserLeader = data['isUserLeader'];
         isLoading = false;
       });
-    } else {
-      print("Failed to load group data");
     }
-  }
-
-  // API call to leave the group
-  void _leaveGroup() async {
-    final response = await Auth.makeAuthenticatedPostRequest("groups/leave", {
-      "groupId": widget.groupId,
-    });
-
-    if (response.statusCode == 200) {
-      Navigator.pop(context);
-      Navigator.pushReplacementNamed(context, "/home");
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("You have left the group.")));
-    } else {
-      print("Error leaving group: ${response.body}");
-    }
-  }
-
-  // Show confirmation dialog before leaving the group
-  void _showLeaveGroupDialog() {
-    if (isUserLeader) {
-      if (members.length <= 1) {
-        // Case when leader is the only member
-        showDialog(
-          context: context,
-          builder: (context) {
-            return AlertDialog(
-              title: Text("Cannot Leave Group"),
-              content: Text(
-                "You are the only member of this group. As the leader, you cannot leave unless there are other members. Please invite someone before trying to leave.",
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text("OK"),
-                ),
-              ],
-            );
-          },
-        );
-      } else {
-        // Case when leader needs to assign new leader
-        showDialog(
-          context: context,
-          builder: (context) {
-            return AlertDialog(
-              title: Text("Assign New Leader"),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "As the group leader, you must assign a new leader before leaving. Please select a member to become the new leader:",
-                  ),
-                  SizedBox(height: 16),
-                  DropdownButtonFormField<User>(
-                    decoration: InputDecoration(
-                      border: OutlineInputBorder(),
-                      labelText: "Select New Leader",
-                    ),
-                    items:
-                        members
-                            .where((member) => member.id != group.leaderId)
-                            .map(
-                              (member) => DropdownMenuItem(
-                                value: member,
-                                child: Text(member.name),
-                              ),
-                            )
-                            .toList(),
-                    onChanged: (selectedMember) async {
-                      if (selectedMember != null) {
-                        // API call to assign new leader
-                        final response =
-                            await Auth.makeAuthenticatedPostRequest(
-                              "groups/assign-leader",
-                              {
-                                "groupId": widget.groupId,
-                                "newLeaderId": selectedMember.id,
-                              },
-                            );
-
-                        if (response.statusCode == 200) {
-                          // After successful assignment, proceed with leaving
-                          _leaveGroup();
-                          Navigator.pop(context);
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                "Failed to assign new leader: ${response.body}",
-                              ),
-                            ),
-                          );
-                        }
-                      }
-                    },
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text("Cancel"),
-                ),
-              ],
-            );
-          },
-        );
-      }
-    } else {
-      // Original dialog for non-leaders
-      showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: Text("Leave Group"),
-            content: Text(
-              "Are you sure you want to leave this group? You will need an invite to rejoin.",
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text("Cancel"),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  _leaveGroup(); // Calls the API to leave
-                },
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                child: Text("Leave Group"),
-              ),
-            ],
-          );
-        },
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (isLoading) {
-      return Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ), // Show loading animation
-      );
-    }
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          group.name ?? "Unnamed Group",
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-            color: Colors.amber[800],
-          ),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme: IconThemeData(color: Colors.amber[800]),
-        actions: [
-          if (isUserLeader)
-            IconButton(
-              icon: Icon(Icons.settings, color: Colors.amber[800]),
-              onPressed: () {
-                _showGroupSettings(context, group);
-              },
-            ),
-          if (!isUserLeader)
-            IconButton(
-              icon: Icon(Icons.exit_to_app, color: Colors.amber[800]),
-              onPressed: () {
-                _showLeaveGroupDialog();
-              },
-            ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Group Header with Image and Info
-            _buildGroupHeader(context, group, isUserLeader),
-
-            // Group Stats
-            _buildGroupStats(context, group),
-
-            // Members Section
-            // Members Section
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Members (${members.length})',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.amber[800],
-                    ),
-                  ),
-                  if (isUserLeader)
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        _showInviteMembersDialog(context);
-                      },
-                      icon: Icon(Icons.person_add, size: 20),
-                      label: Text('Invite'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.amber[800],
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-
-            // Members List
-            ListView.builder(
-              shrinkWrap: true,
-              physics: NeverScrollableScrollPhysics(),
-              itemCount: members.length,
-              itemBuilder: (context, index) {
-                final member = members[index];
-                return _buildMemberItem(context, member, isUserLeader);
-              },
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   Future<void> _handleImageUpload(BuildContext context) async {
-    final ImagePicker picker = ImagePicker();
+    final picker = ImagePicker();
 
-    // Show a dialog to let the user choose between camera and gallery
     showModalBottomSheet(
       context: context,
-      builder: (BuildContext context) {
-        return SafeArea(
-          child: Wrap(
-            children: <Widget>[
-              ListTile(
-                leading: Icon(Icons.photo_library),
-                title: Text('Choose from Gallery'),
-                onTap: () async {
-                  Navigator.pop(context);
-                  final XFile? image = await picker.pickImage(
-                    source: ImageSource.gallery,
-                    maxWidth: 1000,
-                    maxHeight: 1000,
-                    imageQuality: 85,
-                  );
-                  if (image != null) {
-                    _uploadImage(File(image.path));
-                  }
-                },
-              ),
-              ListTile(
-                leading: Icon(Icons.photo_camera),
-                title: Text('Take a Photo'),
-                onTap: () async {
-                  Navigator.pop(context);
-                  final XFile? photo = await picker.pickImage(
-                    source: ImageSource.camera,
-                    maxWidth: 1000,
-                    maxHeight: 1000,
-                    imageQuality: 85,
-                  );
-                  if (photo != null) {
-                    _uploadImage(File(photo.path));
-                  }
-                },
-              ),
-            ],
+      builder:
+          (_) => SafeArea(
+            child: Wrap(
+              children: [
+                ListTile(
+                  leading: Icon(Icons.photo_library),
+                  title: Text('Choose from Gallery'),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    final XFile? image = await picker.pickImage(
+                      source: ImageSource.gallery,
+                    );
+                    if (image != null) _uploadImage(File(image.path));
+                  },
+                ),
+                ListTile(
+                  leading: Icon(Icons.photo_camera),
+                  title: Text('Take a Photo'),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    final XFile? image = await picker.pickImage(
+                      source: ImageSource.camera,
+                    );
+                    if (image != null) _uploadImage(File(image.path));
+                  },
+                ),
+              ],
+            ),
           ),
-        );
-      },
     );
   }
 
-  // Add this function to handle the image upload process
   Future<void> _uploadImage(File imageFile) async {
-    // Show loading indicator
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => Center(child: CircularProgressIndicator()),
+      builder: (_) => Center(child: CircularProgressIndicator()),
     );
 
     try {
-      print(widget.groupId);
       final response = await Auth.uploadFileWithAuth("groups/icon", imageFile, {
         "groupId": widget.groupId,
       });
-      final responseData = jsonDecode(response.body);
-      print(responseData);
-      // Close loading dialog
       Navigator.pop(context);
 
       if (response.statusCode == 200) {
-        // Refresh group details to show the new image
         fetchGroupDetails();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Group image updated successfully')),
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to upload image. Please try again.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to upload image')));
       }
     } catch (e) {
-      // Close loading dialog
       Navigator.pop(context);
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
     }
-  }
-
-  Widget _buildGroupHeader(
-    BuildContext context,
-    Group group,
-    bool isUserLeader,
-  ) {
-    return SizedBox(
-      height: 200,
-      width: double.infinity,
-      child: Stack(
-        children: [
-          Container(
-            height: 150,
-            width: double.infinity,
-            color: Colors.amber[100],
-            child: Center(
-              child:
-                  group.iconUrl == null
-                      ? Icon(Icons.group, size: 80, color: Colors.amber[800])
-                      : Image.network(group.iconUrl!, height: 80, width: 80),
-            ),
-          ),
-
-          // Upload Button (visible only to group leader)
-          if (isUserLeader)
-            Positioned(
-              top: 8,
-              left: 8,
-              child: IconButton(
-                icon: Container(
-                  padding: EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: Color.fromRGBO(255, 255, 255, 0.6),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(Icons.upload, color: Colors.amber[800], size: 24),
-                ),
-                onPressed: () {
-                  _handleImageUpload(context);
-                },
-                tooltip: 'Upload Group Image',
-              ),
-            ),
-
-          // Group Info Overlay
-          Positioned(
-            bottom: 0,
-            left: 16,
-            right: 16,
-            child: Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      group.name ?? "Unnamed Group",
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.amber[800],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildGroupStats(BuildContext context, Group group) {
-    return Container(
-      padding: EdgeInsets.symmetric(vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.grey[100],
-        border: Border(
-          top: BorderSide(color: Colors.grey[300]!),
-          bottom: BorderSide(color: Colors.grey[300]!),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMemberItem(
-    BuildContext context,
-    User member,
-    bool isUserLeader,
-  ) {
-    return InkWell(
-      onTap: () {
-        print('Navigating to member profile with ID: ${member.id}');
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => MemberProfileScreen(userId: member.id),
-          ),
-        );
-      },
-      child: Card(
-        margin: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        elevation: 1,
-        child: ListTile(
-          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          leading: CircleAvatar(
-            backgroundColor: Colors.amber[100],
-            child:
-                member.avatarUrl == null
-                    ? Icon(Icons.person, color: Colors.amber[800])
-                    : Image.network(member.avatarUrl!, height: 80, width: 80),
-          ),
-          title: Row(
-            children: [
-              Text(
-                member.name,
-                style: TextStyle(
-                  fontWeight: FontWeight.w500,
-                  color: Colors.grey[800],
-                ),
-              ),
-              SizedBox(width: 8),
-              if (member.id == group.leaderId)
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: Colors.amber[100],
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.amber),
-                  ),
-                  child: Text(
-                    'Leader',
-                    style: TextStyle(fontSize: 12, color: Colors.amber[800]),
-                  ),
-                ),
-            ],
-          ),
-          trailing:
-              isUserLeader && member.id != group.leaderId
-                  ? PopupMenuButton(
-                    icon: Icon(Icons.more_vert, color: Colors.amber[800]),
-                    onSelected: (value) {
-                      if (value == 'remove') {
-                        _showRemoveMemberDialog(context, member);
-                      }
-                    },
-                    itemBuilder:
-                        (context) => [
-                          PopupMenuItem(
-                            value: 'remove',
-                            child: Row(
-                              children: [
-                                Icon(Icons.person_remove, color: Colors.red),
-                                SizedBox(width: 8),
-                                Text('Remove'),
-                              ],
-                            ),
-                          ),
-                        ],
-                  )
-                  : null,
-        ),
-      ),
-    );
   }
 
   void _showGroupSettings(BuildContext context, Group group) {
@@ -582,6 +148,7 @@ class _GroupScreenState extends State<GroupScreen> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
+      backgroundColor: Colors.white,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setState) {
@@ -720,7 +287,10 @@ class _GroupScreenState extends State<GroupScreen> {
                             final nameResponse =
                                 await Auth.makeAuthenticatedPostRequest(
                                   "/groups/rename",
-                                  {"groupId": widget.groupId, "newName": newName},
+                                  {
+                                    "groupId": widget.groupId,
+                                    "newName": newName,
+                                  },
                                 );
 
                             // Update beacon frequency
@@ -818,63 +388,362 @@ class _GroupScreenState extends State<GroupScreen> {
     );
   }
 
-  void _showInviteMembersDialog(BuildContext context) {
-    InviteMembersDialog.show(context, widget.groupId);
+  // Show confirmation dialog before leaving the group
+  void _showLeaveGroupDialog() {
+    if (isUserLeader) {
+      if (members.length <= 1) {
+        // Case when leader is the only member
+        showDialog(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              title: Text("Cannot Leave Group"),
+              content: Text(
+                "You are the only member of this group. As the leader, you cannot leave unless there are other members. Please invite someone before trying to leave.",
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text("OK"),
+                ),
+              ],
+            );
+          },
+        );
+      } else {
+        // Case when leader needs to assign new leader
+        showDialog(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              title: Text("Assign New Leader"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "As the group leader, you must assign a new leader before leaving. Please select a member to become the new leader:",
+                  ),
+                  SizedBox(height: 16),
+                  DropdownButtonFormField<User>(
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(),
+                      labelText: "Select New Leader",
+                    ),
+                    items:
+                        members
+                            .where((member) => member.id != group.leaderId)
+                            .map(
+                              (member) => DropdownMenuItem(
+                                value: member,
+                                child: Text(member.name),
+                              ),
+                            )
+                            .toList(),
+                    onChanged: (selectedMember) async {
+                      if (selectedMember != null) {
+                        // API call to assign new leader
+                        final response =
+                            await Auth.makeAuthenticatedPostRequest(
+                              "groups/assign-leader",
+                              {
+                                "groupId": widget.groupId,
+                                "newLeaderId": selectedMember.id,
+                              },
+                            );
+
+                        if (response.statusCode == 200) {
+                          // After successful assignment, proceed with leaving
+                          _leaveGroup();
+                          Navigator.pop(context);
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                "Failed to assign new leader: ${response.body}",
+                              ),
+                            ),
+                          );
+                        }
+                      }
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text("Cancel"),
+                ),
+              ],
+            );
+          },
+        );
+      }
+    } else {
+      // Original dialog for non-leaders
+      showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: Text("Leave Group"),
+            content: Text(
+              "Are you sure you want to leave this group? You will need an invite to rejoin.",
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text("Cancel"),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  _leaveGroup(); // Calls the API to leave
+                },
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                child: Text("Leave Group"),
+              ),
+            ],
+          );
+        },
+      );
+    }
   }
 
-  void _showRemoveMemberDialog(BuildContext context, User member) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('Remove Member'),
-          content: Text(
-            'Are you sure you want to remove ${member.name} from this group?',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: Text('Cancel'),
+  void _leaveGroup() async {
+    final response = await Auth.makeAuthenticatedPostRequest("groups/leave", {
+      "groupId": widget.groupId,
+    });
+
+    if (response.statusCode == 200) {
+      Navigator.pop(context);
+      Navigator.pushReplacementNamed(context, "/home");
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("You have left the group.")));
+    } else {
+      print("Error leaving group: ${response.body}");
+    }
+  }
+
+  Widget _buildGroupHeader() {
+    return Column(
+      children: [
+        SizedBox(height: 20),
+        Stack(
+          alignment: Alignment.center,
+          children: [
+            Container(
+              width: 110,
+              height: 110,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.amber[500]!, width: 4),
+              ),
+              child: ClipOval(
+                child:
+                    group.iconUrl != null
+                        ? Image.network(group.iconUrl!, fit: BoxFit.cover)
+                        : Icon(Icons.group, size: 60, color: Colors.grey[400]),
+              ),
             ),
-            ElevatedButton(
-              onPressed: () async {
-                await Auth.makeAuthenticatedPostRequest("groups/remove", {
-                  "groupId": widget.groupId, // Pass the groupId here
-                  "removingUserId": member.id, // Pass the user ID to invite
-                });
-                await fetchGroupDetails();
-                Navigator.pop(context);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+            if (isUserLeader)
+              Positioned(
+                bottom: 0,
+                right: 0,
+                child: GestureDetector(
+                  onTap: () => _handleImageUpload(context),
+                  child: Container(
+                    padding: EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white,
+                      border: Border.all(color: Colors.amber[500]!),
+                    ),
+                    child: Icon(
+                      Icons.upload,
+                      size: 20,
+                      color: Colors.amber[800],
+                    ),
+                  ),
                 ),
               ),
-              child: Text('Remove', style: TextStyle(color: Colors.white)),
-            ),
           ],
+        ),
+        SizedBox(height: 12),
+        Text(
+          group.name ?? 'Group Name',
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: Colors.amber[800],
+          ),
+        ),
+        SizedBox(height: 8),
+      ],
+    );
+  }
+
+  Widget _buildMemberList() {
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: NeverScrollableScrollPhysics(),
+      itemCount: members.length,
+      itemBuilder: (context, index) {
+        final member = members[index];
+        final isLeader = member.id == group.leaderId;
+
+        return Container(
+          margin: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 6,
+                offset: Offset(0, 3),
+              ),
+            ],
+          ),
+          child: ListTile(
+            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            leading: CircleAvatar(
+              radius: 22,
+              backgroundColor: Colors.amber[100],
+              child:
+                  member.avatarUrl != null
+                      ? ClipOval(
+                        child: Image.network(
+                          member.avatarUrl!,
+                          fit: BoxFit.cover,
+                        ),
+                      )
+                      : Icon(Icons.person, color: Colors.amber[800]),
+            ),
+            title: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    member.name,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey[800],
+                    ),
+                  ),
+                ),
+                if (isLeader)
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.amber[100],
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.amber),
+                    ),
+                    child: Text(
+                      'Leader',
+                      style: TextStyle(fontSize: 12, color: Colors.amber[800]),
+                    ),
+                  ),
+              ],
+            ),
+            onTap:
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => MemberProfileScreen(userId: member.id),
+                  ),
+                ),
+          ),
         );
       },
     );
   }
 
-  String _formatDate(DateTime date) {
-    final now = DateTime.now();
-    final difference = now.difference(date);
-
-    if (difference.inDays > 365) {
-      return '${(difference.inDays / 365).floor()} years ago';
-    } else if (difference.inDays > 30) {
-      return '${(difference.inDays / 30).floor()} months ago';
-    } else if (difference.inDays > 0) {
-      return '${difference.inDays} days ago';
-    } else if (difference.inHours > 0) {
-      return '${difference.inHours} hours ago';
-    } else {
-      return '${difference.inMinutes} minutes ago';
+  @override
+  Widget build(BuildContext context) {
+    if (isLoading) {
+      return Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(color: Colors.amber[800]),
+        ),
+        backgroundColor: Colors.white,
+      );
     }
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: Text(
+          group.name ?? 'Group',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+            color: Colors.amber[800],
+          ),
+        ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: IconThemeData(color: Colors.amber[800]),
+        actions: [
+          if (isUserLeader)
+            IconButton(
+              icon: Icon(Icons.settings, color: Colors.amber[800]),
+              onPressed: () => _showGroupSettings(context, group),
+            ),
+          if (!isUserLeader)
+            IconButton(
+              icon: Icon(Icons.logout, color: Colors.amber[800]),
+              onPressed: () => _showLeaveGroupDialog(),
+            ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            _buildGroupHeader(),
+            SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Members (${members.length})',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.amber[800],
+                    ),
+                  ),
+                  if (isUserLeader)
+                    ElevatedButton.icon(
+                      onPressed:
+                          () =>
+                              InviteMembersDialog.show(context, widget.groupId),
+                      icon: Icon(
+                        Icons.person_add,
+                        size: 20,
+                        color: Colors.white,
+                      ),
+                      label: Text('Invite'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.amber[800],
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            SizedBox(height: 8),
+            _buildMemberList(),
+            SizedBox(height: 24),
+          ],
+        ),
+      ),
+    );
   }
 }

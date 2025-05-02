@@ -136,12 +136,12 @@ class _GroupsBottomSheetState extends State<GroupsBottomSheet> {
     int selectedFrequency = 86400; // Default: once a day
     final Map<int, String> frequencyOptions = {
       0: "0 times per day",
-      86400: "Once a day",          // 1 day
-      604800: "Once a week",        // 7 days
-      1209600: "Once every 2 weeks",// 14 days
-      2592000: "Once a month",      // 30 days
+      86400: "Once a day", // 1 day
+      604800: "Once a week", // 7 days
+      1209600: "Once every 2 weeks", // 14 days
+      2592000: "Once a month", // 30 days
     };
-    
+
     showDialog(
       context: context,
       builder: (context) {
@@ -309,7 +309,11 @@ class _GroupsBottomSheetState extends State<GroupsBottomSheet> {
                     try {
                       final response = await Auth.makeAuthenticatedPostRequest(
                         "groups/create",
-                        {"groupName": groupName, "isPublic": isPublic, "frequency": selectedFrequency},
+                        {
+                          "groupName": groupName,
+                          "isPublic": isPublic,
+                          "frequency": selectedFrequency,
+                        },
                       );
 
                       if (response.statusCode == 200) {
@@ -400,7 +404,11 @@ class _GroupsBottomSheetState extends State<GroupsBottomSheet> {
                                 onPressed: () {
                                   Navigator.pushNamed(context, "/search");
                                 },
-                                icon: Icon(Icons.search, size: 20),
+                                icon: Icon(
+                                  Icons.search,
+                                  size: 20,
+                                  color: Colors.amber[800],
+                                ),
                                 label: Text("Search"),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.grey[100],
@@ -414,7 +422,11 @@ class _GroupsBottomSheetState extends State<GroupsBottomSheet> {
                               SizedBox(width: 8), // Add space between buttons
                               ElevatedButton.icon(
                                 onPressed: _createNewGroup,
-                                icon: Icon(Icons.add, size: 20),
+                                icon: Icon(
+                                  Icons.add,
+                                  size: 20,
+                                  color: Colors.white,
+                                ),
                                 label: Text("Create"),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.amber[800],

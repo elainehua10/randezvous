@@ -234,22 +234,27 @@ class _SearchScreenState extends State<SearchScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text("Search", style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.amber[800],
+        title: const Text(
+          "Search",
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.amber),
+        ),
+        backgroundColor: Colors.white, // Set AppBar background color to white
+        elevation: 1,
+        iconTheme: const IconThemeData(color: Colors.amber),
         bottom: TabBar(
           controller: _tabController,
-          tabs: const [Tab(text: "Users"), Tab(text: "Groups")],
-          labelColor: Theme.of(context).primaryColor,
+          labelColor: Colors.amber[800],
           unselectedLabelColor: Colors.grey,
+          indicatorColor: Colors.amber[800],
+          tabs: const [Tab(text: "Users"), Tab(text: "Groups")],
         ),
       ),
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
@@ -257,22 +262,24 @@ class _SearchScreenState extends State<SearchScreen>
                     _tabController.index == 0
                         ? 'Search users'
                         : 'Search groups',
-                prefixIcon: const Icon(Icons.search),
+                prefixIcon: const Icon(Icons.search, color: Colors.amber),
                 suffixIcon: IconButton(
-                  icon: const Icon(Icons.clear),
+                  icon: const Icon(Icons.clear, color: Colors.grey),
                   onPressed: () {
                     _searchController.clear();
                     _performSearch('');
                   },
                 ),
+                filled: true,
+                fillColor: Colors.grey[100],
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide(color: Colors.grey[300]!),
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(color: Colors.amber[800]!),
-                )
+                ),
               ),
               onSubmitted: _performSearch,
               onChanged: (value) {
@@ -280,6 +287,7 @@ class _SearchScreenState extends State<SearchScreen>
               },
             ),
           ),
+          const SizedBox(height: 12),
           Expanded(
             child: TabBarView(
               controller: _tabController,
@@ -292,9 +300,8 @@ class _SearchScreenState extends State<SearchScreen>
   }
 
   Widget _buildUserResults() {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
+    if (_isLoading) return const Center(child: CircularProgressIndicator());
+
     if (_userResults.isEmpty) {
       return const Center(
         child: Text('No users found', style: TextStyle(color: Colors.grey)),
@@ -305,60 +312,144 @@ class _SearchScreenState extends State<SearchScreen>
       itemCount: _userResults.length,
       itemBuilder: (context, index) {
         final user = _userResults[index];
-        return ListTile(
-          leading: CircleAvatar(
-            backgroundImage:
-                user.avatarUrl != null && user.avatarUrl!.isNotEmpty
-                    ? NetworkImage(user.avatarUrl!)
-                    : null,
-            child:
-                user.avatarUrl == null || user.avatarUrl!.isEmpty
-                    ? Text(user.name.isNotEmpty == true ? user.name[0] : 'U')
-                    : null,
+
+        return Card(
+          color: Colors.white, // Set Card background color to white
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
           ),
-          title: Text(user.name ?? 'Unnamed User'),
-          subtitle: Text('@${user.username ?? ''}'),
-          trailing: PopupMenuButton<String>(
-            onSelected: (value) {
-              if (value == 'block') {
-                _showBlockConfirmationDialog(user);
-              } else if (value == 'report') {
-                _showReportConfirmation(user);
-              }
+          elevation: 1,
+          child: ListTile(
+            leading: CircleAvatar(
+              backgroundColor: Colors.amber[100],
+              backgroundImage:
+                  (user.avatarUrl?.isNotEmpty ?? false)
+                      ? NetworkImage(user.avatarUrl!)
+                      : null,
+              child:
+                  user.avatarUrl == null || user.avatarUrl!.isEmpty
+                      ? Icon(Icons.person, color: Colors.amber[800])
+                      : null,
+            ),
+            title: Text(user.name),
+            subtitle: Text('@${user.username}'),
+            trailing: PopupMenuButton<String>(
+              onSelected: (value) {
+                if (value == 'block') {
+                  _showBlockConfirmationDialog(user);
+                } else if (value == 'report') {
+                  _showReportConfirmation(user);
+                }
+              },
+              itemBuilder:
+                  (context) => [
+                    const PopupMenuItem(
+                      value: 'block',
+                      child: Row(
+                        children: [
+                          Icon(Icons.block, color: Colors.red),
+                          SizedBox(width: 8),
+                          Text('Block'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'report',
+                      child: Row(
+                        children: [
+                          Icon(Icons.report_gmailerrorred, color: Colors.red),
+                          SizedBox(width: 8),
+                          Text('Report'),
+                        ],
+                      ),
+                    ),
+                  ],
+              icon: const Icon(Icons.more_vert, color: Colors.grey),
+            ),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => MemberProfileScreen(userId: user.id),
+                ),
+              );
             },
-            itemBuilder:
-                (context) => [
-                  const PopupMenuItem(
-                    value: 'block',
-                    child: Row(
-                      children: [
-                        Icon(Icons.block, color: Colors.red),
-                        SizedBox(width: 8),
-                        Text('Block'),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'report',
-                    child: Row(
-                      children: [
-                        Icon(Icons.report_gmailerrorred, color: Colors.red),
-                        SizedBox(width: 8),
-                        Text('Report'),
-                      ],
-                    ),
-                  ),
-                ],
-            icon: const Icon(Icons.more_vert),
           ),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => MemberProfileScreen(userId: user.id),
+        );
+      },
+    );
+  }
+
+  Widget _buildGroupResults() {
+    if (_isLoading) return const Center(child: CircularProgressIndicator());
+
+    if (_groupResults.isEmpty) {
+      return const Center(
+        child: Text('No groups found', style: TextStyle(color: Colors.grey)),
+      );
+    }
+
+    return ListView.builder(
+      itemCount: _groupResults.length,
+      itemBuilder: (context, index) {
+        final group = _groupResults[index];
+        final isJoining = _joiningGroups.contains(group.id);
+
+        return Card(
+          color: Colors.white,
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          elevation: 1,
+          child: ListTile(
+            leading: CircleAvatar(
+              backgroundColor: Colors.amber[100],
+              backgroundImage:
+                  group.iconUrl != null && group.iconUrl!.isNotEmpty
+                      ? NetworkImage(group.iconUrl!)
+                      : null,
+              child:
+                  group.iconUrl == null || group.iconUrl!.isEmpty
+                      ? Icon(Icons.group, color: Colors.amber[800])
+                      : null,
+            ),
+            title: Text(group.name!),
+            trailing: ElevatedButton(
+              onPressed: isJoining ? null : () => _joinGroup(group.id!),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.amber[800],
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
               ),
-            );
-          },
+              child:
+                  isJoining
+                      ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                      : const Text('Join'),
+            ),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => GroupPreview(groupId: group.id!),
+                ),
+              );
+            },
+          ),
         );
       },
     );
@@ -398,7 +489,7 @@ class _SearchScreenState extends State<SearchScreen>
       "Harassment or bullying",
       "Fake profile",
       "Spam",
-      "Other"
+      "Other",
     ];
 
     final TextEditingController descriptionController = TextEditingController();
@@ -461,63 +552,6 @@ class _SearchScreenState extends State<SearchScreen>
                   },
                 ),
               ],
-            );
-          },
-        );
-      },
-    );
-  }
-
-
-  Widget _buildGroupResults() {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    if (_groupResults.isEmpty) {
-      return const Center(
-        child: Text('No groups found', style: TextStyle(color: Colors.grey)),
-      );
-    }
-
-    return ListView.builder(
-      itemCount: _groupResults.length,
-      itemBuilder: (context, index) {
-        final group = _groupResults[index];
-        final isJoining = _joiningGroups.contains(group.id);
-
-        return ListTile(
-          leading: CircleAvatar(
-            backgroundImage:
-                group.iconUrl != null && group.iconUrl!.isNotEmpty
-                    ? NetworkImage(group.iconUrl!)
-                    : null,
-            child:
-                group.iconUrl == null || group.iconUrl!.isEmpty
-                    ? const Icon(Icons.group)
-                    : null,
-          ),
-          title: Text(group.name ?? "Unnamed group"),
-          trailing: ElevatedButton(
-            onPressed: isJoining ? null : () => _joinGroup(group.id ?? "no"),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              minimumSize: const Size(0, 36),
-            ),
-            child:
-                isJoining
-                    ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                    : const Text('Join'),
-          ),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => GroupPreview(groupId: group.id ?? ''),
-              ),
             );
           },
         );
